@@ -1,0 +1,4 @@
+name = "Fill PDF"
+description = "Allows users to populate PDF forms (using XFDF) from submitted node data."
+package = Other
+dependencies = content token
