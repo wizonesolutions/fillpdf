@@ -1,6 +1,6 @@
 <?php
 // $Id$
-
+ 
 /**
  * @file
  * Allows mappings of PDFs to site content
@@ -15,10 +15,10 @@ function fillpdf_help($section) {
   switch ($section) {
     case 'admin/help#fillpdf':
       return '<p>After setting up your PDF-to-node mapping & you want to download the PDF, 
-		you need to navigate to /fillpdf?fid=10&nid=10
-	  	where fid is the form id of the form you\'ve just created, and nid is the node 
-		id whose content you\'ll be pulling via tokens.  You can obtain fid from the URL 
-		when editing your form.  It will look like: http://localhost/admin/content/fillpdf/form/FID/...</p>';
+    you need to navigate to /fillpdf?fid=10&nid=10
+      where fid is the form id of the form you\'ve just created, and nid is the node 
+    id whose content you\'ll be pulling via tokens.  You can obtain fid from the URL 
+    when editing your form.  It will look like: http://localhost/admin/content/fillpdf/form/FID/...</p>';
     case 'admin/content/fillpdf':
       if (module_exists('help')) {
         return t('See the !link for an explaination on dowloading these forms to PDF',
@@ -101,7 +101,7 @@ function fillpdf_menu($may_cache) {
       'path' => 'admin/content/fillpdf/form/'. arg(4) .'/generate',
       'title' => t('Generate Fields From PDF'),
       'callback' => 'fillpdf_generate_fields_from_pdf',
-	  'callback arguments' => array(arg(4)),
+      'callback arguments' => array(arg(4)),
       'access' => $access,
       'type' => MENU_CALLBACK
     );
@@ -137,8 +137,7 @@ function fillpdf_perm() {
 }
 
 
-function fillpdf_admin() {
-	
+function fillpdf_admin() {  
   $result = db_query("SELECT * FROM {fillpdf_forms} ORDER BY title");
 
   $header = array(t('Title'), array('data' => t('Operations'), 'colspan' => '4'));
@@ -149,7 +148,7 @@ function fillpdf_admin() {
     $row[] = l(t('Edit PDF'), "admin/content/fillpdf/form/$pdf_form->fid/edit");
     $row[] = l(t('Edit fields'), "admin/content/fillpdf/form/$pdf_form->fid/list");
     $row[] = l(t('Add field'), "admin/content/fillpdf/form/$pdf_form->fid/add");
-	$row[] = l(t('Generate Fields From PDF'), "admin/content/fillpdf/form/$pdf_form->fid/generate");
+  $row[] = l(t('Generate Fields From PDF'), "admin/content/fillpdf/form/$pdf_form->fid/generate");
     $rows[] = $row;
   }
 
@@ -175,10 +174,10 @@ function fillpdf_form_edit($op = 'add', $fid = NULL) {
                   ); 
   $form['url'] = array('#type' => 'textfield', 
                         '#title' => t('URL'), 
-						'#description' => t('The URL of the PDF file that will be parsed & merged.  
-							Currently, this module doesn\'t upload, so if you want the PDF file on your 
-							own server, upload it via one of Drupal\'s many uploading mechanisms (or FTP)
-							and paste the http:// url here.'),
+            '#description' => t('The URL of the PDF file that will be parsed & merged.  
+              Currently, this module doesn\'t upload, so if you want the PDF file on your 
+              own server, upload it via one of Drupal\'s many uploading mechanisms (or FTP)
+              and paste the http:// url here.'),
                         '#maxlength' => 127,
                         '#default_value' => $pdf_form ? $pdf_form->url : '',
                         '#required' => TRUE,
@@ -309,20 +308,20 @@ function fillpdf_field_edit($pdf_form, $field) {
     '#maxlength' => 255,
     '#default_value' => $field->label,
     '#description' => t('An optional label to help you identify the field.'),
-	'#weight' => 0,
+  '#weight' => 0,
   );
   $form['pdf_key'] = array(
     '#type' => 'textfield',
     '#title' => t('PDF Key'),
     '#maxlength' => 255,
     '#default_value' => $field->pdf_key,
-	'#required' => TRUE,
+  '#required' => TRUE,
     '#description' => t('The field key from the original PDF form.  You likely need Acrobat Pro to discover this.'),
     '#weight' => 1,
   );
 //  $form['type'] = array(
 //    '#type' => 'radios',
-//	'#options' => array('text','int'),
+//  '#options' => array('text','int'),
 //    '#title' => t('Type'),
 //    '#default_value' => ( ($field->type)?($field->type):0 ),
 //    '#description' => t('The type of PDF field.'),
@@ -337,10 +336,10 @@ function fillpdf_field_edit($pdf_form, $field) {
   );
   $form['tokens_fieldset'] = array(
     '#type' => 'fieldset',
-	'#title' => 'Tokens',
-	'#collapsible' => TRUE,
-	'#collapsed' => TRUE,
-	'#weight' => 5,
+  '#title' => 'Tokens',
+  '#collapsible' => TRUE,
+  '#collapsed' => TRUE,
+  '#weight' => 5,
   );
   $form['tokens_fieldset']['tokens'] = array(
     '#value' => theme('token_help'),
@@ -368,9 +367,9 @@ function fillpdf_field_edit($pdf_form, $field) {
 
 function fillpdf_field_edit_validate($form_id, &$form_values, &$form) {
   if (db_result( db_query("SELECT * FROM {fillpdf_fields} WHERE fid = %d AND pdf_key = '%s'", 
-  		$form_values['form']->fid, $form_values['pdf_key'] ))) {
-  	if ($form_values['field'] && $form_values['field']->pdf_key == $form_values['pdf_key'] ) return;
-	else form_set_error('pdf_key', t('A field with this pdf_key already exists. Choose another pdf_key.'));
+      $form_values['form']->fid, $form_values['pdf_key'] ))) {
+    if ($form_values['field'] && $form_values['field']->pdf_key == $form_values['pdf_key'] ) return;
+  else form_set_error('pdf_key', t('A field with this pdf_key already exists. Choose another pdf_key.'));
   }
 }
 
@@ -462,69 +461,69 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
  * parses the XML response & contsructs the fields.
  */
 function fillpdf_generate_fields_from_pdf($fid) {
-	
-	//currently disabled file upload 
-	
-	/*$file = file_check_upload('pdf_upload');
-	//handle the file, using file_save_upload, or something similar
-	if (!$file) return;
+  
+  //currently disabled file upload 
+  
+  /*$file = file_check_upload('pdf_upload');
+  //handle the file, using file_save_upload, or something similar
+  if (!$file) return;
 
-	//save the node (we need the nid before uploading)
-	$title->title=$file->filename;
-	
-	$filename="{$title}.pdf";
-	$file = file_save_upload($file,"fillpdf/{$filename}");
-	// get form fields from web service / CGI script
-	*/
+  //save the node (we need the nid before uploading)
+  $title->title=$file->filename;
+  
+  $filename="{$title}.pdf";
+  $file = file_save_upload($file,"fillpdf/{$filename}");
+  // get form fields from web service / CGI script
+  */
 
-	$form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-	$handle = fopen(SERVLET_URL. "?method=parse&form_url={$form_url}", "rb");
-	$contents = stream_get_contents($handle);
-	fclose($handle);
+  $form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
+  $handle = fopen(SERVLET_URL ."?method=parse&form_url={$form_url}", "rb");
+  $contents = stream_get_contents($handle);
+  fclose($handle);
 
-	// parse XML
-	$xml = simplexml_load_string( $contents );
-	
-	// webform_129.pdf => webform_129 (content-type name)
-	$filename=substr($filename, 0, -4);
-		
-	//create fields
-	$i=1;
-	$weight=-10;	
-	foreach ($xml->field as $field) {		
-		$field_type='';
-		switch ((int)$field['type']) {
-			case 5:	//List
-			case 6:	//Combobox
-					$field_type='select'; break;
-			
-			case 3:	//Radiobutton
-			case 2: //Checkbox
-					$field_type='select'; break;
-			
-			case 0: //None
-        	case 1: //Pushbutton
-					//return;
-			
-			case 4:	//Text
-			case 7:	//Signature
-			default: 
-					$field_type='textfield'; break;
-		}
-		
-//		$new_field->label = $new_field->pdf_key = $field['name'];	
-//		$new_field->type=$field_type;
-//		$fields[]=$new_field;
-		if ($field['name']) {
-			if (!(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name']))) {
-				db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
-					$fid, $field['name'], $field['name']);	
-			}
-		}
-		$i++;
-	}	
-	 
-	drupal_goto("admin/content/fillpdf/form/{$fid}/list");		
+  // parse XML
+  $xml = simplexml_load_string( $contents );
+  
+  // webform_129.pdf => webform_129 (content-type name)
+  $filename=substr($filename, 0, -4);
+    
+  //create fields
+  $i=1;
+  $weight=-10;  
+  foreach ($xml->field as $field) {    
+    $field_type='';
+    switch ((int)$field['type']) {
+      case 5:  //List
+      case 6:  //Combobox
+          $field_type='select'; break;
+      
+      case 3:  //Radiobutton
+      case 2: //Checkbox
+          $field_type='select'; break;
+      
+      case 0: //None
+          case 1: //Pushbutton
+          //return;
+      
+      case 4:  //Text
+      case 7:  //Signature
+      default: 
+          $field_type='textfield'; break;
+    }
+    
+//    $new_field->label = $new_field->pdf_key = $field['name'];  
+//    $new_field->type=$field_type;
+//    $fields[]=$new_field;
+    if ($field['name']) {
+      if (!(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name']))) {
+        db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
+          $fid, $field['name'], $field['name']);  
+      }
+    }
+    $i++;
+  }  
+   
+  drupal_goto("admin/content/fillpdf/form/{$fid}/list");    
 }
 
 /**
@@ -535,39 +534,39 @@ function fillpdf_generate_fields_from_pdf($fid) {
  * where fid is this form's id and nid is the node id from which data will be pulled via tokens.
  */
 function fillpdf_generate_pdf() {
-		$fid = $_GET['fid'];
-		$nid = $_GET['nid'];	
-		
-		if (!$fid) return;
-		$fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-		
-		//just give them empty pdf if no nid
-		if (!$nid) {
-			header("Location: {$fillpdf_info->url}");
-			exit;
-		}
-				
-		$host = 'http://'. $_SERVER['SERVER_NAME'];
-		$node = node_load($nid);
-		$fields = array();
-		$query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
-		while ($obj = db_fetch_object($query)) {			
-			$str = token_replace($obj->value, $type = 'node', $object = $node);
-			$str = preg_replace('|<br />|', '
-',$str);
-			$fields[$obj->pdf_key] = $str;
-		}	
-    		
-		// get the XFDF file contents	
-		include_once(drupal_get_path('module', 'fillpdf'). '/xfdf.inc');
-		$xfdf = createXFDF($fillpdf_info->url,$fields);
-		$download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
-		//$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
-		$dir = "files/xfdf";
-		file_check_directory($dir, 1);		
-		$res = file_save_data($xfdf, "xfdf/{$download_name}.xfdf", FILE_EXISTS_REPLACE);
-		if (!$res) return; //couldn't save file	
-		$xfdf_file = $host. '/' .$res;				
-			
-		header("Location: ". SERVLET_URL ."?method=merge&title={$download_name}&pdf={$fillpdf_info->url}&xfdf={$xfdf_file}");	
+    $fid = $_GET['fid'];
+    $nid = $_GET['nid'];  
+    
+    if (!$fid) return;
+    $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
+    
+    //just give them empty pdf if no nid
+    if (!$nid) {
+      header("Location: {$fillpdf_info->url}");
+      exit;
+    }
+        
+    $host = 'http://'. $_SERVER['SERVER_NAME'];
+    $node = node_load($nid);
+    $fields = array();
+    $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
+    while ($obj = db_fetch_object($query)) {      
+      $str = token_replace($obj->value, $type = 'node', $object = $node);
+      $str = preg_replace('|<br />|', '
+', $str);
+      $fields[$obj->pdf_key] = $str;
+    }  
+        
+    // get the XFDF file contents  
+    include_once(drupal_get_path('module', 'fillpdf') .'/xfdf.inc');
+    $xfdf = createXFDF($fillpdf_info->url, $fields);
+    $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
+    //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
+    $dir = "files/xfdf";
+    file_check_directory($dir, 1);    
+    $res = file_save_data($xfdf, "xfdf/{$download_name}.xfdf", FILE_EXISTS_REPLACE);
+    if (!$res) return; //couldn't save file  
+    $xfdf_file = $host .'/'. $res;        
+      
+    header("Location: ". SERVLET_URL ."?method=merge&title={$download_name}&pdf={$fillpdf_info->url}&xfdf={$xfdf_file}");  
 }

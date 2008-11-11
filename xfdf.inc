@@ -14,53 +14,52 @@
  */
 function createXFDF($file, $info, $enc='UTF-8') {
     $data='<?xml version="1.0" encoding="'. $enc .'"?>'."\n".
-    	'<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">'."\n".
-		'<fields>'."\n";
+      '<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">'."\n".
+    '<fields>'."\n";
     $data .= print_fields($info);
     $data .= '</fields>'."\n".
-    	'<ids original="'. md5($file) .'" modified="'. time() .'" />'."\n".
-    	'<f href="'. $file .'" />'."\n".
-    	'</xfdf>'."\n";
+      '<ids original="'. md5($file) .'" modified="'. time() .'" />'."\n".
+      '<f href="'. $file .'" />'."\n".
+      '</xfdf>'."\n";
     return $data;
 }
 
 function escape_string($str) {
-	if ($str == NULL) return $str;
-	$str = str_replace(array('\\', '\''), array('\\\\', '\\\''), $str);
-	return $str;
+  if ($str == NULL) return $str;
+  $str = str_replace(array('\\', '\''), array('\\\\', '\\\''), $str);
+  return $str;
 }
 
 
 function print_fields($info) {
-	$fields=array();
-	foreach ($info as $field => $val) {
-		$arr = explode('.', $field);
-		$str .= '$fields';
-		foreach ($arr as $node) {
-			$str .= "['{$node}']";
-		}
-		$str .= "='". escape_string($val) ."';";
-	}
-	eval($str);
-	
-	$str='';
-	foreach ($fields as $field => $val) {		
-		print_fields_recurse($field, $val, $str);
-	}
-	return $str;
+  $fields=array();
+  foreach ($info as $field => $val) {
+    $arr = explode('.', $field);
+    $str .= '$fields';
+    foreach ($arr as $node) {
+      $str .= "['{$node}']";
+    }
+    $str .= "='". escape_string($val) ."';";
+  }
+  eval($str);
+  
+  $str='';
+  foreach ($fields as $field => $val) {    
+    print_fields_recurse($field, $val, $str);
+  }
+  return $str;
 }
 
 function print_fields_recurse($field, $val, &$str) {
-	
-	$str .= '<field name="'. $field .'">'."\n";
-	if (is_array($val)) {		
-		foreach ($val as $field => $val) {
-			print_fields_recurse($field, $val, $str);
-		}
-	}
-	else {		
-		$str .= '<value>'. $val .'</value>'."\n";
-	}
-	$str .= '</field>'."\n";
+  
+  $str .= '<field name="'. $field .'">'."\n";
+  if (is_array($val)) {    
+    foreach ($val as $field => $val) {
+      print_fields_recurse($field, $val, $str);
+    }
+  }
+  else {    
+    $str .= '<value>'. $val .'</value>'."\n";
+  }
+  $str .= '</field>'."\n";
 }
-?>
