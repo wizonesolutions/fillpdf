@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content
  */
 
-define("SERVLET_URL", "http://elc.ocdevel.com:8080/fillpdf_itext/fillpdf_itext");
+define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_itext/fillpdf_itext");
 
 /**
  * Implementation of hook_help().
@@ -376,7 +376,7 @@ function fillpdf_field_edit_validate($form_id, &$form_values, &$form) {
 function fillpdf_field_edit_submit($form_id, &$form_values) {
   if ($form_values['field']) {
     if ($form_values['op'] == t('Delete')) {
-      return 'admin/content/fillpdf/form/'. $form_values['form']->fid .'/delete/'. $form_values['field']->name;
+      return 'admin/content/fillpdf/form/'. $form_values['form']->fid .'/delete/'. $form_values['field']->pdf_key;
     }
     $edit_field = (object)$form_values;
     fillpdf_update_field($form_values['form'], $edit_field, $form_values['field']->pdf_key);   
@@ -515,7 +515,7 @@ function fillpdf_generate_fields_from_pdf($fid) {
 //    $new_field->type=$field_type;
 //    $fields[]=$new_field;
     if ($field['name']) {
-      if (!(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name']))) {
+      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name'])))) {
         db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
           $fid, $field['name'], $field['name']);  
       }
@@ -537,7 +537,7 @@ function fillpdf_generate_pdf() {
     $fid = $_GET['fid'];
     $nid = $_GET['nid'];  
     
-    if (!$fid) return;
+    if (is_null($fid)) return;
     $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
     
     //just give them empty pdf if no nid
@@ -562,8 +562,8 @@ function fillpdf_generate_pdf() {
     $xfdf = createXFDF($fillpdf_info->url, $fields);
     $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
-    $dir = "files/xfdf";
-    file_check_directory($dir, 1);    
+    $dir = file_directory_path()."/xfdf";
+    file_check_directory($dir, FILE_CREATE_DIRECTORY);    
     $res = file_save_data($xfdf, "xfdf/{$download_name}.xfdf", FILE_EXISTS_REPLACE);
     if (!$res) return; //couldn't save file  
     $xfdf_file = $host .'/'. $res;        
