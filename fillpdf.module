@@ -3,7 +3,7 @@
  
 /**
  * @file
- * Allows mappings of PDFs to site content
+ * Allows mappings of PDFs to site content.
  */
 
 define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_itext/fillpdf_itext");
