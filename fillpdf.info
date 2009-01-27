@@ -1,4 +1,8 @@
-name = "Fill PDF"
-description = "Allows users to populate PDF forms (using XFDF) from submitted node data."
+; $Id$ admin_menu.info,v 1.5.2.1 2008/11/30 12:50:36 sun Exp $
+name = Fill PDF
+description = Allows users to populate PDF forms (using XFDF) from submitted node data.
 package = Other
-dependencies = content token
+core = 6.x
+
+dependencies[] = content
+dependencies[] = token

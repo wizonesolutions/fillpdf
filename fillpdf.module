@@ -11,8 +11,8 @@ define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_itext/fillpdf_itext");
 /**
  * Implementation of hook_help().
  */
-function fillpdf_help($section) {
-  switch ($section) {
+function fillpdf_help($path, $arg) {
+  switch ($path) {
     case 'admin/help#fillpdf':
       return '<p>After setting up your PDF-to-node mapping & you want to download the PDF, 
     you need to navigate to /fillpdf?fid=10&nid=10
@@ -35,97 +35,86 @@ function fillpdf_help($section) {
 /**
  * Implementation of hook_menu().
  */
-function fillpdf_menu($may_cache) {
+function fillpdf_menu() {
+    $access = array('administer pdfs');
+    $items = array();
 
-  if ($may_cache) {
-    $access = user_access('administer pdfs');
-
-    $items[] = array(
-      'path' => 'fillpdf', // fillpdf?fid=10&nid=20
-      'callback' => 'fillpdf_generate_pdf',
-      'access' => user_access('access content')
+    $items['fillpdf'] = array( // fillpdf?fid=10&nid=20
+      'page callback' => 'fillpdf_generate_pdf',
+      'access arguments' => $access
     );
 
-    $items[] = array(
-      'path' => 'admin/content/fillpdf',
-      'title' => t('Fill PDF'),
-      'description' => t('Manage your PDFs.'),
-      'callback' => 'fillpdf_admin',
-      'access' => $access
+    $items['admin/content/fillpdf'] = array(
+      'title' => 'Fill PDF',
+      'description' => 'Manage your PDFs.',
+      'page callback' => 'fillpdf_admin',
+      'access arguments' => $access
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/list',
-      'title' => t('List PDFs'),
+    $items['admin/content/fillpdf/list'] = array(
+      'title' => 'List PDFs',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/add',
-      'title' => t('Add PDF'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('fillpdf_form_edit', 'add'),
-      'access' => $access,
+    $items['admin/content/fillpdf/add'] = array(
+      'title' => 'Add PDF',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fillpdf_form_edit', 'add'),
+      'access arguments' => $access,
       'type' => MENU_LOCAL_TASK
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/delete',
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('fillpdf_form_delete_confirm'),
-      'access' => $access,
+    $items['admin/content/fillpdf/delete/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fillpdf_form_delete_confirm', 4),
+      'access arguments' => $access,
       'type' => MENU_CALLBACK
-    );
-  }
-  else if (is_numeric(arg(4))) {
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/edit',
-      'title' => t('Edit PDF'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('fillpdf_form_edit', 'edit', arg(4)),
-      'access' => $access,
+    );  
+  //}else if (is_numeric(arg(4))) {
+    $items['admin/content/fillpdf/form/%/edit'] = array(
+      'title' => 'Edit PDF',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fillpdf_form_edit', 'edit', 4),
+      'access arguments' => $access,
       'type' => MENU_LOCAL_TASK,
       'weight' => -20,
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4),
-      'callback' => 'fillpdf_field_edit_field',
+    $items['admin/content/fillpdf/form/%'] = array(
+      'page callback' => 'fillpdf_field_edit_field',
+      'page arguments' => array(4),
       'type' => MENU_CALLBACK,
-      'access' => $access
+      'access arguments' => $access,
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/list',
-      'title' => t('List fields'),
+    $items['admin/content/fillpdf/form/%/list'] = array(
+      'title' => 'List fields',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/generate',
-      'title' => t('Generate Fields From PDF'),
-      'callback' => 'fillpdf_generate_fields_from_pdf',
-      'callback arguments' => array(arg(4)),
-      'access' => $access,
+    $items['admin/content/fillpdf/form/%/generate'] = array(
+      'title' => 'Generate Fields From PDF',
+      'page callback' => 'fillpdf_generate_fields_from_pdf',
+      'page arguments' => array(4),
+      'access arguments' => $access,
       'type' => MENU_CALLBACK
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/add',
-      'title' => t('Add field'),
-      'callback' => 'fillpdf_field_edit_field',
-      'access' => $access,
+    $items['admin/content/fillpdf/form/%/add'] = array(
+      'title' => 'Add field',
+      'page callback' => 'fillpdf_field_edit_field',
+      'page arguments' => array(4),
+      'access arguments' => $access,
       'type' => MENU_LOCAL_TASK
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/edit/'. arg(6),
-      'callback' => 'fillpdf_field_edit_field',
-      'access' => $access,
+    $items['admin/content/fillpdf/form/%/edit/%'] = array(
+      'page callback' => 'fillpdf_field_edit_field',
+      'page arguments' => array(4, 6),
+      'access arguments' => $access,
       'type' => MENU_CALLBACK
     );
-    $items[] = array(
-      'path' => 'admin/content/fillpdf/form/'. arg(4) .'/delete',
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('fillpdf_field_delete_confirm', arg(4), arg(6)),
-      'access' => $access,
+    $items['admin/content/fillpdf/form/%/delete/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fillpdf_field_delete_confirm', 4, 6),
+      'access arguments' => $access,
       'type' => MENU_CALLBACK
     );
-  }
+  //}
   return $items;
 }
 
@@ -160,77 +149,80 @@ function fillpdf_admin() {
 }
 
 
-function fillpdf_form_edit($op = 'add', $fid = NULL) {
+function fillpdf_form_edit(&$form_state, $op = 'add', $fid = NULL) {
   if ($op != 'add' && is_numeric($fid)) {
     $pdf_form = db_fetch_object(db_query("SELECT * FROM {fillpdf_forms} WHERE fid = %d", $fid));
     drupal_set_title(t('Edit form'));
   }  
   $form['title'] = array('#type' => 'textfield', 
-                        '#title' => t('Title'), 
-                        '#maxlength' => 127,
-                        '#default_value' => $pdf_form ? $pdf_form->title : '',
-                        '#required' => TRUE,
-                        '#weight' => -5,
+      '#title' => t('Title'), 
+      '#maxlength' => 127,
+      '#default_value' => $pdf_form ? $pdf_form->title : '',
+      '#required' => TRUE,
+      '#weight' => -5,
                   ); 
   $form['url'] = array('#type' => 'textfield', 
-                        '#title' => t('URL'), 
-            '#description' => t('The URL of the PDF file that will be parsed & merged.  
+      '#title' => t('URL'), 
+      '#description' => t('The URL of the PDF file that will be parsed & merged.  
               Currently, this module doesn\'t upload, so if you want the PDF file on your 
               own server, upload it via one of Drupal\'s many uploading mechanisms (or FTP)
               and paste the http:// url here.'),
-                        '#maxlength' => 127,
-                        '#default_value' => $pdf_form ? $pdf_form->url : '',
-                        '#required' => TRUE,
-                        '#weight' => -5,
-                  );
+      '#maxlength' => 127,
+      '#default_value' => $pdf_form ? $pdf_form->url : '',
+      '#required' => TRUE,
+      '#weight' => -5,
+   );
   $form['submit'] = array('#type' => 'submit',
-                          '#value' => t('Submit'),
-                          '#weight' => 15,
-                    );
+      '#value' => t('Submit'),
+      '#weight' => 15,
+   );
   if ($pdf_form) {
     $form['delete'] = array('#type' => 'submit',
-                          '#value' => t('Delete'),
-                          '#weight' => 16,
-                      );
+      '#value' => t('Delete'),
+      '#weight' => 16,
+   );
   }
   else {
     $pdf_form = (object) array('new' => TRUE);
   }
+  //$form['#pdf_form'] = &$pdf_form;
+  $form['#pdf_form'] = $pdf_form;
 
-  $form['form'] = array('#type' => 'value', '#value' => &$pdf_form);
-
-  $form['#validate'] = array('fillpdf_form_edit_validate' => array());
-  $form['#submit'] = array('fillpdf_form_edit_submit' => array());
+  $form['#validate'][] = 'fillpdf_form_edit_validate';
+  $form['#submit'][] = 'fillpdf_form_edit_submit';
 
   return $form;
 }
 
-function fillpdf_form_edit_validate($form_id, &$form_values, &$form) {
-  $url = rtrim(ltrim($form_values['url'], '/'), '/');
+function fillpdf_form_edit_validate($form, &$form_state) {
+  $url = rtrim(ltrim($form_state['values']['url'], '/'), '/');
+
   if (!valid_url($url, TRUE)) { //if they used drupal-relative URL
     $url = 'http://'. $_SERVER['SERVER_NAME'] .'/'. $url;    
   }  
-  form_set_value($form['url'], $url);
+  form_set_value($form['url'], $url, $form_state);
 }
 
-function fillpdf_form_edit_submit($form_id, &$form_values) {
-
-  if (!$form_values['form']->new) {
-    if ($form_values['op'] == t('Delete')) {
-      return 'admin/content/fillpdf/delete/'. $form_values['form']->fid;
+function fillpdf_form_edit_submit($form, &$form_state) {
+  if (!$form['#pdf_form']->new) {
+    if ($form_state['values']['op'] == t('Delete')) {
+      $form_state['redirect'] = 'admin/content/fillpdf/delete/'. $form['#pdf_form']->fid;
+      return;
     }
     db_query("UPDATE {fillpdf_forms} SET title = '%s', url = '%s' WHERE fid = %d", 
-             $form_values['title'], $form_values['url'], $form_values['form']->fid);
+             $form_state['values']['title'], $form_state['values']['url'], $form['#pdf_form']->fid);
   }
   else {
-    $form_values['form']->fid = db_next_id('{fillpdf}_fid');
+    $form['#pdf_form']->fid = db_last_insert_id('fillpdf', 'fid');
     db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')", 
-             $form_values['form']->fid, $form_values['title'], $form_values['url']);
+             $form['#pdf_form']->fid, $form_state['values']['title'], $form_state['values']['url']);
   } 
-  return 'admin/content/fillpdf';
+
+  $form_state['redirect'] = 'admin/content/fillpdf';
+  //$form_state['nid'] = $node->nid;
 }
 
-function fillpdf_form_delete_confirm($pdf_form) {
+function fillpdf_form_delete_confirm(&$form_state, $pdf_form) {
 
   if (is_numeric(arg(4))) {
     $pdf_form = db_fetch_object(db_query("SELECT * FROM {fillpdf_forms} WHERE fid = %d", arg(4)));    
@@ -240,7 +232,7 @@ function fillpdf_form_delete_confirm($pdf_form) {
     exit;
   }
 
-  $form['form'] = array('#type' => 'value', '#value' => $pdf_form);
+  $form['#pdf_form'] = $pdf_form;
 
   return confirm_form($form,
     t('Are you sure you want to delete the form %title?', array('%title' => $pdf_form->title)),
@@ -250,11 +242,12 @@ function fillpdf_form_delete_confirm($pdf_form) {
   );
 }
 
-function fillpdf_form_delete_confirm_submit($form_id, &$form_values) {
-  db_query("DELETE FROM {fillpdf_fields} WHERE fid = %d", $form_values['form']->fid);
-  db_query("DELETE FROM {fillpdf_forms} WHERE fid = %d", $form_values['form']->fid);
+function fillpdf_form_delete_confirm_submit($form, &$form_state) {
+  db_query("DELETE FROM {fillpdf_fields} WHERE fid = %d", $form['#pdf_form']->fid);
+  db_query("DELETE FROM {fillpdf_forms} WHERE fid = %d", $form['#pdf_form']->fid);
   drupal_set_message('Your form has been deleted.');
-  return 'admin/content/fillpdf';
+  //return 'admin/content/fillpdf';
+  $form_state['redirect'] = 'admin/content/fillpdf';
 }
 
 
@@ -299,9 +292,7 @@ function fillpdf_field_edit_field() {
   return drupal_get_form('fillpdf_field_edit', $pdf_form, $field);
 }
 
-function fillpdf_field_edit($pdf_form, $field) {
-
-  
+function fillpdf_field_edit(&$form_state, $pdf_form, $field) {
   $form['label'] = array(
     '#type' => 'textfield',
     '#title' => t('Label'),
@@ -359,35 +350,36 @@ function fillpdf_field_edit($pdf_form, $field) {
     );
   }
 
-  $form['field'] = array('#type' => 'value', '#value' => $field);
-  $form['form'] = array('#type' => 'value', '#value' => $pdf_form);
+  $form['#pdf_field'] = $field;
+  $form['#pdf_form'] = $pdf_form;
   
   return $form;
 }
 
-function fillpdf_field_edit_validate($form_id, &$form_values, &$form) {
+function fillpdf_field_edit_validate($form, &$form_state) {
   if (db_result( db_query("SELECT * FROM {fillpdf_fields} WHERE fid = %d AND pdf_key = '%s'", 
-      $form_values['form']->fid, $form_values['pdf_key'] ))) {
-    if ($form_values['field'] && $form_values['field']->pdf_key == $form_values['pdf_key'] ) return;
+      $form['#pdf_form']->fid, $form_state['values']['pdf_key'] ))) {
+    if ($form['#pdf_field'] && $form['#pdf_field']->pdf_key == $form_state['values']['pdf_key'] ) return;
   else form_set_error('pdf_key', t('A field with this pdf_key already exists. Choose another pdf_key.'));
   }
 }
 
-function fillpdf_field_edit_submit($form_id, &$form_values) {
-  if ($form_values['field']) {
-    if ($form_values['op'] == t('Delete')) {
-      return 'admin/content/fillpdf/form/'. $form_values['form']->fid .'/delete/'. $form_values['field']->pdf_key;
+function fillpdf_field_edit_submit($form, &$form_state) {
+  if ($form['#pdf_field']) {
+    if ($form_state['values']['op'] == t('Delete')) {
+      $form_state['redirect'] = 'admin/content/fillpdf/form/'. $form['#pdf_form']->fid .'/delete/'. $form['#pdf_field']->pdf_key;
+      return;
     }
-    $edit_field = (object)$form_values;
-    fillpdf_update_field($form_values['form'], $edit_field, $form_values['field']->pdf_key);   
+    $edit_field = (object)$form_state['values'];
+    fillpdf_update_field($form['#pdf_form'], $edit_field, $form['#pdf_field']->pdf_key);   
   }
   else {
     //add a new field
-    $edit_field = (object)$form_values;
+    $edit_field = (object)$form_state['values'];
     db_query("INSERT INTO {fillpdf_fields} (fid, label, pdf_key, value) VALUES(%d, '%s', '%s', '%s')", 
-             $form_values['form']->fid, $form_values['label'], $form_values['pdf_key'], $form_values['value']);
+             $form['#pdf_form']->fid, $form_state['values']['label'], $form_state['values']['pdf_key'], $form_state['values']['value']);
   }
-  return 'admin/content/fillpdf/form/'. $form_values['form']->fid;
+  $form_state['redirect'] = 'admin/content/fillpdf/form/'. $form['#pdf_form']->fid;
 }
 
 
@@ -417,7 +409,7 @@ function fillpdf_form_overview(&$pdf_form) {
   return theme('table', $header, $rows, array('id' => 'fillpdf_fields'));
 }
 
-function fillpdf_field_delete_confirm($fid, $pdf_key) {
+function fillpdf_field_delete_confirm(&$form_state, $fid, $pdf_key) {
   $pdf_form = db_fetch_object(db_query("SELECT * FROM {fillpdf_forms} WHERE fid = %d", $fid));  
 
   if ($pdf_key) {
@@ -428,8 +420,8 @@ function fillpdf_field_delete_confirm($fid, $pdf_key) {
     exit;
   }
 
-  $form['field'] = array('#type' => 'value', '#value' => $field);
-  $form['form'] = array('#type' => 'value', '#value' => $pdf_form);
+  $form['#pdf_field'] = $field;
+  $form['#pdf_form'] = $pdf_form;
   
   return confirm_form($form,
     t('Are you sure you want to delete the field %pdf_key?', array('%pdf_key' => $field->pdf_key)),
@@ -438,11 +430,12 @@ function fillpdf_field_delete_confirm($fid, $pdf_key) {
   );
 }
 
-function fillpdf_field_delete_confirm_submit($form_id, &$form_values) {
+function fillpdf_field_delete_confirm_submit($form, &$form_state) {
   db_query("DELETE FROM {fillpdf_fields} WHERE fid = %d AND pdf_key ='%s'",
-           $form_values['field']->fid, $form_values['field']->pdf_key);
+           $form['#pdf_field']->fid, $form['#pdf_field']->pdf_key);
   drupal_set_message('Your field has been deleted.');
-  return 'admin/content/fillpdf/form/'. $form_values['field']->fid;
+  //return 'admin/content/fillpdf/form/'. $form['#pdf_field']->fid;
+  $form_state['redirect'] = 'admin/content/fillpdf/form/'. $form['#pdf_field']->fid;
 }
 
 /*
@@ -477,7 +470,7 @@ function fillpdf_generate_fields_from_pdf($fid) {
   */
 
   $form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-  $handle = fopen(SERVLET_URL ."?method=parse&form_url={$form_url}", "rb");
+  $handle = fopen(SERVLET_URL ."?method=parse&form_url={$form_url}", "rb"); 
   $contents = stream_get_contents($handle);
   fclose($handle);
 
@@ -514,10 +507,14 @@ function fillpdf_generate_fields_from_pdf($fid) {
 //    $new_field->label = $new_field->pdf_key = $field['name'];  
 //    $new_field->type=$field_type;
 //    $fields[]=$new_field;
-    if ($field['name']) {
-      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name'])))) {
+
+//	$field['name']=(string)$field['name']; //d6 seems to have required this... 
+    $field_name=(string)$field['name'];
+    if ($field_name) {
+      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field_name)))) {
+      	    	drupal_set_message(print_r($field_name,TRUE));
         db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
-          $fid, $field['name'], $field['name']);  
+          $fid, $field_name, $field_name);  
       }
     }
     $i++;
@@ -537,6 +534,7 @@ function fillpdf_generate_pdf() {
     $fid = $_GET['fid'];
     $nid = $_GET['nid'];  
     
+	
     if (is_null($fid)) return;
     $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
     
