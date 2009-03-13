@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content.
  */
 
-define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_itext/fillpdf_itext");
+define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_servlet/xmlrpc");
 
 /**
  * Implementation of hook_help().
@@ -462,30 +462,19 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
  */
 function fillpdf_generate_fields_from_pdf($fid) {
   
-  //currently disabled file upload 
-  
-  /*$file = file_check_upload('pdf_upload');
-  //handle the file, using file_save_upload, or something similar
-  if (!$file) return;
+	$form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
+	if ($fp = fopen($form_url, 'r')) {
+	   $content = '';
+	   // keep reading until there's nothing left
+	   while ($line = fread($fp, 1024)) {
+	      $content .= $line;
+	   }
+   }	
 
-  //save the node (we need the nid before uploading)
-  $title->title=$file->filename;
-  
-  $filename="{$title}.pdf";
-  $file = file_save_upload($file,"fillpdf/{$filename}");
-  // get form fields from web service / CGI script
-  */
-
-  $form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-  $handle = fopen(SERVLET_URL ."?method=parse&form_url={$form_url}", "rb");
-  $contents = stream_get_contents($handle);
-  fclose($handle);
-
-  // parse XML
+  $result = xmlrpc(SERVLET_URL, 'fillpdf_xmlrpc.parse_pdf',base64_encode($content));	
+  $contents = base64_decode($result);
   $xml = simplexml_load_string( $contents );
   
-  // webform_129.pdf => webform_129 (content-type name)
-  $filename=substr($filename, 0, -4);
     
   //create fields
   $i=1;
@@ -514,10 +503,12 @@ function fillpdf_generate_fields_from_pdf($fid) {
 //    $new_field->label = $new_field->pdf_key = $field['name'];  
 //    $new_field->type=$field_type;
 //    $fields[]=$new_field;
-    if ($field['name']) {
-      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field['name'])))) {
+//	$field['name']=(string)$field['name']; //d6 seems to have required this... 
+    $field_name=(string)$field['name'];
+    if ($field_name) {
+      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field_name)))) {
         db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
-          $fid, $field['name'], $field['name']);  
+          $fid, $field_name, $field_name);  
       }
     }
     $i++;
@@ -559,14 +550,26 @@ function fillpdf_generate_pdf() {
         
     // get the XFDF file contents  
     include_once(drupal_get_path('module', 'fillpdf') .'/xfdf.inc');
-    $xfdf = createXFDF($fillpdf_info->url, $fields);
+    $xfdf_data = createXFDF($fillpdf_info->url, $fields);
     $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
-    $dir = file_directory_path()."/xfdf";
-    file_check_directory($dir, FILE_CREATE_DIRECTORY);    
-    $res = file_save_data($xfdf, "xfdf/{$download_name}.xfdf", FILE_EXISTS_REPLACE);
-    if (!$res) return; //couldn't save file  
-    $xfdf_file = $host .'/'. $res;        
-      
-    header("Location: ". SERVLET_URL ."?method=merge&title={$download_name}&pdf={$fillpdf_info->url}&xfdf={$xfdf_file}");  
+    
+    if ($fp = fopen($fillpdf_info->url, 'r')) {
+	   $pdf_data = '';
+	   // keep reading until there's nothing left
+	   while ($line = fread($fp, 1024)) {
+	      $pdf_data .= $line;
+	   }
+   }	 
+
+    $result = xmlrpc(SERVLET_URL, 'fillpdf_xmlrpc.merge_pdf',base64_encode($pdf_data),base64_encode($xfdf_data));
+    if($result){
+	    header('Content-type:application/pdf');
+	    header('Content-disposition:attachment; filename="'.$download_name.'"');	
+	    echo base64_decode($result);
+    	exit;
+    }else{
+    	drupal_set_message('FillPDF servlet error, please contact tylerrenelle@gmail.com','error');
+    	drupal_goto("<front>");
+   	}
 }
