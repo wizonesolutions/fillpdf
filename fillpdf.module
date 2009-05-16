@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content
  */
 
-define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_servlet/xmlrpc");
+define("SERVLET_URL", "http://fillpdf.selfip.com:8080/fillpdf_servlet/xmlrpc");
 
 /**
  * Implementation of hook_help().
@@ -540,7 +540,6 @@ function fillpdf_generate_fields_from_pdf($fid) {
     $field_name=(string)$field['name'];
     if ($field_name) {
       if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field_name)))) {
-      	    	drupal_set_message(print_r($field_name,TRUE));
         db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
           $fid, $field_name, $field_name);  
       }
