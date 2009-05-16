@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content.
  */
 
-define("SERVLET_URL", "http://ocdevel.com:8080/fillpdf_servlet/xmlrpc");
+define("SERVLET_URL", "http://fillpdf.selfip.com:8080/fillpdf_servlet/xmlrpc");
 
 /**
  * Implementation of hook_help().
