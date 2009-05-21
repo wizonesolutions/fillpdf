@@ -234,6 +234,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
   if( file_check_directory($dir, FILE_CREATE_DIRECTORY) ) {
   	  $validators = array('file_validate_extensions' => array('pdf') );
 	  if ($file = file_save_upload('upload', $validators, $dir, FILE_EXISTS_REPLACE)) {
+        file_set_status($file, FILE_STATUS_PERMANENT);
 	    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
 	  }//else{ drupal_set_message('Error saving file to ' . $dir, 'error'); } //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
   } else {
