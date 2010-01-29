@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content
  */
 
-define("SERVLET_URL", "http://fillpdf.selfip.com:8080/fillpdf_servlet/xmlrpc");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf/fillpdf/xmlrpc");
 
 /**
  * Implementation of hook_help().
@@ -41,6 +41,14 @@ function fillpdf_menu() {
 
     $items['fillpdf'] = array( // fillpdf?fid=10&nid=20
       'page callback' => 'fillpdf_generate_pdf',
+      'access arguments' => $access
+    );
+    
+    $items['admin/settings/fillpdf'] = array(
+      'title' => 'Fill PDF Settings',
+      'description' => 'Configure Fill PDF Servelet Information',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fillpdf_settings'),
       'access arguments' => $access
     );
 
@@ -123,6 +131,22 @@ function fillpdf_menu() {
  */
 function fillpdf_perm() {
   return array('administer pdfs');
+}
+
+function fillpdf_settings(){
+  $form['fillpdf_servlet_url'] = array(
+  	'#type' => 'textfield', 
+  	'#title' => t('Servlet URL'), 
+    '#default_value' => variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL),
+    '#description' => t('')
+  );
+  $form['fillpdf_api_key'] = array(
+  	'#type' => 'textfield', 
+  	'#title' => t('API Key'),
+    '#default_value' => variable_get('fillpdf_api_key', ''), 
+    '#description' => t('')
+  );
+  return system_settings_form($form);
 }
 
 
@@ -234,7 +258,6 @@ function fillpdf_form_edit_submit($form, &$form_state) {
   if( file_check_directory($dir, FILE_CREATE_DIRECTORY) ) {
   	  $validators = array('file_validate_extensions' => array('pdf') );
 	  if ($file = file_save_upload('upload', $validators, $dir, FILE_EXISTS_REPLACE)) {
-        file_set_status($file, FILE_STATUS_PERMANENT);
 	    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
 	  }//else{ drupal_set_message('Error saving file to ' . $dir, 'error'); } //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
   } else {
@@ -505,9 +528,12 @@ function fillpdf_generate_fields_from_pdf($fid) {
 	   }
    }	
   
-  $result = xmlrpc(SERVLET_URL, 'fillpdf_xmlrpc.parse_pdf',base64_encode($content));	
-  $contents = base64_decode($result);
-  $xml = simplexml_load_string( $contents );
+  $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+  $api_key = variable_get('fillpdf_api_key', '0');
+  $result = _fillpdf_xmlrpc_request($servlet_url, 'fillpdf_xmlrpc.parsePdf', $content, $api_key);
+  if($result->error == true)
+    drupal_goto("admin/content/fillpdf/form/{$fid}/list"); //after setting error message  
+  $xml = simplexml_load_string( $result->data );
     
   //create fields
   $i=1;
@@ -597,14 +623,37 @@ function fillpdf_generate_pdf() {
 	   }
    }	 
 
-    $result = xmlrpc(SERVLET_URL, 'fillpdf_xmlrpc.merge_pdf',base64_encode($pdf_data),base64_encode($xfdf_data));
-    if($result){
-	    header('Content-type:application/pdf');
-	    header('Content-disposition:attachment; filename="'.$download_name.'"');	
-	    echo base64_decode($result);
-    	exit;
-    }else{
-    	drupal_set_message('FillPDF servlet error, please contact tylerrenelle@gmail.com','error');
-    	drupal_goto("<front>");
-   	}
+    $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+    $api_key = variable_get('fillpdf_api_key', '0');
+    $result = _fillpdf_xmlrpc_request($servlet_url, 'fillpdf_xmlrpc.mergePdf', $pdf_data, $xfdf_data, $api_key);
+    if($result->error == true)
+      drupal_goto("<front>"); //after setting error message  
+    
+    header('Content-type:application/pdf');
+    header('Content-disposition:attachment; filename="'.$download_name.'"');	
+    echo $result->data;
+  	exit;
+}
+
+function _fillpdf_xmlrpc_request($url, $method){
+  $args = func_get_args();
+  $count = count($args);
+  for ($i = 2; $i < $count; $i++) // don't encode $url & $method
+      $args[$i] = base64_encode($args[$i]);
+  
+  $result = call_user_func_array('xmlrpc', $args);
+  $ret = new stdClass;
+  if($result == 'auth_error'){
+    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="fillpdf.ocdevel.com">register for a key</a>.  Otherwise, you must host your own servlet (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
+    $ret->error = true;
+  }
+  elseif($result == false){
+    drupal_set_message('There was a problem contacting the Fill PDF Servlet.  It maybe be down, or you may not have internet access.', 'error');
+    $ret->error = true;
+  }
+  else{
+    $ret->data = base64_decode($result);
+    $ret->error = false;
+  }  
+  return $ret;
 }
