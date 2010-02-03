@@ -6,7 +6,8 @@
  * Allows mappings of PDFs to site content
  */
 
-define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf/fillpdf/xmlrpc");
+//define("DEFAULT_SERVLET_URL", "http://localhost:8080/fillpdf_grails/fillpdf/xmlrpc");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
 
 /**
  * Implementation of hook_help().
@@ -530,7 +531,7 @@ function fillpdf_generate_fields_from_pdf($fid) {
   
   $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
   $api_key = variable_get('fillpdf_api_key', '0');
-  $result = _fillpdf_xmlrpc_request($servlet_url, 'fillpdf_xmlrpc.parsePdf', $content, $api_key);
+  $result = _fillpdf_xmlrpc_request($servlet_url, 'parsePdf', $content, $api_key);
   if($result->error == true)
     drupal_goto("admin/content/fillpdf/form/{$fid}/list"); //after setting error message  
   $xml = simplexml_load_string( $result->data );
@@ -540,21 +541,20 @@ function fillpdf_generate_fields_from_pdf($fid) {
   $weight=-10;  
   foreach ($xml->field as $field) {    
     $field_type='';
-    switch ((int)$field['type']) {
-      case 5:  //List
-      case 6:  //Combobox
+    switch ($field['type']) {
+      case "List":
+      case "Combobox":
+      case "Radiobutton":
+      case "Checkbox":
           $field_type='select'; break;
-      
-      case 3:  //Radiobutton
-      case 2: //Checkbox
-          $field_type='select'; break;
-      
-      case 0: //None
-          case 1: //Pushbutton
+          
+      case "None":
+      case "Pushbutton":
+      case "?":
           //return;
       
-      case 4:  //Text
-      case 7:  //Signature
+      case "Text":
+      case "Signature":
       default: 
           $field_type='textfield'; break;
     }
@@ -625,7 +625,7 @@ function fillpdf_generate_pdf() {
 
     $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
     $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request($servlet_url, 'fillpdf_xmlrpc.mergePdf', $pdf_data, $xfdf_data, $api_key);
+    $result = _fillpdf_xmlrpc_request($servlet_url, 'mergePdf', $pdf_data, $xfdf_data, $api_key);
     if($result->error == true)
       drupal_goto("<front>"); //after setting error message  
     
@@ -644,7 +644,7 @@ function _fillpdf_xmlrpc_request($url, $method){
   $result = call_user_func_array('xmlrpc', $args);
   $ret = new stdClass;
   if($result == 'auth_error'){
-    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="fillpdf.ocdevel.com">register for a key</a>.  Otherwise, you must host your own servlet (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
+    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="http://fillpdf.ocdevel.com">register for a key</a>.  Otherwise, you must <a href="http://fillpdf.ocdevel.com/node/5">host your own servlet</a> (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
     $ret->error = true;
   }
   elseif($result == false){
