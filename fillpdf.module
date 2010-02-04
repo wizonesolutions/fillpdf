@@ -135,12 +135,12 @@ function fillpdf_perm() {
 }
 
 function fillpdf_settings(){
-  $form['fillpdf_servlet_url'] = array(
-  	'#type' => 'textfield', 
-  	'#title' => t('Servlet URL'), 
-    '#default_value' => variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL),
-    '#description' => t('')
-  );
+//  $form['fillpdf_servlet_url'] = array(
+//  	'#type' => 'textfield', 
+//  	'#title' => t('Servlet URL'), 
+//    '#default_value' => variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL),
+//    '#description' => t('')
+//  );
   $form['fillpdf_api_key'] = array(
   	'#type' => 'textfield', 
   	'#title' => t('API Key'),
@@ -529,7 +529,8 @@ function fillpdf_generate_fields_from_pdf($fid) {
 	   }
    }	
   
-  $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+//  $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+  $servlet_url = DEFAULT_SERVLET_URL;
   $api_key = variable_get('fillpdf_api_key', '0');
   $result = _fillpdf_xmlrpc_request($servlet_url, 'parsePdf', $content, $api_key);
   if($result->error == true)
@@ -623,7 +624,8 @@ function fillpdf_generate_pdf() {
 	   }
    }	 
 
-    $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+//    $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
+    $servlet_url = DEFAULT_SERVLET_URL;
     $api_key = variable_get('fillpdf_api_key', '0');
     $result = _fillpdf_xmlrpc_request($servlet_url, 'mergePdf', $pdf_data, $xfdf_data, $api_key);
     if($result->error == true)
@@ -644,11 +646,11 @@ function _fillpdf_xmlrpc_request($url, $method){
   $result = call_user_func_array('xmlrpc', $args);
   $ret = new stdClass;
   if($result == 'auth_error'){
-    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="http://fillpdf.ocdevel.com">register for a key</a>.  Otherwise, you must <a href="http://fillpdf.ocdevel.com/node/5">host your own servlet</a> (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
+    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="http://fillpdf.ocdevel.com">register for a key</a>.  (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
     $ret->error = true;
   }
   elseif($result == false){
-    drupal_set_message('There was a problem contacting the Fill PDF Servlet.  It maybe be down, or you may not have internet access.', 'error');
+    drupal_set_message('There was a problem contacting the Fill PDF service.  It maybe be down, or you may not have internet access.', 'error');
     $ret->error = true;
   }
   else{
