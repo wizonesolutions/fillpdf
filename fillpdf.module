@@ -126,6 +126,57 @@ function fillpdf_theme(){
   return $theme;
 }
 
+function fillpdf_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      for ($i = 0; $i < 10; $i++)
+        $blocks[$i]['info'] = 'FillPDF ' . $i;
+      return $blocks;
+    case 'configure':
+      $form['forms'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('FillPDF forms'),
+        '#default_value' => variable_get("fillpdf_forms_$delta", array()),
+      );
+      $result = db_query(
+        "SELECT fid, title ".
+        "FROM {fillpdf_forms} "
+	  );
+      while ($form_rec = db_fetch_object($result))
+        $form['forms']['#options'][$form_rec->fid + 1] = $form_rec->title;
+      $form['nid'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Code to return node nid'),
+        '#default_value' => variable_get("fillpdf_nid_$delta", ''),
+        '#description' => t('Enter PHP code between %php. Note that executing incorrect PHP-code can break your Drupal site.', array('%php' => '<?php ?>')),
+      ); 
+      return $form;
+    case 'save':
+      variable_set("fillpdf_forms_$delta", $edit['forms']);
+      variable_set("fillpdf_nid_$delta", $edit['nid']);
+      break;
+    case 'view':
+      $nid = drupal_eval(variable_get("fillpdf_nid_$delta", ''));
+      foreach (variable_get("fillpdf_forms_$delta", array()) as $fid)
+        if ($fid) {
+          $fid--;
+          $form = db_fetch_object(db_query("SELECT title FROM {fillpdf_forms} WHERE fid = %d", $fid));
+          $links[] = l(
+	          $form->title,
+	          "fillpdf",
+	          array('query' => array(
+	            'fid' => $fid,
+	            'nid' => $nid, 
+	          ))
+	        );
+        }
+
+      $block['content'] = theme('item_list', $links);
+      return $block;
+  }
+}
+
+
 /**
  * This function generates the form fields from the specified PDF.  It (1) sends a request to the iText
  * servlet to parse the specified PDF, (2) iText returns an XML response with fields-mappings, this module
