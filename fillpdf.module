@@ -43,7 +43,7 @@ function fillpdf_menu() {
 
     $items['fillpdf'] = array( // fillpdf?fid=10&nid=20
       'page callback' => 'fillpdf_generate_pdf',
-      'access arguments' => $access
+      'access callback' => 'fillpdf_generate_pdf_access',
     );
     
     // ------- Config ---------------------------
@@ -105,8 +105,17 @@ function fillpdf_menu() {
  * Implementation of hook_perm().
  */
 function fillpdf_perm() {
-  return array('administer pdfs');
+  return array('administer pdfs', 'publish own pdfs', 'publish all pdfs');
 }
+
+function fillpdf_generate_pdf_access() {
+  global $user;
+  $node = node_load($_GET['nid']);
+  return user_access('administer pdfs') ||
+         user_access('publish all pdfs') ||
+         (user_access('publish own pdfs') && ($node->uid == $user->uid));
+}
+
 
 function fillpdf_theme(){
   $theme = array(
@@ -116,7 +125,6 @@ function fillpdf_theme(){
   );
   return $theme;
 }
-
 
 /**
  * This function generates the form fields from the specified PDF.  It (1) sends a request to the iText
@@ -240,6 +248,13 @@ function fillpdf_generate_pdf() {
     if($result->error == true)
       drupal_goto("<front>"); //after setting error message  
     
+    // Log this, could be useful
+  	watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
+  	  '%user' => $GLOBALS['user']->name,
+  	  '%form' => $fillpdf_info->title,
+  	  '%node' => $node->title,
+   	));
+      
     header('Content-type:application/pdf');
     header('Content-disposition:attachment; filename="'.$download_name.'"');	
     echo $result->data;
