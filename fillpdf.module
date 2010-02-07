@@ -7,7 +7,7 @@
  */
 
 //define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
-define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com:3000/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 /**
@@ -196,9 +196,9 @@ function _fillpdf_generate_fields_from_pdf($fid) {
 //  $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
   $servlet_url = DEFAULT_SERVLET_URL;
   $api_key = variable_get('fillpdf_api_key', '0');
-  $result = _fillpdf_xmlrpc_request($servlet_url, 'parsePdf', $content, $api_key);
+  $result = _fillpdf_xmlrpc_request($servlet_url, 'parse_pdf', base64_encode($content), $api_key);
   if($result->error == true)
-    drupal_goto("admin/content/fillpdf/form/{$fid}/list"); //after setting error message  
+    drupal_goto("admin/content/fillpdf"); //after setting error message  
   $xml = simplexml_load_string( $result->data );
     
   //create fields
@@ -256,14 +256,14 @@ function fillpdf_generate_pdf() {
     if (is_null($fid)) return;
     $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
     
+    $host = 'http://'. $_SERVER['SERVER_NAME'];
     //just give them empty pdf if no nid
     if (!$nid && !$sample) {
       //@@TODO: bug here, blank screen
-      header("Location: /".$fillpdf_info->url);
+      header("Location: ".$host.'/'.$fillpdf_info->url);
       exit;
     }
-        
-    $host = 'http://'. $_SERVER['SERVER_NAME'];
+    
     $node = node_load($nid);
     $fields = array();
     $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
@@ -271,16 +271,29 @@ function fillpdf_generate_pdf() {
       if($sample == 'true')
         $fields[$obj->pdf_key] = $obj->pdf_key;
       else{
-        $str = token_replace($obj->value, $type = 'node', $object = $node);
-        $str = preg_replace('|<br />|', '
+        
+        // if they're populating with an imagefield
+        //@@TODO: check if an image (not another pdf or some-such)_
+        if(strstr($obj->value, 'filefield-fid]')){
+          module_load_include('filefield', 'field_file.inc');
+          $file_id = token_replace($obj->value, $type = 'node', $object = $node);
+          $filefield = field_file_load($file_id);
+//          $file_bytes = file_get_contents($filefield->filepath);
+//          $str = base64_encode($file_bytes);
+          $fields[$obj->pdf_key] = '{image}'.$host.'/'.$filefield['filepath'];
+        }else{
+          $str = token_replace($obj->value, $type = 'node', $object = $node);
+          $str = preg_replace('|<br />|', '
 ', $str);
-        $fields[$obj->pdf_key] = $str;
+          $fields[$obj->pdf_key] = $str;
+        }
+        
       }
     }  
         
     // get the XFDF file contents  
-    include_once(drupal_get_path('module', 'fillpdf') .'/xfdf.inc');
-    $xfdf_data = createXFDF($fillpdf_info->url, $fields);
+//    include_once(drupal_get_path('module', 'fillpdf') .'/xfdf.inc');
+//    $xfdf_data = createXFDF($fillpdf_info->url, $fields);
     $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
     
@@ -290,12 +303,13 @@ function fillpdf_generate_pdf() {
 	   while ($line = fread($fp, 1024)) {
 	      $pdf_data .= $line;
 	   }
-   }	 
+//	   fclose($fp);
+    }	 
 
 //    $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
     $servlet_url = DEFAULT_SERVLET_URL;
     $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request($servlet_url, 'mergePdf', $pdf_data, $xfdf_data, $api_key);
+    $result = _fillpdf_xmlrpc_request($servlet_url, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
     if($result->error == true)
       drupal_goto("<front>"); //after setting error message  
     
@@ -314,10 +328,6 @@ function fillpdf_generate_pdf() {
 
 function _fillpdf_xmlrpc_request($url, $method){
   $args = func_get_args();
-  $count = count($args);
-  for ($i = 2; $i < $count; $i++) // don't encode $url & $method
-      $args[$i] = base64_encode($args[$i]);
-  
   $result = call_user_func_array('xmlrpc', $args);
   $ret = new stdClass;
   if($result == 'auth_error'){
