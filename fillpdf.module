@@ -275,12 +275,14 @@ function fillpdf_generate_pdf() {
         // if they're populating with an imagefield
         //@@TODO: check if an image (not another pdf or some-such)_
         if(strstr($obj->value, 'filefield-fid]')){
-          module_load_include('filefield', 'field_file.inc');
+          module_load_include('inc', 'filefield', 'field_file');
           $file_id = token_replace($obj->value, $type = 'node', $object = $node);
           $filefield = field_file_load($file_id);
-//          $file_bytes = file_get_contents($filefield->filepath);
-//          $str = base64_encode($file_bytes);
-          $fields[$obj->pdf_key] = '{image}'.$host.'/'.$filefield['filepath'];
+          //@@TODO: bottle-neck right there, file_get_contents as a URL is loading it over http, not from file-system.
+          $file_bytes = file_get_contents("$host/{$filefield['filepath']}");
+          $str = base64_encode($file_bytes);
+//          $fields[$obj->pdf_key] = '{image}'.$host.'/'.$filefield['filepath'];
+          $fields[$obj->pdf_key] = '{image}'.$str;
         }else{
           $str = token_replace($obj->value, $type = 'node', $object = $node);
           $str = preg_replace('|<br />|', '
