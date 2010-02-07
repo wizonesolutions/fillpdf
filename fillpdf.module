@@ -7,7 +7,7 @@
  */
 
 //define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
-define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com:3000/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 /**
