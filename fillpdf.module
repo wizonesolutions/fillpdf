@@ -183,17 +183,11 @@ function fillpdf_block($op = 'list', $delta = 0, $edit = array()) {
  * parses the XML response & contsructs the fields.
  */
 function _fillpdf_generate_fields_from_pdf($fid) {
+  $filename = db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
+  $handle = fopen($filename, "r");
+  $content = fread($handle, filesize($filename));
+  fclose($handle);
   
-	$form_url=db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-	if ($fp = fopen($form_url, 'r')) {
-	   $content = '';
-	   // keep reading until there's nothing left
-	   while ($line = fread($fp, 1024)) {
-	      $content .= $line;
-	   }
-   }	
-  
-//  $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
   $servlet_url = DEFAULT_SERVLET_URL;
   $api_key = variable_get('fillpdf_api_key', '0');
   $result = _fillpdf_xmlrpc_request($servlet_url, 'parse_pdf', base64_encode($content), $api_key);
@@ -249,7 +243,7 @@ function _fillpdf_generate_fields_from_pdf($fid) {
  */
 function fillpdf_generate_pdf() {
     $fid = $_GET['fid'];
-    $nid = $_GET['nid'];  
+    $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] ); 
     $sample = $_GET['sample'];
     
 	
@@ -258,13 +252,14 @@ function fillpdf_generate_pdf() {
     
     $host = 'http://'. $_SERVER['SERVER_NAME'];
     //just give them empty pdf if no nid
-    if (!$nid && !$sample) {
+  if (!$nids && !$sample) {
       //@@TODO: bug here, blank screen
       header("Location: ".$host.'/'.$fillpdf_info->url);
       exit;
     }
     
-    $node = node_load($nid);
+    foreach($nids as $nid)
+      $nodes[] = node_load($nid);
     $fields = array();
     $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
     while ($obj = db_fetch_object($query)) {
@@ -272,43 +267,43 @@ function fillpdf_generate_pdf() {
         $fields[$obj->pdf_key] = $obj->pdf_key;
       else{
         
+        // multiple nids, #516840
+        // we want the last nid in $_GET to override previous ones (aka, of fillpdf?nids[]=1&nids=2, 2 wins)
+        $nodes = array_reverse($nodes); 
+        foreach($nodes as $node){
+          $token = token_replace($obj->value, $type = 'node', $object = $node);
+          if($token)
+            break;
+        }
+        
         // if they're populating with an imagefield
         //@@TODO: check if an image (not another pdf or some-such)_
         if(strstr($obj->value, 'filefield-fid]')){
           module_load_include('inc', 'filefield', 'field_file');
-          $file_id = token_replace($obj->value, $type = 'node', $object = $node);
-          $filefield = field_file_load($file_id);
-          //@@TODO: bottle-neck right there, file_get_contents as a URL is loading it over http, not from file-system.
-          $file_bytes = file_get_contents("$host/{$filefield['filepath']}");
+          $filefield = field_file_load($token);
+          
+          $handle = fopen($filefield['filepath'], "r");
+          $file_bytes = fread($handle, filesize($filefield['filepath']));
+          fclose($handle);
+          
           $str = base64_encode($file_bytes);
-//          $fields[$obj->pdf_key] = '{image}'.$host.'/'.$filefield['filepath'];
           $fields[$obj->pdf_key] = '{image}'.$str;
         }else{
-          $str = token_replace($obj->value, $type = 'node', $object = $node);
           $str = preg_replace('|<br />|', '
-', $str);
+', $token);
           $fields[$obj->pdf_key] = $str;
         }
         
       }
     }  
         
-    // get the XFDF file contents  
-//    include_once(drupal_get_path('module', 'fillpdf') .'/xfdf.inc');
-//    $xfdf_data = createXFDF($fillpdf_info->url, $fields);
     $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
     
-    if ($fp = fopen($fillpdf_info->url, 'r')) {
-	   $pdf_data = '';
-	   // keep reading until there's nothing left
-	   while ($line = fread($fp, 1024)) {
-	      $pdf_data .= $line;
-	   }
-//	   fclose($fp);
-    }	 
+    $handle = fopen($fillpdf_info->url, "r");
+    $pdf_data = fread($handle, filesize($fillpdf_info->url));
+    fclose($handle);
 
-//    $servlet_url = variable_get('fillpdf_servlet_url', DEFAULT_SERVLET_URL);
     $servlet_url = DEFAULT_SERVLET_URL;
     $api_key = variable_get('fillpdf_api_key', '0');
     $result = _fillpdf_xmlrpc_request($servlet_url, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
@@ -332,8 +327,8 @@ function _fillpdf_xmlrpc_request($url, $method){
   $args = func_get_args();
   $result = call_user_func_array('xmlrpc', $args);
   $ret = new stdClass;
-  if($result == 'auth_error'){
-    drupal_set_message('Authentication failed.  To use the hosted Fill PDF server, you must <a href="http://fillpdf.ocdevel.com">register for a key</a>.  (see <a href="/admin/settings/fillpdf">/admin/settings/fillpdf</a>)', 'error');
+  if(isset($result['error'])){
+    drupal_set_message($result['error'], 'error');
     $ret->error = true;
   }
   elseif($result == false){
@@ -341,7 +336,7 @@ function _fillpdf_xmlrpc_request($url, $method){
     $ret->error = true;
   }
   else{
-    $ret->data = base64_decode($result);
+    $ret->data = base64_decode($result['data']);
     $ret->error = false;
   }  
   return $ret;
