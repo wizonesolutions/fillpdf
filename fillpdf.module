@@ -6,9 +6,12 @@
  * Allows mappings of PDFs to site content
  */
 
-//define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
-define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
+//define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
+//@@TODO refactor this, will post the webform_tokens module on D.O
+if(module_exists('webform'))
+  module_load_include('inc', 'fillpdf', 'webform_tokens');
 
 /**
  * Implementation of hook_help().
@@ -242,27 +245,47 @@ function _fillpdf_generate_fields_from_pdf($fid) {
  * where fid is this form's id and nid is the node id from which data will be pulled via tokens.
  */
 function fillpdf_generate_pdf() {
+    // example.com/fillpdf?fid=1&nids[]=2&webform[nid]=3&webform[sid]=1
+  
+    // form_id, required
     $fid = $_GET['fid'];
-    $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] ); 
-    $sample = $_GET['sample'];
-    
-	
     if (is_null($fid)) return;
+    
+    $sample = $_GET['sample'];
+    $nids = $webforms = array();
+    if( $_GET['nid'] || $_GET['nids'] )
+      $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] ); 
+    if( $_GET['webform'] || $_GET['webforms'] )
+      $webforms = ( $_GET['webform'] ? array($_GET['webform']) : $_GET['webforms'] ); 
+    // http://fillpdf/fillpdf?fid=3&webform[nid]=10&webform[sid]=1
+    
     $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
     
-    $host = 'http://'. $_SERVER['SERVER_NAME'];
-    //just give them empty pdf if no nid
-  if (!$nids && !$sample) {
-      //@@TODO: bug here, blank screen
+    //just give them empty pdf they only requested fid
+    if (!$nids && !$webforms && !$sample) {
+      $host = 'http://'. $_SERVER['SERVER_NAME'];
       header("Location: ".$host.'/'.$fillpdf_info->url);
       exit;
     }
     
+
+    $nodes = $submissions = array();
+    // Nodes
     foreach($nids as $nid)
       $nodes[] = node_load($nid);
+    // Webforms
+    if(module_exists('webform')){
+      module_load_include('inc', 'webform', 'webform_submissions');
+      foreach($webforms as $webform)
+        $submissions[] = webform_get_submission($webform['nid'], $webform['sid']);
+    }
+      
+    
     $fields = array();
     $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
     while ($obj = db_fetch_object($query)) {
+      
+      // Fill a sample PDF & return
       if($sample == 'true')
         $fields[$obj->pdf_key] = $obj->pdf_key;
       else{
@@ -270,33 +293,57 @@ function fillpdf_generate_pdf() {
         // multiple nids, #516840
         // we want the last nid in $_GET to override previous ones (aka, of fillpdf?nids[]=1&nids=2, 2 wins)
         $nodes = array_reverse($nodes); 
-        foreach($nodes as $node){
-          $token = token_replace($obj->value, $type = 'node', $object = $node);
-          if($token)
-            break;
-        }
+        $webforms = array_reverse($webforms); 
         
-        // if they're populating with an imagefield
-        //@@TODO: check if an image (not another pdf or some-such)_
-        if(strstr($obj->value, 'filefield-fid]')){
-          module_load_include('inc', 'filefield', 'field_file');
-          $filefield = field_file_load($token);
+        
+        // --- node token replacements
+        if(!empty($nodes)){
+          foreach($nodes as $node){
+            $token = token_replace($obj->value, $type = 'node', $object = $node);
+            if($token)
+              break;
+          }
           
-          $handle = fopen($filefield['filepath'], "r");
-          $file_bytes = fread($handle, filesize($filefield['filepath']));
-          fclose($handle);
-          
-          $str = base64_encode($file_bytes);
-          $fields[$obj->pdf_key] = '{image}'.$str;
-        }else{
+          // if they're populating with an imagefield
+          //@@TODO: check if an image (not another pdf or some-such)_
+          if(strstr($obj->value, 'filefield-fid]')){
+            module_load_include('inc', 'filefield', 'field_file');
+            $filefield = field_file_load($token);
+            
+            $handle = fopen($filefield['filepath'], "r");
+            $file_bytes = fread($handle, filesize($filefield['filepath']));
+            fclose($handle);
+            
+            $str = base64_encode($file_bytes);
+            $fields[$obj->pdf_key] = '{image}'.$str;
+          }else{
+            $str = preg_replace('|<br />|', '
+', $token);
+            $fields[$obj->pdf_key] = $str;
+          }
+        }
+        // /--- node token replacements ---
+        
+        // --- webform token replacements
+        if(!empty($submissions)){
+          foreach($submissions as $submission){
+            //@@TODO: remove me!!! and change to 'webform'
+            $submission = node_load($submission->nid);
+//            $token = token_replace($obj->value, $type = 'webform', $object = $submission);
+            $token = token_replace($obj->value, $type = 'node', $object = $submission);
+            if($token)
+              break;
+          }
           $str = preg_replace('|<br />|', '
 ', $token);
           $fields[$obj->pdf_key] = $str;
         }
+        // /--- webform token replacements ---
+        
         
       }
-    }  
-        
+    }
+      
     $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
     
