@@ -327,10 +327,8 @@ function fillpdf_generate_pdf() {
         // --- webform token replacements
         if(!empty($submissions)){
           foreach($submissions as $submission){
-            //@@TODO: remove me!!! and change to 'webform'
-            $submission = node_load($submission->nid);
-//            $token = token_replace($obj->value, $type = 'webform', $object = $submission);
-            $token = token_replace($obj->value, $type = 'node', $object = $submission);
+//            $submission = node_load($submission->nid);
+            $token = token_replace($obj->value, $type = 'webform', $object = $submission);
             if($token)
               break;
           }
