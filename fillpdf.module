@@ -6,8 +6,8 @@
  * Allows mappings of PDFs to site content
  */
 
-define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
-//define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
+//define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 //@@TODO refactor this, will post the webform_tokens module on D.O
 if(module_exists('webform'))
