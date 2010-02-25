@@ -111,13 +111,7 @@ function fillpdf_perm() {
   return array('administer pdfs', 'publish own pdfs', 'publish all pdfs');
 }
 
-function fillpdf_generate_pdf_access() {
-  global $user;
-  $node = node_load($_GET['nid']);
-  return user_access('administer pdfs') ||
-         user_access('publish all pdfs') ||
-         (user_access('publish own pdfs') && ($node->uid == $user->uid));
-}
+
 
 
 function fillpdf_theme(){
@@ -237,6 +231,74 @@ function _fillpdf_generate_fields_from_pdf($fid) {
   }  
 }
 
+function _fillpdf_get_request_data(){
+    // array will look like 
+    // array( nodes => array( ... ), webforms => array( array(node, submission), array( ... )) )
+    static $get;
+    if($get)
+      return $get;
+      
+    $get = array( 
+    	'nodes'=>array(), 
+    	'webforms'=>array(), 
+    	'sample'=> $_GET['sample'], 
+    	'fid'=> $_GET['fid']);
+    
+    $nids = $webforms = array();
+    if( $_GET['nid'] || $_GET['nids'] )
+      $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] ); 
+    if( $_GET['webform'] || $_GET['webforms'] )
+      $webforms = ( $_GET['webform'] ? array($_GET['webform']) : $_GET['webforms'] ); 
+  
+    // Nodes
+    foreach($nids as $nid)
+      $get['nodes'][] = node_load($nid);
+    // Webforms
+    if(module_exists('webform')){
+      module_load_include('inc', 'webform', 'webform_submissions');
+      foreach($webforms as $webform){
+        if(!$webform['sid']){ // user didn't specify submission-id, meaning they want most recent
+          $webform['sid'] = db_result(db_query('select sid from {webform_submissions} 
+          	where nid=%d and uid=%d order by submitted desc', $webform['nid'], $user->uid));
+        }
+        $get['webforms'][] = array( 
+          'webform' => node_load($webform['nid']),
+          'submission' => webform_get_submission($webform['nid'], $webform['sid']) );
+      }
+    }
+    return $get;
+}
+
+// @@TODO: This function is terribly written!
+function fillpdf_generate_pdf_access() {
+  if( user_access('administer pdfs') || user_access('publish all pdfs') )
+    return true;
+  if(!user_access('publish own pdfs'))
+    return false;
+    
+  // they can publish only their own, so now make sure it's theirs
+  global $user;
+  $get = _fillpdf_get_request_data();
+  
+  
+  // own node?
+  foreach($get['nodes'] as $node)
+    if( !(node_access('view', $node)) )
+      return false;
+        
+  // own webform?
+  if(!(empty($get['webforms']))) {
+    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions'))))
+      return false;
+    foreach($get['webforms'] as $webform){
+      if( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) )
+        return false; 
+    }
+  }
+  
+  return true;
+}
+
 /**
  * Generates the PDF ouput based on field values 
  * It (1) constructs the XFDF from the form's fields, (2) saves the XFDF to /files/xfdf/x.xfdf, 
@@ -246,38 +308,22 @@ function _fillpdf_generate_fields_from_pdf($fid) {
  */
 function fillpdf_generate_pdf() {
     // example.com/fillpdf?fid=1&nids[]=2&webform[nid]=3&webform[sid]=1
-  
+    $get = _fillpdf_get_request_data();
+    $fid = $get['fid'];
     // form_id, required
-    $fid = $_GET['fid'];
-    if (is_null($fid)) return;
-    
-    $sample = $_GET['sample'];
-    $nids = $webforms = array();
-    if( $_GET['nid'] || $_GET['nids'] )
-      $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] ); 
-    if( $_GET['webform'] || $_GET['webforms'] )
-      $webforms = ( $_GET['webform'] ? array($_GET['webform']) : $_GET['webforms'] ); 
-    // http://fillpdf/fillpdf?fid=3&webform[nid]=10&webform[sid]=1
-    
+    if(is_null($fid))
+      drupal_goto();
+    global $user;
+    $sample = $get['sample'];
+    $nodes = $get['nodes'];
+    $webforms = $get['webforms'];
     $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid=%d", $fid));
     
     //just give them empty pdf they only requested fid
-    if (!$nids && !$webforms && !$sample) {
+    if (!empty($nodes) && !empty($webforms) && !is_null($sample)) {
       $host = 'http://'. $_SERVER['SERVER_NAME'];
       header("Location: ".$host.'/'.$fillpdf_info->url);
       exit;
-    }
-    
-
-    $nodes = $submissions = array();
-    // Nodes
-    foreach($nids as $nid)
-      $nodes[] = node_load($nid);
-    // Webforms
-    if(module_exists('webform')){
-      module_load_include('inc', 'webform', 'webform_submissions');
-      foreach($webforms as $webform)
-        $submissions[] = webform_get_submission($webform['nid'], $webform['sid']);
     }
       
     
@@ -325,10 +371,10 @@ function fillpdf_generate_pdf() {
         // /--- node token replacements ---
         
         // --- webform token replacements
-        if(!empty($submissions)){
-          foreach($submissions as $submission){
+        if(!empty($webforms)){
+          foreach($webforms as $webform){
 //            $submission = node_load($submission->nid);
-            $token = token_replace($obj->value, $type = 'webform', $object = $submission);
+            $token = token_replace($obj->value, $type = 'webform', $webform['submission']);
             if($token)
               break;
           }
@@ -357,7 +403,7 @@ function fillpdf_generate_pdf() {
     
     // Log this, could be useful
   	watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
-  	  '%user' => $GLOBALS['user']->name,
+  	  '%user' => $user->name,
   	  '%form' => $fillpdf_info->title,
   	  '%node' => $node->title,
    	));
