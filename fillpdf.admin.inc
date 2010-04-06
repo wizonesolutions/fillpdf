@@ -12,12 +12,67 @@
  * Settings form for user to place API Key 
  */
 function fillpdf_settings(){
-  $form['fillpdf_api_key'] = array(
-  	'#type' => 'textfield', 
-  	'#title' => t('API Key'),
+	$form['settings_help'] = array(
+	  '#type'=>'markup',
+	  '#value' => t("
+	    If you have a VPS or Dedicated server on which you can install a Java Servlet Container
+	    (like Tomcat), then select the \"Use Local Service\" option and follow README.txt for setting that up.
+	    Otherwise (being 90% of us who are on shared hosting), you'll have to use \"Use Remote Service\".
+	    Go to <a href='http://fillpdf.ocdevel.com'>fillpdf.ocdevel.com</a>, sign up for an API key, and plug it in here.
+	    "),
+	);
+	$form['remote'] = array(
+	  '#type' => 'fieldset',
+	  '#title' => t('Use Remote Service'),
+	);
+	$form['remote']['fillpdf_remote_service'] = array(
+	  '#type' => 'checkbox',
+	  '#title' => t('Use fillpdf-service.com'),
+	  '#default_value' => variable_get('fillpdf_remote_service', true),
+	);
+	$form['remote']['fillpdf_api_key'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('API Key'),
     '#default_value' => variable_get('fillpdf_api_key', ''), 
     '#description' => t('')
   );
+	if(variable_get('fillpdf_api_key', '')==''){
+		$form['remote']['warning'] = array(
+	    '#type' => 'markup', 
+		  '#prefix' => "<div class='warning'>", '#suffix' => "</div>",
+	    '#value' => t("You need to sign up for an API key at <a href='http://fillpdf.ocdevel.com'>fillpdf.ocdevel.com</a>"), 
+	  );
+	}
+  
+	$form['local'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Use Local Service'),
+  );
+	$form['local']['fillpdf_local_service'] = array(
+	  '#type' => 'checkbox',
+    '#title' => t('Use locally-installed PHP/JavaBridge'),
+    '#default_value' => !(variable_get('fillpdf_remote_service', true)),
+	);
+  if(!(file_exists(drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc'))){
+    $form['local']['warning'] = array(
+      '#type' => 'markup', 
+      '#prefix' => "<div class='warning'>", '#suffix' => "</div>",
+      '#value' => t("JavaBridge isn't installed locally.  See README.txt for setting it up."), 
+    );
+  }
+	
+	$js = <<<JS
+Drupal.behaviors.fillpdfSettingsCheckboxes = function (context) {
+  $("input#edit-fillpdf-remote-service").change(function(){
+    $("input#edit-fillpdf-local-service").trigger('click');
+  });
+  $("input#edit-fillpdf-local-service").change(function(){
+    $("input#edit-fillpdf-remote-service").trigger('click');
+  });
+};
+JS;
+	drupal_add_js($js, 'inline');
+  
   return system_settings_form($form);
 }
 

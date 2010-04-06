@@ -7,7 +7,7 @@
  */
 
 //define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
-define("DEFAULT_SERVLET_URL", "http://fillpdf-grails.ocdevel.com/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 //@@TODO refactor this, will post the webform_tokens module on D.O
 if(module_exists('webform'))
@@ -23,7 +23,7 @@ function fillpdf_help($path, $arg) {
     you need to navigate to /fillpdf?fid=10&nid=10
       where fid is the form id of the form you\'ve just created, and nid is the node 
     id whose content you\'ll be pulling via tokens.  You can obtain fid from the URL 
-    when editing your form.  It will look like: http://localhost/admin/content/fillpdf/form/FID/...</p>';
+    when editing your form.</p>';
     case 'admin/content/fillpdf':
       if (module_exists('help')) {
         return t('See the !link for an explaination on dowloading these forms to PDF',
@@ -104,16 +104,10 @@ function fillpdf_menu() {
   return $items;
 }
 
+
 /**
- * Implementation of hook_perm().
+ * Implementation of hook_theme
  */
-function fillpdf_perm() {
-  return array('administer pdfs', 'publish own pdfs', 'publish all pdfs');
-}
-
-
-
-
 function fillpdf_theme(){
   $theme = array(
   	'fillpdf_fields_form' => array(
@@ -123,6 +117,9 @@ function fillpdf_theme(){
   return $theme;
 }
 
+/**
+ * implementation of hook_block 
+ */
 function fillpdf_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
@@ -185,12 +182,28 @@ function _fillpdf_generate_fields_from_pdf($fid) {
   $content = fread($handle, filesize($filename));
   fclose($handle);
   
-  $servlet_url = DEFAULT_SERVLET_URL;
-  $api_key = variable_get('fillpdf_api_key', '0');
-  $result = _fillpdf_xmlrpc_request($servlet_url, 'parse_pdf', base64_encode($content), $api_key);
-  if($result->error == true)
-    drupal_goto("admin/content/fillpdf"); //after setting error message  
-  $xml = simplexml_load_string( $result->data );
+  $fillpdf_remote_service= variable_get('fillpdf_remote_service', true);
+  
+  // use fillpdf-service.com's xmlrpc service (must be registered)
+  if($fillpdf_remote_service){
+    $servlet_url = DEFAULT_SERVLET_URL;
+		$api_key = variable_get('fillpdf_api_key', '0');
+		$result = _fillpdf_xmlrpc_request($servlet_url, 'parse_pdf', base64_encode($content), $api_key);
+		if($result->error == true)
+		  drupal_goto("admin/content/fillpdf"); //after setting error message  
+		$data = $result->data;
+  }
+  
+	// use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
+  else{
+    $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
+	  require_once($require);
+	  $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
+    //TODO: use parse() & work with fields, instead of parse_as_xfdf working with xml
+    $data = java_values($fillpdf->parse_as_xfdf());	
+  }
+
+  $xml = simplexml_load_string( $data );
     
   //create fields
   $i=1;
@@ -231,18 +244,24 @@ function _fillpdf_generate_fields_from_pdf($fid) {
   }  
 }
 
+/**
+ * Get the data and form that need to be merged, from the $_GET (alternatively you can call
+ * fillpdf_generate_pdf($get) with a manually-constructed array
+ * @return an array that looks like:
+ * 	array( 'nodes' => array($node1, $node2, ...),
+ * 			'webforms' => array( array($node3, $submission1), array( ...), ...) );
+ */
 function _fillpdf_get_request_data(){
-    // array will look like 
-    // array( nodes => array( ... ), webforms => array( array(node, submission), array( ... )) )
+    //this function called multiple times, cut down on DB calls
     static $get;
     if($get)
       return $get;
       
     $get = array( 
+    	'sample'=> $_GET['sample'], // is this just the PDF populated with sample data? 
+    	'fid'=> $_GET['fid'],
     	'nodes'=>array(), 
-    	'webforms'=>array(), 
-    	'sample'=> $_GET['sample'], 
-    	'fid'=> $_GET['fid']);
+    	'webforms'=>array());
     
     $nids = $webforms = array();
     if( $_GET['nid'] || $_GET['nids'] )
@@ -269,7 +288,9 @@ function _fillpdf_get_request_data(){
     return $get;
 }
 
-// @@TODO: This function is terribly written!
+/**
+ * Make sure the user has access to data they want to populate the PDF 
+ */
 function fillpdf_generate_pdf_access() {
   if( user_access('administer pdfs') || user_access('publish all pdfs') )
     return true;
@@ -277,9 +298,7 @@ function fillpdf_generate_pdf_access() {
     return false;
     
   // they can publish only their own, so now make sure it's theirs
-  global $user;
   $get = _fillpdf_get_request_data();
-  
   
   // own node?
   foreach($get['nodes'] as $node)
@@ -288,6 +307,7 @@ function fillpdf_generate_pdf_access() {
         
   // own webform?
   if(!(empty($get['webforms']))) {
+    global $user;
     if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions'))))
       return false;
     foreach($get['webforms'] as $webform){
@@ -300,15 +320,30 @@ function fillpdf_generate_pdf_access() {
 }
 
 /**
+ * Implementation of hook_perm().
+ */
+function fillpdf_perm() {
+  return array('administer pdfs', 'publish own pdfs', 'publish all pdfs');
+}
+
+/**
  * Generates the PDF ouput based on field values 
  * It (1) constructs the XFDF from the form's fields, (2) saves the XFDF to /files/xfdf/x.xfdf, 
  * (3) redirects to the servlet at SERVLET_URL which downloads this XFDF, merges it with the 
  * user-specified PDF, and returns the output.  The SERVLET_URL construct is SERVLET_URL?fid=10&nid=10
  * where fid is this form's id and nid is the node id from which data will be pulled via tokens.
  */
-function fillpdf_generate_pdf() {
+
+/**
+ * 
+ * @param array $get: If not provided, comes from url (fillpdf?fid=1&nid=10), else array looks like
+ * array( 'nodes' => array($node1, $node2, ...),
+ * 			'webforms' => array( array($node3, $submission1), array( ...), ...) );
+ * @return doesn't return anything, actually constructs a page from scratch (pdf content-type)
+ */
+function fillpdf_generate_pdf($get = array()) {
     // example.com/fillpdf?fid=1&nids[]=2&webform[nid]=3&webform[sid]=1
-    $get = _fillpdf_get_request_data();
+    $get = ( empty($get) ? _fillpdf_get_request_data() : $get );
     $fid = $get['fid'];
     // form_id, required
     if(is_null($fid))
@@ -394,12 +429,29 @@ function fillpdf_generate_pdf() {
     $handle = fopen($fillpdf_info->url, "r");
     $pdf_data = fread($handle, filesize($fillpdf_info->url));
     fclose($handle);
-
-    $servlet_url = DEFAULT_SERVLET_URL;
-    $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request($servlet_url, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
-    if($result->error == true)
-      drupal_goto("<front>"); //after setting error message  
+    
+    $fillpdf_remote_service= variable_get('fillpdf_remote_service', TRUE);
+  
+	  // use fillpdf-service.com's xmlrpc service (must be registered)
+	  if($fillpdf_remote_service){
+	    $servlet_url = DEFAULT_SERVLET_URL;
+	    $api_key = variable_get('fillpdf_api_key', '0');
+	    $result = _fillpdf_xmlrpc_request($servlet_url, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
+	    if($result->error == true)
+	      drupal_goto("<front>"); //after setting error message
+	    $data = $result->data;
+	  }
+	  
+	  // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
+	  else{
+	    $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
+	    require_once($require);
+	    $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
+	    foreach($fields as $key=>$field){
+	     $fillpdf->text($key, $field);  
+	    }
+	    $data = java_values($fillpdf->toString());
+	  }
     
     // Log this, could be useful
   	watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
@@ -409,8 +461,8 @@ function fillpdf_generate_pdf() {
    	));
       
     header('Content-type:application/pdf');
-    header('Content-disposition:attachment; filename="'.$download_name.'"');	
-    echo $result->data;
+    header('Content-disposition:attachment; filename="'.$download_name.'"');
+    echo $data;	
   	exit;
 }
 
