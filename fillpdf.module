@@ -450,7 +450,7 @@ function fillpdf_generate_pdf($get = array()) {
 	    foreach($fields as $key=>$field){
 	     $fillpdf->text($key, $field);  
 	    }
-	    $data = java_values($fillpdf->toString());
+	    $data = java_values(base64_decode($fillpdf->toString()));
 	  }
     
     // Log this, could be useful
