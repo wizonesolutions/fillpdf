@@ -6,7 +6,7 @@
  * Allows mappings of PDFs to site content
  */
 
-//define("DEFAULT_SERVLET_URL", "http://localhost:3000/fillpdf");
+//define("DEFAULT_SERVLET_URL", "http://fillpdf/xmlrpc.php");
 define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/fillpdf");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 //@@TODO refactor this, will post the webform_tokens module on D.O
@@ -474,9 +474,11 @@ function _fillpdf_xmlrpc_request($url, $method){
     drupal_set_message($result['error'], 'error');
     $ret->error = true;
   }
-  elseif($result == false){
-    drupal_set_message('There was a problem contacting the Fill PDF service.  It maybe be down, or you may not have internet access.', 'error');
-    $ret->error = true;
+  else if ($result==false || xmlrpc_error()) {
+      $error = xmlrpc_error();
+      $ret->error = true;
+      drupal_set_message("There was a problem contacting the Fill PDF service.  
+        It maybe be down, or you may not have internet access.  [ERROR {$error->code}: {$error->message}]", 'error');
   }
   else{
     $ret->data = base64_decode($result['data']);
