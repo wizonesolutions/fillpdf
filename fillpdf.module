@@ -198,9 +198,14 @@ function _fillpdf_generate_fields_from_pdf($fid) {
   else{
     $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
 	  require_once($require);
-	  $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
-    //TODO: use parse() & work with fields, instead of parse_as_xfdf working with xml
-    $data = java_values($fillpdf->parse_as_xfdf());	
+	  try{
+	    //TODO: use parse() & work with fields, instead of parse_as_xfdf working with xml
+		  $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
+	  }catch(JavaException $e){
+      drupal_set_message(java_truncate((string)$e), 'error');
+      drupal_goto("admin/content/fillpdf"); //after setting error message
+    }
+    $data = java_values($fillpdf->parse_as_xfdf());
   }
 
   $xml = simplexml_load_string( $data );
@@ -446,11 +451,16 @@ function fillpdf_generate_pdf($get = array()) {
 	  else{
 	    $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
 	    require_once($require);
-	    $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
-	    foreach($fields as $key=>$field){
-	     $fillpdf->text($key, $field);  
+	    try{
+		    $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
+		    foreach($fields as $key=>$field){
+		     $fillpdf->text($key, $field);  
+		    }
+	    }catch(JavaException $e){
+	    	drupal_set_message(java_truncate((string)$e), 'error');
+	    	drupal_goto("<front>"); //after setting error message
 	    }
-	    $data = java_values(base64_decode($fillpdf->toString()));
+	    $data = java_values(base64_decode($fillpdf->toByteArray()));
 	  }
     
     // Log this, could be useful
