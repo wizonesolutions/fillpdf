@@ -7,7 +7,7 @@
  */
 
 //define("DEFAULT_SERVLET_URL", "http://fillpdf/xmlrpc.php");
-define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/fillpdf");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/xmlrpc.php");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 //@@TODO refactor this, will post the webform_tokens module on D.O
 if(module_exists('webform'))
