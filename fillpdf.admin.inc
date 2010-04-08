@@ -117,27 +117,39 @@ function fillpdf_forms() {
  * Makes sure the Upload was provided (want to validate .pdf here too) 
  */
 function fillpdf_forms_validate($form, &$form_state) {
-  if(!$_FILES['files']['name']['upload_pdf']){
+  
+  // uploading anything?
+  $file = $_FILES['files']['name']['upload_pdf'];
+  if(!$file)
   	form_set_error('url', t('A PDF must be provided.'));
+
+  //from includes/file.inc, line 634, but can't use that function because file not an object yet	
+  if (!preg_match('/\.pdf$/i', $file)) {
+    form_set_error('url', t('Only PDF files are allowed'));
   }
+  
+  // directory exist or writeable?
+  $dir = file_directory_path()."/fillpdf";
+  file_check_directory($dir, FILE_CREATE_DIRECTORY, 'url');
+  
 }
 
 /**
  * Creates a new Form from the uploaded PDF, including parsed fields 
  */
 function fillpdf_forms_submit($form, &$form_state) {	  
-  $dir = file_directory_path()."/fillpdf";
-  if( file_check_directory($dir, FILE_CREATE_DIRECTORY) ) {
-  	  $validators = array('file_validate_extensions' => array('pdf') );
+    $dir = file_directory_path()."/fillpdf";
+    // $validators not working, so I just checked manually in fillpdf_forms_validate()
+  	$validators = array('file_validate_extensions' => array('pdf') );
 	  if ($file = file_save_upload('upload_pdf', $validators, $dir, FILE_EXISTS_REPLACE)) {
 	    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
-	  }//else{ drupal_set_message('Error saving file to ' . $dir, 'error'); } //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
-  } else {
-      //@@TODO: Set error and return, they must not proceed if they can't upload files!
-      drupal_set_message( t($dir.' is not accessible. Consult with site admin!', 'warning') );
-  }
-  
-    //@@TODO: rename url to filepath
+	    file_set_status($file, FILE_STATUS_PERMANENT);
+	  }else{
+	    //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered) 
+	    drupal_set_message('Error saving file to ' . $dir, 'error'); 
+	  } 
+
+	  //@@TODO: rename url to filepath
     $fid = db_last_insert_id('fillpdf', 'fid');
     db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')", 
              $fid, $file->filename, $file->filepath);
