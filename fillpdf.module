@@ -45,7 +45,7 @@ function fillpdf_menu() {
     $items['fillpdf'] = array( 
       'page callback' => 'fillpdf_parse_uri',
     // Can't use access callback.  We need the arguments, but they're passed as $GET.  Will access-check in fillpdf_merge_pdf
-    'access arguments' => array('access content'), 
+      'access arguments' => array('access content'), 
     );
     
     // ------- Config ---------------------------
@@ -267,7 +267,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample) {
       $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
       if($result->error == true)
         drupal_goto(); //after setting error message
-      $data = $result->data;
+      $data = base64_decode($result->data);
     }
     
     // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
@@ -334,17 +334,15 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
  */
 function fillpdf_parse_pdf($fid) {
   $filename = db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
-  $content = _fillpdf_get_file_contents($filename);
-  
+  $content = _fillpdf_get_file_contents($filename, '<front>');
   $fillpdf_remote_service= variable_get('fillpdf_remote_service', true);
   
   // use fillpdf-service.com's xmlrpc service (must be registered)
   if($fillpdf_remote_service){
-		$api_key = variable_get('fillpdf_api_key', '0');
-		$result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf', base64_encode($content), $api_key);
+		$result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
 		if($result->error == true)
 		  drupal_goto("admin/content/fillpdf"); //after setting error message  
-		$data = $result->data;
+		$fields = $result->data;
   }
   
 	// use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
@@ -352,53 +350,21 @@ function fillpdf_parse_pdf($fid) {
     $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
 	  require_once($require);
 	  try{
-	    //TODO: use parse() & work with fields, instead of parse_as_xfdf working with xml
 		  $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
+	    $fields = java_values($fillpdf->parse());
 	  }catch(JavaException $e){
       drupal_set_message(java_truncate((string)$e), 'error');
       drupal_goto("admin/content/fillpdf"); //after setting error message
     }
-    $data = java_values($fillpdf->parse_as_xfdf());
   }
 
-  $xml = simplexml_load_string( $data );
-    
   //create fields
-  $i=1;
-  $weight=-10;  
-  foreach ($xml->field as $field) {    
-    $field_type='';
-    switch ($field['type']) {
-      case "List":
-      case "Combobox":
-      case "Radiobutton":
-      case "Checkbox":
-          $field_type='select'; break;
-          
-      case "None":
-      case "Pushbutton":
-      case "?":
-          //return;
-      
-      case "Text":
-      case "Signature":
-      default: 
-          $field_type='textfield'; break;
-    }
-    
-//    $new_field->label = $new_field->pdf_key = $field['name'];  
-//    $new_field->type=$field_type;
-//    $fields[]=$new_field;
-
-//	$field['name']=(string)$field['name']; //d6 seems to have required this... 
-    $field_name=(string)$field['name'];
-    if ($field_name) {
-      if (!(db_result(db_query("SELECT 1 FROM {fillpdf_fields} WHERE fid=%d AND pdf_key='%s'", $fid, $field_name)))) {
-        db_query("INSERT INTO {fillpdf_fields} (fid, pdf_key, label) VALUES(%d, '%s', '%s')",
-          $fid, $field_name, $field_name);  
-      }
-    }
-    $i++;
+  foreach ($fields as $key=>$arr) {    
+    $field = new stdClass();
+    $field->fid = $fid;
+    $field->pdf_key = $arr['name'];
+    $field->label = $arr['name'];
+    drupal_write_record('fillpdf_fields', $field);
   }  
 }
 
@@ -429,7 +395,7 @@ function _fillpdf_xmlrpc_request($url, $method){
         It maybe be down, or you may not have internet access.  [ERROR {$error->code}: {$error->message}]", 'error');
   }
   else{
-    $ret->data = base64_decode($result['data']);
+    $ret->data = $result['data'];
     $ret->error = false;
   }  
   return $ret;
