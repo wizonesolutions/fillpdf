@@ -164,7 +164,7 @@ function fillpdf_parse_uri(){
  * @return doesn't return anything, actually constructs a page from scratch (pdf content-type)
  * @seealso fillpdf_pdf_link for $_GET params 
  */
-function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample) {
+function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null) {
   // Case 1: No $fid
 	if(is_null($fid)){
   	drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
