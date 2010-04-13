@@ -111,69 +111,6 @@ function fillpdf_perm() {
 }
 
 
-//TODO: remove this?  is this useful?
-/**
- * implementation of hook_block 
- */
-function fillpdf_block($op = 'list', $delta = 0, $edit = array()) {
-  switch ($op) {
-    case 'list':
-      for ($i = 0; $i < 10; $i++)
-        $blocks[$i]['info'] = 'FillPDF ' . $i;
-      return $blocks;
-    case 'configure':
-      $form['forms'] = array(
-        '#type' => 'checkboxes',
-        '#title' => t('FillPDF forms'),
-        '#default_value' => variable_get("fillpdf_forms_$delta", array()),
-      );
-      $result = db_query(
-        "SELECT fid, title ".
-        "FROM {fillpdf_forms} "
-    );
-      while ($form_rec = db_fetch_object($result))
-        $form['forms']['#options'][$form_rec->fid + 1] = $form_rec->title;
-      $form['nid'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Code to return node nid'),
-        '#default_value' => variable_get("fillpdf_nid_$delta", ''),
-        '#description' => t('Enter PHP code between %php. Note that executing incorrect PHP-code can break your Drupal site.', array('%php' => '<?php ?>')),
-      ); 
-      return $form;
-    case 'save':
-      variable_set("fillpdf_forms_$delta", $edit['forms']);
-      variable_set("fillpdf_nid_$delta", $edit['nid']);
-      break;
-    case 'view':
-      $nid = drupal_eval(variable_get("fillpdf_nid_$delta", ''));
-      foreach (variable_get("fillpdf_forms_$delta", array()) as $fid)
-        if ($fid) {
-          $fid--;
-          $form = db_fetch_object(db_query("SELECT title FROM {fillpdf_forms} WHERE fid = %d", $fid));
-          $links[] = l(
-            $form->title,
-            "fillpdf",
-            array('query' => array(
-              'fid' => $fid,
-              'nid' => $nid, 
-            ))
-          );
-        }
-
-      $block['content'] = theme('item_list', $links);
-      return $block;
-  }
-}
-
-
-
-//TODO: implement 3 ways to generate pdf
-// fillpdf_pdf_link($nids, $webforms, $sample)
-// fillpdf&nids[]=10&webform...
-// node/%/print-pdf  -or-  node/%/submission/%/print-pdf (add to admin screen)
-
-
-
 /**
  * Gets a link to the prinable PDF, merged with the passed-in data
  * @param array/int $nids or $nid, if you pass in one value it will merge with that node.  
@@ -225,6 +162,7 @@ function fillpdf_parse_uri(){
 /**
  * Documentation stub
  * @return doesn't return anything, actually constructs a page from scratch (pdf content-type)
+ * @seealso fillpdf_pdf_link for $_GET params 
  */
 function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample) {
   // Case 1: No $fid
@@ -389,7 +327,6 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
   return true;
 }
 
-
 /**
  * This function generates the form fields from the specified PDF.  It (1) sends a request to the iText
  * servlet to parse the specified PDF, (2) iText returns an XML response with fields-mappings, this module
@@ -464,14 +401,6 @@ function fillpdf_parse_pdf($fid) {
     $i++;
   }  
 }
-
-/**
- * Generates the PDF ouput based on field values 
- * It (1) constructs the XFDF from the form's fields, (2) saves the XFDF to /files/xfdf/x.xfdf, 
- * (3) redirects to the servlet at SERVLET_URL which downloads this XFDF, merges it with the 
- * user-specified PDF, and returns the output.  The SERVLET_URL construct is SERVLET_URL?fid=10&nid=10
- * where fid is this form's id and nid is the node id from which data will be pulled via tokens.
- */
 
 function _fillpdf_get_file_contents($filepath, $error_goto = null){
   if($error_goto && !(file_exists($filepath))){
