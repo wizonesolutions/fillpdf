@@ -15,11 +15,11 @@ function fillpdf_settings(){
 	$form['settings_help'] = array(
 	  '#type'=>'markup',
 	  '#value' => t("
-	    If you have a VPS or Dedicated server on which you can install a Java Servlet Container
-	    (like Tomcat), then select the \"Use Local Service\" option and follow README.txt for setting that up.
-	    Otherwise (being 90% of us who are on shared hosting), you'll have to use \"Use Remote Service\".
-	    Go to <a href='http://fillpdf.ocdevel.com'>fillpdf.ocdevel.com</a>, sign up for an API key, and plug it in here.
-	    "),
+	    This module requires iText -- you can either:<ul>
+        <li>Sign up for <a href='http://fillpdf-service.com'>Fillpdf as-a-service</a>, and plug your API key in here; <strong>or</strong>
+        <li>Deploy locally -- You'll need VPS or a dedicated server so you can deploy PHP/JavaBridge on Tomcat (see README.txt), then select the \"Use Local Service\"
+      </ul>
+	   "),
 	);
 	$form['remote'] = array(
 	  '#type' => 'fieldset',
@@ -40,7 +40,7 @@ function fillpdf_settings(){
 		$form['remote']['warning'] = array(
 	    '#type' => 'markup', 
 		  '#prefix' => "<div class='warning'>", '#suffix' => "</div>",
-	    '#value' => t("You need to sign up for an API key at <a href='http://fillpdf.ocdevel.com'>fillpdf.ocdevel.com</a>"), 
+	    '#value' => t("You need to sign up for an API key at <a href='http://fillpdf-service.com'>fillpdf-service.com</a>"), 
 	  );
 	}
   
@@ -153,7 +153,7 @@ function fillpdf_forms_submit($form, &$form_state) {
     $fid = db_last_insert_id('fillpdf', 'fid');
     db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')", 
              $fid, $file->filename, $file->filepath);
-  _fillpdf_generate_fields_from_pdf($fid);
+  fillpdf_parse_pdf($fid);
   $form_state['redirect'] = "admin/content/fillpdf/$fid";
   //$form_state['nid'] = $node->nid;
 }
@@ -192,7 +192,7 @@ function fillpdf_form_edit(&$form_state, $fid) {
   $form['pdf_info']['sample_populate'] = array(
     '#type' => 'item',
     '#title' => 'Sample PDF',
-    '#value' => "<a href='/fillpdf?fid=$fid&sample=true'>See which fields are which in this PDF</a><br/>",
+    '#value' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)),
   );
   $form['pdf_info']['form_id'] = array(
     '#type' => 'item',
