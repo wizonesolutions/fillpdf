@@ -33,7 +33,7 @@ There are three steps to setting up a form with Fill PDF: (1) creating the webfo
                    <?php echo l("PDF", fillpdf_pdf_link($form_id = 1, $nids = array(1,2), $webforms = array( array('nid'=>3,'sid'=>1), array('nid'=>3))); ?>
           * Add the link manually in HTML. Examples: 
                 * One-node link: <a href="/fillpdf&fid=1&nid=2">PDF</a> [3]
-                * One-webform link: <a href="/fillpdf&fid=1&$webform[nid]=3&webform[sid]=4">PDF</a> 
+                * One-webform link: <a href="/fillpdf&fid=1&webform[nid]=3&webform[sid]=4">PDF</a> 
                 * Multiple nodes & webforms, later nids override conflicting fields (note: webforms without 'sid' default to latest submission)
                    <a href="/fillpdf&fid=1&nids[]=1&nids[]=2&webforms[0][nid]=3&webforms[0][sid]=1&webforms[1][nid]=3">PDF</a>
 
