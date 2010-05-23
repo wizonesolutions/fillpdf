@@ -46,6 +46,7 @@ function fillpdf_menu() {
       'page callback' => 'fillpdf_parse_uri',
     // Can't use access callback.  We need the arguments, but they're passed as $GET.  Will access-check in fillpdf_merge_pdf
       'access arguments' => array('access content'), 
+      'type' => MENU_CALLBACK,
     );
     
     // ------- Config ---------------------------
