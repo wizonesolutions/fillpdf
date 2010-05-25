@@ -190,7 +190,12 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   }
   // Webforms
   if(module_exists('webform') && is_array($webform_arr)){
-    module_load_include('inc', 'webform', 'webform_submissions');
+    
+  	// attempt to load the submissions inc for both webform-2.x & webform-3.x
+  	// it will ignore if doesn't exist, so this will just load the right one
+  	module_load_include('inc', 'webform', 'webform_submissions');
+    module_load_include('inc', 'webform', 'includes/webform.submissions');
+    
     foreach($webform_arr as $webform){
       if(!$webform['sid']){ // user didn't specify submission-id, meaning they want most recent
         $webform['sid'] = db_result(db_query('select sid from {webform_submissions} 
