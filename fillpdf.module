@@ -267,6 +267,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
     $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
     $fillpdf_remote_service= variable_get('fillpdf_remote_service', TRUE);
+    $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
     // use fillpdf-service.com's xmlrpc service (must be registered)
     if($fillpdf_remote_service){
       $api_key = variable_get('fillpdf_api_key', '0');
@@ -277,7 +278,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     }
     
     // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
-    else{
+    elseif ($fillpdf_local_service) {
       $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
       require_once($require);
       try{
@@ -290,6 +291,19 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
         drupal_goto(); //after setting error message
       }
       $data = java_values(base64_decode($fillpdf->toByteArray()));
+    }
+
+    // Use PDFTK to merge the two
+    else {
+      //drupal_set_message('pdftk merging not implemented yet!', 'error');
+      //drupal_goto('admin/content/fillpdf');
+      module_load_include('inc', 'fillpdf', 'xfdf'); // Looks like I'm the first actually to use this! (wizonesolutions)
+      $xfdfname = $fillpdf_info->url . '.xfdf';
+      $xfdf = createXFDF(basename($xfdfname), $fields);
+      // Generate the file
+      $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_REPLACE);
+      // Now feed this to pdftk and save the result to a variable
+      $data = shell_exec('pdftk ' . escapeshellarg($fillpdf_info->url) . ' fill_form ' . escapeshellarg($xfdffile) . ' output - flatten');
     }
     
     // Log this, could be useful
@@ -342,6 +356,7 @@ function fillpdf_parse_pdf($fid) {
   $filename = db_result(db_query("SELECT url FROM {fillpdf_forms} WHERE fid=%d", $fid));
   $content = _fillpdf_get_file_contents($filename, '<front>');
   $fillpdf_remote_service= variable_get('fillpdf_remote_service', true);
+  $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
   
   // use fillpdf-service.com's xmlrpc service (must be registered)
   if($fillpdf_remote_service){
@@ -352,7 +367,7 @@ function fillpdf_parse_pdf($fid) {
   }
   
 	// use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
-  else{
+  elseif ($fillpdf_local_service) {
     $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
 	  require_once($require);
 	  try{
@@ -361,6 +376,36 @@ function fillpdf_parse_pdf($fid) {
 	  }catch(JavaException $e){
       drupal_set_message(java_truncate((string)$e), 'error');
       drupal_goto("admin/content/fillpdf"); //after setting error message
+    }
+  }
+
+  //use pdftk program (must be installed locally)
+  else {
+    // Use exec() to call pdftk (because it will be easier to go line-by-line parsing the output) and pass $content via stdin. Retrieve the fields with dump_data_fields.
+    $output = array();
+    exec('pdftk ' . escapeshellarg($filename) . ' dump_data_fields', $output);
+
+    // Build a simple map of dump_data_fields keys to our own array keys
+    $data_fields_map = array(
+      'FieldType' => 'type',
+      'FieldName' => 'name',
+      'FieldFlags' => 'flags',
+      'FieldJustification' => 'justification',
+    );
+
+    // Build the fields array
+    $fields = array();
+    $fieldindex = -1;
+    foreach($output as $line => $lineitem) {
+      if ($lineitem == '---') {
+        $fieldindex++;
+        continue;
+      }
+      // Separate the data key from the data value
+      $linedata = explode(':', $lineitem);
+      if (in_array($linedata[0], array_keys($data_fields_map))) {
+        $fields[$fieldindex][$data_fields_map[$linedata[0]]] = trim($linedata[1]);
+      }
     }
   }
 

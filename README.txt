@@ -1,10 +1,11 @@
 Installation
 ------------
 
-This module requires iText, which you can either:
+This module requires one of several external PDF manipulation tools. You can:
 
    1. Deploy locally -- You'll need VPS or a dedicated server so you can deploy PHP/JavaBridge on Tomcat (see later section), or
    2. Sign up for Fillpdf as-a-service [1], and plug your API key into /admin/settings/fillpdf
+   3. Install pdftk on your server and have that be used for PDF manipulation
 
 Usage
 -----
@@ -53,3 +54,7 @@ If you have a VPS or dedicated server and you'd rather install the iText service
    4. Do the same for FillpdfService.jar, from http://github.com/downloads/lefnire/fillpdf-service/FillpdfService.jar
    5. Symlink or copy your JavaBridge webapp directory into fillpdf/lib. (eg, ln -s $TOMCAT_DIR/webapps/JavaBridge $DRUPAL_SITE/sites/all/modules/fillpdf/lib/JavaBridge)
    6. Start Tomcat, then go to /admin/settings/fillpdf & tick the "Use Local Service" checkbox
+
+Local pdftk installation (optional)
+-----------------------------
+As an alternative to using Tomcat and JavaBridge, you can use the pdftk program, which is installable on most servers via their package managers (e.g. yum install pdftk, apt-get install pdftk, etc.). You may also be able to find tutorials on the Internet to enable you to install this on shared hosting; additional steps may be required in that case. Once you have installed pdftk, make sure it is in your PATH, and you should then find it works automatically.
