@@ -190,11 +190,14 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   }
   // Webforms
   if(module_exists('webform') && is_array($webform_arr)){
-    
-  	// attempt to load the submissions inc for both webform-2.x & webform-3.x
-  	// it will ignore if doesn't exist, so this will just load the right one
-  	module_load_include('inc', 'webform', 'webform_submissions');
-    module_load_include('inc', 'webform', 'includes/webform.submissions');
+  	
+  	// Load the submissions inc depending on webform-2.x or webform-3.x
+  	$webform_info_file = drupal_parse_info_file(drupal_get_path('module', 'webform').'/webform.info');
+  	if(strstr($webform_info_file['version'], "6.x-2")===FALSE){
+	    module_load_include('inc', 'webform', 'includes/webform.submissions');
+  	}else{
+    	module_load_include('inc', 'webform', 'webform_submissions');
+  	}
     
     foreach($webform_arr as $webform){
       if(!$webform['sid']){ // user didn't specify submission-id, meaning they want most recent
