@@ -414,11 +414,14 @@ function fillpdf_parse_pdf($fid) {
 
   //create fields
   foreach ($fields as $key=>$arr) {    
-    $field = new stdClass();
-    $field->fid = $fid;
-    $field->pdf_key = $arr['name'];
-    $field->label = $arr['name'];
-    drupal_write_record('fillpdf_fields', $field);
+    if ($arr['type']) { // Don't store "container" fields
+      $arr['name'] = str_replace('&#0;', '', $arr['name']); // pdftk sometimes inserts random &#0; markers - strip these out. NOTE: This may break forms that actually DO contain this pattern, but 99%-of-the-time functionality is better than merge failing due to improper parsing.
+      $field = new stdClass();
+      $field->fid = $fid;
+      $field->pdf_key = $arr['name'];
+      $field->label = $arr['name'];
+      drupal_write_record('fillpdf_fields', $field);
+    }
   }  
 }
 
