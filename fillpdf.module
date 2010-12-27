@@ -306,7 +306,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       // Generate the file
       $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_REPLACE);
       // Now feed this to pdftk and save the result to a variable
-      $data = shell_exec('pdftk ' . escapeshellarg($fillpdf_info->url) . ' fill_form ' . escapeshellarg($xfdffile) . ' output - flatten');
+      $data = shell_exec('pdftk ' . escapeshellarg($fillpdf_info->url) . ' fill_form ' . escapeshellarg($xfdffile) . ' output - flatten drop_xfa');
     }
     
     // Log this, could be useful
