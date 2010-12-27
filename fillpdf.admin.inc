@@ -114,6 +114,8 @@ function fillpdf_forms() {
    		check_plain($pdf_form->title),
     	l(t('Edit'), "admin/content/fillpdf/$pdf_form->fid"),
     	l(t('Delete'), "admin/content/fillpdf/$pdf_form->fid/delete"),
+    	l(t('Export field mappings'), "admin/content/fillpdf/$pdf_form->fid/export"),
+    	l(t('Import field mappings'), "admin/content/fillpdf/$pdf_form->fid/import"),
     	);
     $rows[] = $row;
   }
@@ -314,6 +316,168 @@ function fillpdf_form_delete_confirm_submit($form, &$form_state) {
   drupal_set_message('Your form has been deleted.');
   //return 'admin/content/fillpdf';
   $form_state['redirect'] = 'admin/content/fillpdf';
+}
+
+/**
+ * Export an importable array of PDF field key -> Label, Value mappings.
+ * The array key is the PDF field key and the value is another array containing the label and 
+ * the value (properly keyed).
+ * 
+ * @param mixed $pdf_form The FillPDF form ID.
+ */
+function fillpdf_form_export($pdf_form) {
+  if (is_numeric($pdf_form)) {
+    $fid = db_fetch_object(db_query("SELECT * FROM {fillpdf_forms} WHERE fid = %d", $pdf_form));
+  }
+  if (!$fid) {
+    drupal_not_found();
+    exit;
+  }
+  $fields = db_query('SELECT * FROM {fillpdf_fields} WHERE fid = %d', $fid->fid);
+  $export_array = array();
+  while ($field = db_fetch_object($fields)) {
+    $export_array[$field->pdf_key] = array(
+      'label' => $field->label, 
+      'value' => $field->value
+    );
+  }
+  $fillpdf_code = fillpdf_form_export_encode($export_array);
+  return drupal_get_form('fillpdf_export_form', $fillpdf_code);
+}
+
+function fillpdf_export_form($form_state, $code) {
+  $form = array();
+  $form['export'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Fill PDF Form Mappings'),
+    '#default_value' => $code,
+    '#rows' => 30,
+    '#description' => t('Copy this code and then on the site you want to import to, go to the Edit page for the Fill PDF form for which you want to import these mappings, and paste it in there.'),
+    '#attributes' => array(
+      'style' => 'width: 97%;',
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Build Fill PDF configuration code string recursively
+ * Code borrowed from Node Export (http://drupal.org/project/node_export). Thanks, Node Export!
+ */
+function fillpdf_form_export_encode($var, $iteration = 0) {
+  $tab = '';
+  for ($i = 0; $i < $iteration; $i++) {
+    $tab = $tab ."  ";
+  }
+  $iteration++;
+  if (is_object($var)) {
+    $var = (array)$var;
+    $var['#_export_fillpdf_form_encode_object'] = '1';
+  }
+  if (is_array($var)) {
+    $empty = empty($var);
+    $code = "array(". ($empty ? '' : "\n");
+    foreach ($var as $key => $value) {
+      $out = $tab ."  '". $key ."' => ". fillpdf_form_export_encode($value, $iteration) .",\n";
+      drupal_alter('fillpdf_form_export_encode', $out, $tab, $key, $value, $iteration);
+      $code .= $out;
+    }
+    $code .= ($empty ? '' : $tab) .")";
+    return $code;
+  }
+  else {
+    if (is_string($var)) {
+      return "'". addslashes($var) ."'";
+    }
+    elseif (is_numeric($var)) {
+      return $var;
+    }
+    elseif (is_bool($var)) {
+      return ($var ? 'TRUE' : 'FALSE');
+    }
+    else {
+      return 'NULL';
+    }
+  }
+}
+
+/**
+ * Based loosely on Node Export's import form. Import the code and configure the DB settings.
+ * 
+ * @param mixed $form_state 
+ * @param mixed $pdf_form 
+ */
+function fillpdf_form_import_form(&$form_state, $pdf_form) {
+  if (is_numeric($pdf_form)) {
+    $fid = db_fetch_object(db_query("SELECT * FROM {fillpdf_forms} WHERE fid = %d", $pdf_form));
+  }
+  if (!$fid) {
+    drupal_not_found();
+    exit;
+  }
+  $form['fid'] = array(
+    '#type' => 'value',
+    '#value' => $fid->fid,
+  );
+  $form['paste'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Paste code'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['paste']['code'] = array(
+    '#type' => 'textarea',
+    '#default_value' => '',
+    '#rows' => 30,
+    '#description' => t('Cut and paste the results of a <em>Fill PDF Field Mappings export</em> here.'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+    '#suffix' => l(t('Reset the form'), $_GET['q']),
+  );
+  return $form;
+}
+
+function fillpdf_form_import_form_validate($form, &$form_state) {
+  $mappings = fillpdf_form_export_decode($form_state['values']['code']);
+  if (!is_array($mappings) || empty($mappings)) {
+    form_set_error('code', t('There was a problem processing your Fill PDF Field Mappings code. Please do a fresh export from the source and try pasting it again.'));
+  }
+  else {
+    $form_state['values']['mappings'] = $mappings;
+  }
+}
+
+function fillpdf_form_import_form_submit($form, &$form_state) {
+  $pdf_form = new stdClass();
+  $pdf_form->fid = $form_state['values']['fid'];
+  $mappings = $form_state['values']['mappings'];
+  $fields = fillpdf_get_fields($pdf_form->fid);
+  $field_keys = array_keys($fields);
+  // Process the mappings
+  foreach($mappings as $pdf_key => $field_settings) {
+    if (in_array($pdf_key, $field_keys)) {
+      $field_settings = (object) $field_settings;
+      $field_settings->pdf_key = $pdf_key;
+      fillpdf_update_field($pdf_form, $field_settings, $pdf_key);
+    }
+    else {
+      drupal_set_message(t('Your code contained field mappings for the PDF field key <em>@pdf_key</em>, but it does not exist on this form. Therefore, it was ignored.', array('@pdf_key' => $pdf_key)), 'warning');
+    }
+  }
+  drupal_set_message(t('Successfully imported matching PDF field keys. If any field mappings failed to import, they are listed above.'));
+  $form_state['redirect'] = "admin/content/fillpdf/{$pdf_form->fid}";
+}
+
+/**
+ * Evaluate and return decoded string. Borrowed from Node Export module.
+ */
+function fillpdf_form_export_decode($string) {
+  $array = eval('return '. $string .';');
+  // $return = fillpdf_form_export_decode_objects($array); // (wizonesolutions) Not needed since we simply process an array upon import.
+  $return = $array;
+  return $return;
 }
 
 /* ---------------- Fields Edit --------------------*/
