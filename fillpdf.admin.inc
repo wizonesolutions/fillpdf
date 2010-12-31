@@ -108,7 +108,7 @@ JS;
  */
 function fillpdf_forms() {  
   $result = db_query("SELECT title, fid FROM {fillpdf_forms} ORDER BY title");
-  $header = array(t('Title'), array('data' => t('Operations'), 'colspan' => '2'));
+  $header = array(t('Title'), array('data' => t('Operations'), 'colspan' => '4'));
   while ($pdf_form = db_fetch_object($result)) {
     $row = array(
    		check_plain($pdf_form->title),
