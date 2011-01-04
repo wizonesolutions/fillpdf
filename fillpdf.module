@@ -427,7 +427,7 @@ function fillpdf_parse_pdf($fid) {
 
   //use pdftk program (must be installed locally)
   else {
-    fillpdf_execute_parse();
+    $fields = fillpdf_execute_parse('pdftk', $filename);
   }
 
   //create fields
@@ -447,7 +447,7 @@ function fillpdf_parse_pdf($fid) {
  * Utility function to allow other functions to parse PDFs with the various methods in a consistent way. 
  * 
  * @param string $method The service or program being used. Possible values: local, remote, pdftk. Currently, only pdftk is supported.
- * @param mixed $fillpdf When in URL mode, this is the record from {fillpdf_forms}. When in Stream mode, this is the PDF data.
+ * @param mixed $fillpdf When in URL mode, this is the filename to the PDF to parse. When in Stream mode, this is the PDF data.
  * @param string $mode A special flag to control the behavior of this function. URL mode merges using a PDF on the  
  *   file system and Stream mode merges using the value of $fillpdf directly. Possible values: url, stream.
  */
