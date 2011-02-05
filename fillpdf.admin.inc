@@ -102,7 +102,7 @@ JS;
 /**
  * Manage your existing forms, or upload a new one
  */
-function fillpdf_forms($form, &$form_state) {
+function fillpdf_forms_admin($form, &$form_state) {
   $result = db_query("SELECT title, fid FROM {fillpdf_forms} ORDER BY title");
   $header = array(t('Title'), array(
       'data' => t('Operations'),
@@ -142,7 +142,7 @@ function fillpdf_forms($form, &$form_state) {
 /**
  * Makes sure the Upload was provided (want to validate .pdf here too)
  */
-function fillpdf_forms_validate($form, &$form_state) {
+function fillpdf_forms_admin_validate($form, &$form_state) {
 
   // uploading anything?
   $file = $_FILES['files']['name']['upload_pdf'];
@@ -164,7 +164,7 @@ function fillpdf_forms_validate($form, &$form_state) {
 /**
  * Creates a new Form from the uploaded PDF, including parsed fields
  */
-function fillpdf_forms_submit($form, &$form_state) {
+function fillpdf_forms_admin_submit($form, &$form_state) {
   $dir = file_directory_path() . "/fillpdf";
   // $validators not working, so I just checked manually in fillpdf_forms_validate()
   $validators = array('file_validate_extensions' => array('pdf'));

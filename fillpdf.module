@@ -64,7 +64,7 @@ function fillpdf_menu() {
     'title' => 'Fill PDF',
     'description' => 'Manage your PDFs',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('fillpdf_forms'),
+    'page arguments' => array('fillpdf_forms_admin'),
     'access arguments' => $access,
   );
   $items['admin/content/fillpdf/%'] = array(
