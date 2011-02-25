@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 
 function fillpdf_token_values($type, $object = NULL, $options = array()) {
   // When making PDFs with fillpdf, this function is called twice, once with $type = 'node' and $object a node object, and once with $type = 'global' and $object = null. During node display, this function is only called once with $type = 'global' */
