@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 
 /**
  * Implements hook_token_values().
