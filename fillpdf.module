@@ -307,7 +307,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       if (!empty($webforms)) {
         foreach ($webforms as $webform) {
           //            $submission = node_load($submission->nid);
-          $token = token_replace($obj->value, $type = 'webform', $webform['submission']);
+          $token = token_replace($obj->value, array('webform' => $webform['submission']));
           if ($token) {
             break;
           }
