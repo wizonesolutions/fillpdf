@@ -1,48 +1,79 @@
 <?php
 
+/**
+ * @file
+ * Install
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function fillpdf_schema() {
+  $schema = array();
+
+  $schema['fillpdf_forms'] = array(
+    'fields' => array(
+      'fid' => array(
+        'type' => 'int',
+        'length' => 10,
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('fid'),
+  );
+
+  $schema['fillpdf_fields'] = array(
+    'fields' => array(
+      'fid' => array(
+        'type' => 'int',
+        'length' => 10,
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pdf_key' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('fid', 'pdf_key'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
 function fillpdf_install() {
 
-  switch ($GLOBALS['db_type']) {
-    case 'mysqli':
-    case 'mysql':
-      db_query("CREATE TABLE if not exists {fillpdf_forms} (
-        fid int(10) unsigned NOT NULL,
-        title varchar(255) NOT NULL,
-        url varchar(255) NOT NULL,		
-        PRIMARY KEY(fid)
-      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
-
-      db_query("CREATE TABLE if not exists {fillpdf_fields} (
-        fid int(10) unsigned NOT NULL,
-		pdf_key varchar(255) NOT NULL,		
-        label varchar(255) NOT NULL,
-		value mediumtext NOT NULL,		
-        PRIMARY KEY(fid, pdf_key)
-      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
-
-      break;
-    case 'pgsql':
-      db_query("CREATE TABLE {fillpdf_forms} (
-        fid integer NOT NULL,
-        title varchar(255) NOT NULL,
-        url varchar(255) NOT NULL,		
-        PRIMARY KEY(fid)
-      )");
-
-      db_query("CREATE TABLE {fillpdf_fields} (
-        fid integer NOT NULL,
-        pdf_key varchar(255) NOT NULL,		
-        label varchar(255) NOT NULL,
-		value mediumtext NOT NULL,	
-        PRIMARY KEY(fid, pdf_key)
-      )");
-
-    default:
-      break;
-  }
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function fillpdf_uninstall() {
-  db_query("DROP TABLE {fillpdf_forms}");
-  db_query("DROP TABLE {fillpdf_fields}");
+
 }
+

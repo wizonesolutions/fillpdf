@@ -34,6 +34,7 @@ function escape_string($str) {
 
 function print_fields($info) {
   $fields = array();
+  $str = '';
   foreach ($info as $field => $val) {
     $arr = explode('.', $field);
     $str .= '$fields';

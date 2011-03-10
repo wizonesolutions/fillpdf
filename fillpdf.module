@@ -9,7 +9,9 @@ define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/xmlrpc.php");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 if (module_exists('webform')) {
-  module_load_include('inc', 'fillpdf', 'webform_tokens');
+  // TODO: Someone wanna convert this to D7 syntax?
+  // Instructions here: http://drupal.org/documentation/modules/token/update/6/7
+  // module_load_include('inc', 'fillpdf', 'webform_tokens');
 }
 
 /**
@@ -21,9 +23,9 @@ function fillpdf_help($path, $arg) {
       $content = _fillpdf_get_file_contents(drupal_get_path('module', 'fillpdf') . '/README.txt');
       $content = '<pre>' . check_plain($content) . '</pre>';
       return $content;
-    case 'admin/content/fillpdf':
+    case 'admin/structure/fillpdf':
       if (module_exists('help')) {
-        return t('See the !link for an explaination on dowloading these forms to PDF',
+        return t('See the !link for an explanation on dowloading these forms to PDF',
           array('!link' => l(t('Documentation'), 'admin/help/fillpdf')));
       }
       else {
@@ -41,7 +43,7 @@ function fillpdf_menu() {
   $access = array('administer pdfs');
   $items = array();
 
-  // fillpdf&fid=10&nids[]=1&webforms[0][nid]=2&webforms[0][sid]=3
+  // fillpdf?fid=10&nids[]=1&webforms[0][nid]=2&webforms[0][sid]=3
   $items['fillpdf'] = array(
     'page callback' => 'fillpdf_parse_uri',
     // Can't use access callback.  We need the arguments, but they're passed as $GET.  Will access-check in fillpdf_merge_pdf
@@ -50,42 +52,43 @@ function fillpdf_menu() {
   );
 
   // ------- Config ---------------------------
-  $items['admin/config/fillpdf'] = array(
+  $items['admin/config/media/fillpdf'] = array(
     'title' => 'Fill PDF Settings',
-    'description' => 'Configure Fill PDF Servelet Information',
+    'description' => 'Configure tool to use with Fill PDF',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_settings'),
     'access arguments' => $access,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   // --------- Form ------------------------
-  $items['admin/content/fillpdf'] = array(
+  $items['admin/structure/fillpdf'] = array(
     'title' => 'Fill PDF',
     'description' => 'Manage your PDFs',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_forms_admin'),
     'access arguments' => $access,
   );
-  $items['admin/content/fillpdf/%'] = array(
+  $items['admin/structure/fillpdf/%'] = array(
     'title' => 'Edit PDF Form',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_form_edit', 3),
     'access arguments' => $access,
   );
-  $items['admin/content/fillpdf/%/delete'] = array(
+  $items['admin/structure/fillpdf/%/delete'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_form_delete_confirm', 3),
     'access arguments' => $access,
     'type' => MENU_CALLBACK,
   );
-  $items['admin/content/fillpdf/%/export'] = array(
+  $items['admin/structure/fillpdf/%/export'] = array(
     'title' => t('Export Fill PDF Field Mappings'),
     'page callback' => 'fillpdf_form_export',
     'page arguments' => array(3),
     'access arguments' => $access,
     'type' => MENU_CALLBACK,
   );
-  $items['admin/content/fillpdf/%/import'] = array(
+  $items['admin/structure/fillpdf/%/import'] = array(
     'title' => t('Import Fill PDF Field Mappings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_form_import_form', 3),
@@ -95,20 +98,20 @@ function fillpdf_menu() {
   //}else if (is_numeric(arg(4))) {
 
   // --------- Fields ------------------------
-  $items['admin/content/fillpdf/%/add'] = array(
+  $items['admin/structure/fillpdf/%/add'] = array(
     'title' => 'Add field',
     'page callback' => 'fillpdf_field',
     'page arguments' => array(4, 3),
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/content/fillpdf/%/edit/%'] = array(
+  $items['admin/structure/fillpdf/%/edit/%'] = array(
     'page callback' => 'fillpdf_field',
     'page arguments' => array(4, 3, 5),
     'access arguments' => $access,
     'type' => MENU_CALLBACK,
   );
-  $items['admin/content/fillpdf/%/delete/%'] = array(
+  $items['admin/structure/fillpdf/%/delete/%'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_field_delete_confirm', 3, 5),
     'access arguments' => $access,
@@ -147,6 +150,7 @@ function fillpdf_permission() {
  * @param bool $sample True if you want to populate the form with its own field-names (to get a gist of PDF)
  */
 function fillpdf_pdf_link($fid, $nids = null, $webform_arr = null, $sample = false) {
+  $nids_uri = $webforms_uri = "";
 
   if (is_array($nids)) {
     $nids_uri = '&nids[]=' . implode('&nids[]=', $nids);
@@ -166,7 +170,7 @@ function fillpdf_pdf_link($fid, $nids = null, $webform_arr = null, $sample = fal
   }
   $sample = $sample ? '&sample=true' : '';
 
-  return url('', array('absolute' => true)) . "fillpdf&fid={$fid}{$nids_uri}{$webforms_uri}{$sample}";
+  return url('', array('absolute' => true)) . "fillpdf?fid={$fid}{$nids_uri}{$webforms_uri}{$sample}";
 }
 
 
@@ -176,11 +180,22 @@ function fillpdf_pdf_link($fid, $nids = null, $webform_arr = null, $sample = fal
  * @seealso fillpdf_pdf_link for $_GET params
  */
 function fillpdf_parse_uri() {
+  // Avoid undefined index warnings, but don't clobber existing values
+  $_GET += array(
+    'nid' => '',
+    'nids' => '',
+    'webform' => '',
+    'webforms' => '',
+    'fid' => '',
+    'sample' => ''
+  );
+
   //this function called multiple times, cut down on DB calls
   //    static $get;if($get)return $get;
   $sample = $_GET['sample']; // is this just the PDF populated with sample data?
   $fid = $_GET['fid'];
   $nids = $webforms = array();
+
   if ( $_GET['nid'] || $_GET['nids'] ) {
     $nids = ( $_GET['nid'] ? array($_GET['nid']) : $_GET['nids'] );
   }
@@ -204,12 +219,12 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     drupal_goto();
   }
 
-  $fillpdf_info = db_fetch_object(db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid)));
+  $fillpdf_info = db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
   // Case 2: Only $fid -- just give them empty pdf
   if (!empty($nodes) && !empty($webforms) && !is_null($sample)) {
     $host = url('', array('absolute' => true));
     header("Location: " . $host . '/' . $fillpdf_info->url);
-    exit;
+    drupal_exit();
   }
 
   global $user;
@@ -247,11 +262,12 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 
   if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
     drupal_access_denied();
+    drupal_exit();
   }
 
   $fields = array();
   $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid = :fid", array(':fid' => $fid));
-  while ($obj = db_fetch_object($query)) {
+  foreach ($query as $obj) {
     // Fill a sample PDF & return
     if ($sample == 'true') {
       $fields[$obj->pdf_key] = $obj->pdf_key;
@@ -265,7 +281,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       // --- node token replacements
       if (!empty($nodes)) {
         foreach ($nodes as $node) {
-          $token = token_replace($obj->value, $type = 'node', $object = $node);
+          $token = token_replace($obj->value, array('node' => $node));
           if ($token) {
             break;
           }
@@ -353,7 +369,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   header('Content-type:application/pdf');
   header('Content-disposition:attachment; filename="' . $download_name . '"');
   echo $data;
-  exit;
+  drupal_exit();
 }
 
 /**
@@ -417,7 +433,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url') {
       // Generate the file
       $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_RENAME);
       // Now feed this to pdftk and save the result to a variable
-      $data = shell_exec('pdftk ' . escapeshellarg($filename) . ' fill_form ' . escapeshellarg($xfdffile) . ' output - flatten drop_xfa');
+      $data = shell_exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - flatten drop_xfa');
       file_delete($xfdffile);
       if ($mode == 'stream') {
         file_delete($filename);
@@ -440,7 +456,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url') {
  */
 function fillpdf_parse_pdf($fid) {
   $filename = db_query("SELECT url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetchField();
-  $content = _fillpdf_get_file_contents($filename, '<front>');
+  $content = _fillpdf_get_file_contents($filename, "<front>");
   $fillpdf_remote_service = variable_get('fillpdf_remote_service', true);
   $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
 
@@ -448,7 +464,7 @@ function fillpdf_parse_pdf($fid) {
   if ($fillpdf_remote_service) {
     $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
     if ($result->error == true) {
-      drupal_goto("admin/content/fillpdf");
+      drupal_goto("admin/structure/fillpdf");
     } //after setting error message
     $fields = $result->data;
   }
@@ -463,7 +479,7 @@ function fillpdf_parse_pdf($fid) {
     }
     catch (JavaException $e) {
       drupal_set_message(java_truncate((string) $e), 'error');
-      drupal_goto("admin/content/fillpdf"); //after setting error message
+      drupal_goto("admin/structure/fillpdf"); //after setting error message
     }
   }
 
@@ -480,6 +496,7 @@ function fillpdf_parse_pdf($fid) {
       $field->fid = $fid;
       $field->pdf_key = $arr['name'];
       $field->label = $arr['name'];
+      $field->value = '';
       drupal_write_record('fillpdf_fields', $field);
     }
   }
@@ -504,7 +521,7 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
   }
   // Use exec() to call pdftk (because it will be easier to go line-by-line parsing the output) and pass $content via stdin. Retrieve the fields with dump_data_fields.
   $output = array();
-  exec('pdftk ' . escapeshellarg($filename) . ' dump_data_fields', $output);
+  exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' dump_data_fields', $output);
 
   // Build a simple map of dump_data_fields keys to our own array keys
   $data_fields_map = array(
@@ -535,6 +552,7 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
 }
 
 function _fillpdf_get_file_contents($filepath, $error_goto = null) {
+  $filepath = drupal_realpath($filepath);
   if ($error_goto && !(file_exists($filepath))) {
     drupal_set_message("{$filepath} does not exist.  Check your
       filesystem settings, as well as http://drupal.org/node/764936", 'error');
@@ -548,7 +566,10 @@ function _fillpdf_get_file_contents($filepath, $error_goto = null) {
 
 function _fillpdf_xmlrpc_request($url, $method) {
   $args = func_get_args();
-  $result = call_user_func_array('xmlrpc', $args);
+  array_shift($args); // $url
+  // Fix up the array for Drupal 7 xmlrpc() function style
+  $args = array($args[0] => array_slice($args, 1));
+  $result = xmlrpc($url, $args);
   $ret = new stdClass;
   if (isset($result['error'])) {
     drupal_set_message($result['error'], 'error');
@@ -573,7 +594,7 @@ function _fillpdf_xmlrpc_request($url, $method) {
 function fillpdf_get_fields($fid) {
   $result = db_query('select * from {fillpdf_fields} where fid = %d', $fid);
   $return = array();
-  while ($result_array = db_fetch_array($result)) {
+  foreach ($result as $result_array) {
     $return[$result_array['pdf_key']] = array(
       'label' => $result_array['label'],
       'value' => $result_array['value'],

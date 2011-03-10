@@ -3,17 +3,4 @@ description = Allows users to populate PDF forms from submitted node data.
 package = Other
 core = 7.x
 
-dependencies[] = content
 dependencies[] = token
-; Information added by drupal.org packaging script on 2011-01-04
-version = "6.x-1.x-dev"
-core = 7.x
-project = "fillpdf"
-datestamp = "1294143233"
-
-
-files[] = fillpdf.admin.inc
-files[] = fillpdf.install
-files[] = fillpdf.module
-files[] = webform_tokens.inc
-files[] = xfdf.inc
