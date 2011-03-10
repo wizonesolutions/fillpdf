@@ -377,33 +377,43 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
  */
 function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
   if ( user_access('administer pdfs') || user_access('publish all pdfs') ) {
-    return true;
+    return TRUE;
   }
   if (!user_access('publish own pdfs')) {
-    return false;
+    return FALSE;
   }
 
-  // own node?
-  foreach ($nodes as $node) {
-    if ( !(node_access('view', $node)) ) {
-      return false;
+  global $user;
+  if (empty($webforms)) {
+    foreach ($nodes as $node) {
+      // own node?
+      if ( !(node_access('view', $node)) || ($node->uid != $user->uid) ) {
+        return FALSE;
+      }
     }
   }
-
-  // own webform?
-  if (!(empty($webforms))) {
-    global $user;
-    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions')))) {
-      return false;
-    }
+  else {
     foreach ($webforms as $webform) {
-      if ( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) ) {
-        return false;
+      // In this case, we only care that they can view the Webform
+      if (!(node_access('view', node_load($webform['webform']->nid)))) {
+        return FALSE;
       }
     }
   }
 
-  return true;
+  // Own webform submission?
+  if (!(empty($webforms))) {
+    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions')))) {
+      return FALSE;
+    }
+    foreach ($webforms as $webform) {
+      if ( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) ) {
+        return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
 }
 
 /**
