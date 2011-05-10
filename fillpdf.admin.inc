@@ -163,24 +163,22 @@ function fillpdf_forms_validate($form, &$form_state) {
  * Creates a new Form from the uploaded PDF, including parsed fields 
  */
 function fillpdf_forms_submit($form, &$form_state) {	  
-    $dir = file_directory_path()."/fillpdf";
-    // $validators not working, so I just checked manually in fillpdf_forms_validate()
-  	$validators = array('file_validate_extensions' => array('pdf') );
-	  if ($file = file_save_upload('upload_pdf', $validators, $dir, FILE_EXISTS_REPLACE)) {
-	    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
-	    file_set_status($file, FILE_STATUS_PERMANENT);
-	  }else{
-	    //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered) 
-	    drupal_set_message('Error saving file to ' . $dir, 'error'); 
-	  } 
+  $dir = file_directory_path()."/fillpdf";
+  // $validators not working, so I just checked manually in fillpdf_forms_validate()
+  $validators = array('file_validate_extensions' => array('pdf') );
+  if ($file = file_save_upload('upload_pdf', $validators, $dir, FILE_EXISTS_REPLACE)) {
+    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
+    file_set_status($file, FILE_STATUS_PERMANENT);
+  }
+  else {
+    drupal_set_message('Error saving file to ' . $dir, 'error');
+  }
 
-	  //@@TODO: rename url to filepath
-    $fid = db_last_insert_id('fillpdf', 'fid');
-    db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')", 
-             $fid, $file->filename, $file->filepath);
+  $fid = db_last_insert_id('fillpdf', 'fid');
+  db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')",
+    $fid, $file->filename, $file->filepath);
   fillpdf_parse_pdf($fid);
   $form_state['redirect'] = "admin/content/fillpdf/$fid";
-  //$form_state['nid'] = $node->nid;
 }
 
 
@@ -232,7 +230,6 @@ function fillpdf_form_edit(&$form_state, $fid) {
   $form['delete'] = array('#type' => 'submit',
       '#value' => t('Delete'),
    );
-   //$form['#pdf_form'] = &$pdf_form;
   $form['#pdf_form'] = $pdf_form;
   
   // @@TODO: order by weight, and add dragable ala http://www.computerminds.co.uk/quick-guide-using-drupal-add-tabledrag-and-enjoying-jquery-drag-and-drop-loveliness
@@ -545,13 +542,13 @@ function fillpdf_field_edit(&$form_state, $pdf_form, $field) {
   );
   $form['tokens_fieldset'] = array(
     '#type' => 'fieldset',
-  '#title' => 'Tokens',
+  '#title' => 'Replacement patterns',
   '#collapsible' => TRUE,
   '#collapsed' => TRUE,
   '#weight' => 5,
   );
   $form['tokens_fieldset']['tokens'] = array(
-    '#value' => theme('token_help'),
+    '#value' => theme('token_help', array('node', 'webform')),
   );
 
   $form['submit'] = array(
