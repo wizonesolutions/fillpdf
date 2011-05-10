@@ -586,15 +586,15 @@ function _fillpdf_process_destination_path($destination_path, $token_objects) {
   elseif (isset($token_objects['webform'])) {
     $types[] = 'webform';
   }
-  foreach ($types as $type) {
-    $destination_path = token_replace($destination_path, $type, $token_objects[$type]);
-  }
   if (substr($destination_path, 0, 1) == '/') {
     // No further modifications needed
   }
   else {
     // Slap on the files directory in front and return it
     $destination_path = file_directory_path() . "/$destination_path";
+  }
+  foreach ($types as $type) {
+    $destination_path = token_replace($destination_path, $type, $token_objects[$type]);
   }
   return $destination_path;
 }

@@ -216,7 +216,8 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#type' => 'item',
     '#title' => 'Sample PDF',
     '#value' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)),
-    '#description' => t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
+    '#description' => t("If you have set a custom path on this PDF, the sample will be saved there silently.
+      Also, path token replacement requires a real node or webform. It will not work in sample mode."),
   );
   $form['pdf_info']['form_id'] = array(
     '#type' => 'item',
