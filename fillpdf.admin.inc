@@ -216,6 +216,7 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#type' => 'item',
     '#title' => 'Sample PDF',
     '#value' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)),
+    '#description' => t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
   );
   $form['pdf_info']['form_id'] = array(
     '#type' => 'item',
@@ -223,7 +224,35 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#value' => "Form ID: [$fid].  Populate this form with node IDs, such as /fillpdf?fid=$fid&nid=10<br/>",
   );
   
-  
+  $form['destination_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom path for generated PDFs'),
+    '#description' => t("<p>By default, filled PDFs are not saved to disk; they are simply sent
+      directly to the browser for download. Enter a path here to change this behavior (tokens allowed).
+      <strong>Warning! Unless you include the &download=1 flag in the Fill PDF URL, PDFs will only
+      be saved to disk <em>and won't</em> be sent to the browser as well.</strong></p><p>The path
+      you specify must be in one of the following two formats:<br />
+        <ul>
+          <li><em>path/to/directory</em> (path will be treated as relative to
+          your <em>files</em> directory)</li>
+          <li><em>/absolute/path/to/directory</em> (path will be treated as relative to your entire
+          filesystem)</li>
+        </ul>
+      Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"),
+    '#maxlength' => 255,
+    '#default_value' => $pdf_form->destination_path,
+  );
+
+  $form['tokens_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Replacement patterns',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['tokens_fieldset']['tokens'] = array(
+    '#value' => theme('token_help', array('node', 'webform')),
+  );
+
   $form['submit'] = array('#type' => 'submit',
       '#value' => t('Submit'),
    );
@@ -251,18 +280,6 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#value' => '<br/><br/>'.theme('table', $header, $rows, array('id' => 'fillpdf_fields')),
   );
   
-//  $form['tokens_fieldset'] = array(
-//    '#type' => 'fieldset',
-//    '#title' => 'Tokens',
-//    '#collapsible' => TRUE,
-//    '#collapsed' => TRUE,
-//    '#weight' => 1,
-//  );
-//  $form['tokens_fieldset']['tokens'] = array(
-//    '#value' => theme('token_help'),
-//  );
-  
-  
   return $form;
 }
 
@@ -274,8 +291,8 @@ function fillpdf_form_edit_submit($form, &$form_state) {
     $form_state['redirect'] = "admin/content/fillpdf/{$form['#pdf_form']->fid}/delete" ;
     return;
   }else{
-    db_query('UPDATE {fillpdf_forms} SET title = "%s" WHERE fid = %d', 
-             $form_state['values']['title'], $form['#pdf_form']->fid);
+    db_query('UPDATE {fillpdf_forms} SET title = "%s", destination_path = "%s" WHERE fid = %d',
+             $form_state['values']['title'], trim($form_state['values']['destination_path']), $form['#pdf_form']->fid);
     $form_state['redirect'] = "admin/content/fillpdf/{$form['#pdf_form']->fid}";
     drupal_set_message('Successfully updated form');
     //$form_state['nid'] = $node->nid;
@@ -592,7 +609,7 @@ function fillpdf_field_edit_submit($form, &$form_state) {
     //add a new field
     $edit_field = (object)$form_state['values'];
     db_query("INSERT INTO {fillpdf_fields} (fid, label, pdf_key, value) VALUES(%d, '%s', '%s', '%s')", 
-             $form['#pdf_form']->fid, $form_state['values']['label'], $form_state['values']['pdf_key'], $form_state['values']['value']);
+      $form['#pdf_form']->fid, $form_state['values']['label'], $form_state['values']['pdf_key'], $form_state['values']['value']);
   }
   $form_state['redirect'] = 'admin/content/fillpdf/'. $form['#pdf_form']->fid;
 }

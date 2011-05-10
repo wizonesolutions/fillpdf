@@ -14,6 +14,7 @@ function fillpdf_schema() {
       'fid' =>     array('type' => 'int', 'length' => 10, 'unsigned' => TRUE, 'not null' => TRUE),
       'title' =>   array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'url' =>  array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'destination_path' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
     ),
     'primary key' => array('fid')
   );
@@ -33,6 +34,15 @@ function fillpdf_schema() {
 
 function fillpdf_install() {
   drupal_install_schema('fillpdf');
+}
+
+/**
+ * Add the destination_path field to {fillpdf_forms}.
+ */
+function fillpdf_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+  return $ret;
 }
 
 function fillpdf_uninstall() {
