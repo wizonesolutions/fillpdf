@@ -224,9 +224,14 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
         'submission' => webform_get_submission($webform['nid'], $webform['sid']) );
     }
   }
-  
-  if(!fillpdf_merge_pdf_access($nodes, $webforms))
+
+  // Are we skipping the access check? This may be done when the PDF is generated
+  // programmatically. Use wisely.
+  if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
     drupal_access_denied();
+    module_invoke_all('exit');
+    exit();
+  }
     
   $fields = $token_objects = array();
   $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
@@ -365,31 +370,47 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 }
 
 /**
- * Make sure the user has access to data they want to populate the PDF 
+ * Make sure the user has access to data they want to populate the PDF
  */
 function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
-  if( user_access('administer pdfs') || user_access('publish all pdfs') )
-    return true;
-  if(!user_access('publish own pdfs'))
-    return false;
-    
-  // own node?
-  foreach($nodes as $node)
-    if( !(node_access('view', $node)) )
-      return false;
-        
-  // own webform?
-  if(!(empty($webforms))) {
-    global $user;
-    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions'))))
-      return false;
-    foreach($webforms as $webform){
-      if( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) )
-        return false; 
+  if ( user_access('administer pdfs') || user_access('publish all pdfs') ) {
+    return TRUE;
+  }
+  if (!user_access('publish own pdfs')) {
+    return FALSE;
+  }
+
+  global $user;
+  if (empty($webforms)) {
+    foreach ($nodes as $node) {
+      // own node?
+      if ( !(node_access('view', $node)) || ($node->uid != $user->uid) ) {
+        return FALSE;
+      }
     }
   }
-  
-  return true;
+  else {
+    foreach ($webforms as $webform) {
+      // In this case, we only care that they can view the Webform
+      if (!(node_access('view', node_load($webform['webform']->nid)))) {
+        return FALSE;
+      }
+    }
+  }
+
+  // Own webform submission?
+  if (!(empty($webforms))) {
+    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions')))) {
+      return FALSE;
+    }
+    foreach ($webforms as $webform) {
+      if ( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) ) {
+        return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
 }
 
 /**
