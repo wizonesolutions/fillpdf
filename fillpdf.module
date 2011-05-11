@@ -180,7 +180,7 @@ function fillpdf_parse_uri(){
  *   or not.
  * @seealso fillpdf_pdf_link for $_GET params 
  */
-function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE) {
+function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE, $skip_access_check = FALSE) {
   // Case 1: No $fid
 	if(is_null($fid)){
   	drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
@@ -227,10 +227,12 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 
   // Are we skipping the access check? This may be done when the PDF is generated
   // programmatically. Use wisely.
-  if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
-    drupal_access_denied();
-    module_invoke_all('exit');
-    exit();
+  if ($skip_access_check !== TRUE) {
+    if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
+      drupal_access_denied();
+      module_invoke_all('exit');
+      exit();
+    }
   }
     
   $fields = $token_objects = array();
