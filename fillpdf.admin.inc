@@ -5,6 +5,16 @@
  * Allows mappings of PDFs to site content
  */
 
+define('FILLPDF_REPLACEMENTS_DESCRIPTION', t("<p>Tokens, such as those from CCK, sometimes output values that need additional
+  processing prior to being sent to the PDF. A common example is when a key within a CCK <em>Allowed values</em>
+  configuration does not match the field name or option value in the PDF that you would like to be selected but you
+  do not want to change the <em>Allowed values</em> key.</p><p>This field will replace any matching values with the
+  replacements you specify. Specify <strong>one replacement per line</strong> in the format
+  <em>original value|replacement value</em>. For example, <em>yes|Y</em> will fill the PDF with
+  <strong><em>Y</em></strong> anywhere that <strong><em>yes</em></strong> would have originally
+  been used. <p>Note that omitting the <em>replacement value</em> will replace <em>original value</em>
+  with a blank, essentially erasing it.</p>"));
+
 /* ---------------- Configuration --------------------*/
 
 /**
@@ -225,7 +235,13 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#value' => "Form ID: [$fid].  Populate this form with node IDs, such as /fillpdf?fid=$fid&nid=10<br/>",
   );
   
-  $form['destination_path'] = array(
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Additional PDF settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => ($pdf_form->destination_path || $pdf_form->replacements ? FALSE : TRUE),
+  );
+  $form['extra']['destination_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Custom path for generated PDFs'),
     '#description' => t("<p>By default, filled PDFs are not saved to disk; they are simply sent
@@ -244,14 +260,22 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#default_value' => $pdf_form->destination_path,
   );
 
-  $form['tokens_fieldset'] = array(
+  $form['extra']['tokens_fieldset'] = array(
     '#type' => 'fieldset',
     '#title' => 'Replacement patterns',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['tokens_fieldset']['tokens'] = array(
+  $form['extra']['tokens_fieldset']['tokens'] = array(
     '#value' => theme('token_help', array('node', 'webform')),
+  );
+
+  $form['extra']['replacements'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Transform filled PDF field values'),
+    '#wysiwyg' => FALSE,
+    '#description' => FILLPDF_REPLACEMENTS_DESCRIPTION,
+    '#default_value' => $pdf_form->replacements,
   );
 
   $form['submit'] = array('#type' => 'submit',
@@ -264,12 +288,13 @@ function fillpdf_form_edit(&$form_state, $fid) {
   
   // @@TODO: order by weight, and add dragable ala http://www.computerminds.co.uk/quick-guide-using-drupal-add-tabledrag-and-enjoying-jquery-drag-and-drop-loveliness
   $q = db_query('SELECT * FROM {fillpdf_fields} WHERE fid = %d', $fid);
-  $header = array(t('Label'), t('PDF-field key'), t('Value'), array('data' => t('Operations'), 'colspan' => 2) );
+  $header = array(t('Label'), t('PDF-field key'), t('Value'), t('Transformed'), array('data' => t('Operations'), 'colspan' => 2) );
   while($field = db_fetch_object($q)){
     $row = array(
     	check_plain($field->label), //editable
     	check_plain($field->pdf_key),
     	$field->value, //editable, expandable
+      ($field->replacements ? 'Yes' : 'No'),
     	l(t('Edit'), "admin/content/fillpdf/$fid/edit/{$field->pdf_key}"),
     	l(t('Delete'), "admin/content/fillpdf/$fid/delete/{$field->pdf_key}"),
     	);
@@ -292,8 +317,8 @@ function fillpdf_form_edit_submit($form, &$form_state) {
     $form_state['redirect'] = "admin/content/fillpdf/{$form['#pdf_form']->fid}/delete" ;
     return;
   }else{
-    db_query('UPDATE {fillpdf_forms} SET title = "%s", destination_path = "%s" WHERE fid = %d',
-             $form_state['values']['title'], trim($form_state['values']['destination_path']), $form['#pdf_form']->fid);
+    db_query('UPDATE {fillpdf_forms} SET title = "%s", destination_path = "%s", replacements = "%s" WHERE fid = %d',
+             $form_state['values']['title'], trim($form_state['values']['destination_path']), $form_state['values']['replacements'], $form['#pdf_form']->fid);
     $form_state['redirect'] = "admin/content/fillpdf/{$form['#pdf_form']->fid}";
     drupal_set_message('Successfully updated form');
     //$form_state['nid'] = $node->nid;
@@ -352,7 +377,8 @@ function fillpdf_form_export($pdf_form) {
   while ($field = db_fetch_object($fields)) {
     $export_array[$field->pdf_key] = array(
       'label' => $field->label, 
-      'value' => $field->value
+      'value' => $field->value,
+      'replacements' => $field->replacements,
     );
   }
   $fillpdf_code = fillpdf_form_export_encode($export_array);
@@ -569,6 +595,21 @@ function fillpdf_field_edit(&$form_state, $pdf_form, $field) {
     '#value' => theme('token_help', array('node', 'webform')),
   );
 
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Transform values on this field'),
+    '#collapsible' => TRUE,
+    '#collapsed' => ($field->replacements ? FALSE : TRUE),
+    '#weight' => 6,
+  );
+
+  $form['extra']['replacements'] = array(
+    '#type' => 'textarea',
+    '#wysiwyg' => FALSE,
+    '#description' => FILLPDF_REPLACEMENTS_DESCRIPTION,
+    '#default_value' => $field->replacements,
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
@@ -609,8 +650,8 @@ function fillpdf_field_edit_submit($form, &$form_state) {
   else {
     //add a new field
     $edit_field = (object)$form_state['values'];
-    db_query("INSERT INTO {fillpdf_fields} (fid, label, pdf_key, value) VALUES(%d, '%s', '%s', '%s')", 
-      $form['#pdf_form']->fid, $form_state['values']['label'], $form_state['values']['pdf_key'], $form_state['values']['value']);
+    db_query("INSERT INTO {fillpdf_fields} (fid, label, pdf_key, value, replacements) VALUES(%d, '%s', '%s', '%s', '%s')",
+      $form['#pdf_form']->fid, $form_state['values']['label'], $form_state['values']['pdf_key'], $form_state['values']['value'], $form_state['values']['replacements']);
   }
   $form_state['redirect'] = 'admin/content/fillpdf/'. $form['#pdf_form']->fid;
 }
@@ -650,7 +691,7 @@ function fillpdf_field_delete_confirm_submit($form, &$form_state) {
  */
 function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   db_query("UPDATE {fillpdf_fields} SET label = '%s', pdf_key='%s', 
-           value = '%s' WHERE fid = %d AND pdf_key = '%s'",
-           $field->label, $field->pdf_key, $field->value, 
+           value = '%s', replacements='%s' WHERE fid = %d AND pdf_key = '%s'",
+           $field->label, $field->pdf_key, $field->value, $field->replacements,
            $pdf_form->fid, $old_key);
 }

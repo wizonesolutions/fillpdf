@@ -187,7 +187,8 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   	drupal_goto();
   }
   
-  $fillpdf_info = db_fetch_object(db_query("SELECT title, url, destination_path FROM {fillpdf_forms} WHERE fid=%d", $fid));
+  $fillpdf_info = db_fetch_object(db_query("SELECT title, url, destination_path, replacements FROM {fillpdf_forms} WHERE fid=%d", $fid));
+  $fillpdf_info->replacements = _fillpdf_replacements_to_array($fillpdf_info->replacements);
   // Case 2: Only $fid -- just give them empty pdf
   if (!empty($nodes) && !empty($webforms) && !is_null($sample)) {
     $host = url('', array('absolute'=>true));
@@ -238,137 +239,144 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   $fields = $token_objects = array();
   $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid=%d", $fid);
   while ($obj = db_fetch_object($query)) {
+    $obj->replacements = _fillpdf_replacements_to_array($obj->replacements);
+    // Keep track of whether we're dealing with an image or not
+    $transform_string = FALSE;
     // Fill a sample PDF & return
-    if($sample == 'true') {
+    if ($sample == 'true') {
       $fields[$obj->pdf_key] = $obj->pdf_key;
       // If sampling, return to the form edit page
       $_REQUEST['destination'] = "admin/content/fillpdf/$fid";
     }
-    else{
+    else {
       // multiple nids, #516840
       // we want the last nid in $_GET to override previous ones (aka, of fillpdf?nids[]=1&nids[]=2, 2 wins)
       $nodes = array_reverse($nodes); 
       $webforms = array_reverse($webforms); 
-        
+
       // --- node token replacements
-      if(!empty($nodes)){
-        foreach($nodes as $node){
+      if (!empty($nodes)) {
+        foreach ($nodes as $node) {
           $token = token_replace($obj->value, $type = 'node', $object = $node);
-          if($token)
+          if ($token) {
             $token_objects['node'] = $node;
             break;
+          }
+        }
+        $transform_string = TRUE;
       }
       // if they're populating with an imagefield
       //@@TODO: check if an image (not another pdf or some-such)_
-      if(strstr($obj->value, 'filefield-fid]')){
+      if (strstr($obj->value, 'filefield-fid]')) {
         module_load_include('inc', 'filefield', 'field_file');
         $filefield = field_file_load($token);
         $file_bytes = _fillpdf_get_file_contents($filefield['filepath']);
         $str = base64_encode($file_bytes);
+        $transform_string = FALSE;
         $fields[$obj->pdf_key] = '{image}'.$str;
-      }else{
-        $str = preg_replace('|<br />|', '
-', $token);
-        $fields[$obj->pdf_key] = $str;
-       }
-     }
-     // /--- node token replacements ---
-        
-     // --- webform token replacements
-     if(!empty($webforms)){
-       foreach($webforms as $webform){
-//            $submission = node_load($submission->nid);
-         $token = token_replace($obj->value, $type = 'webform', $webform['submission']);
-           if($token)
-             $token_objects['webform'] = $webform['submission'];
-              break;
-         }
-         $str = preg_replace('|<br />|', '
-', $token);
-         $fields[$obj->pdf_key] = $str;
-       }
-       // /--- webform token replacements ---
-        
-        
-      }
-    }
-      
-    $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
-    $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
-
-    $fillpdf_remote_service= variable_get('fillpdf_remote_service', TRUE);
-    $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
-    // use fillpdf-service.com's xmlrpc service (must be registered)
-    if($fillpdf_remote_service){
-      $api_key = variable_get('fillpdf_api_key', '0');
-      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
-      if($result->error == true)
-        drupal_goto(); //after setting error message
-      $data = base64_decode($result->data);
-    }
-    
-    // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
-    elseif ($fillpdf_local_service) {
-      $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
-      require_once($require);
-      try{
-        $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
-        foreach($fields as $key=>$field){
-         $fillpdf->text($key, $field);  
-        }
-      }catch(JavaException $e){
-        drupal_set_message(java_truncate((string)$e), 'error');
-        drupal_goto(); //after setting error message
-      }
-      $data = java_values(base64_decode($fillpdf->toByteArray()));
-    }
-
-    // Use PDFTK to merge the two
-    else {
-      $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info);
-    }
-    
-    // Log this, could be useful
-    watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
-      '%user' => $user->name,
-      '%form' => $fillpdf_info->title,
-      '%node' => $node->title,
-    ));
-
-    if (!empty($fillpdf_info->destination_path)) {
-      $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
-      $path_exists = file_check_directory($destination_path, FILE_CREATE_DIRECTORY);
-      if ($path_exists === FALSE) {
-        watchdog('fillpdf', "The path %destination_path does not exist and could not be
-          automatically created. Therefore, the previous submission was not saved. If
-          the URL contained download=1, then the PDF was still sent to the user's browser.
-          If the destination path looks wrong and you have used tokens, check that you have
-          used the correct token and that it is available to Fill PDF at the time of PDF
-          generation.",
-          array('%destination_path' => $destination_path));
       }
       else {
-        // Full steam ahead!
-        file_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
       }
-      if ($force_download === FALSE) {
-        // Allow the "destination" query string parameter to be used
-        // e.g. fillpdf?nid=1&fid=1&destination=node/1
-        // If no destination is provided, drupal_goto() will send the
-        // user to the front page.
-        drupal_goto();
+      // /--- node token replacements ---
+
+      // --- webform token replacements
+      if (!empty($webforms)) {
+        foreach ($webforms as $webform) {
+          $token = token_replace($obj->value, $type = 'webform', $webform['submission']);
+          if ($token) {
+            $token_objects['webform'] = $webform['submission'];
+            break;
+          }
+        }
+        $transform_string = TRUE;
+      }
+      // /--- webform token replacements ---
+      if ($transform_string) {
+        // Replace <br /> occurrences with newlines
+        $str = preg_replace('|<br />|', '
+', $token);
+        $str = _fillpdf_transform_field_value($str, $fillpdf_info->replacements, $obj->replacements);
+        $fields[$obj->pdf_key] = $str;
       }
     }
+  }
 
-    drupal_set_header('Pragma: public');
-    drupal_set_header('Expires: 0');
-    drupal_set_header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    drupal_set_header('Content-type:application/pdf');
-    drupal_set_header('Content-Length: ' , strlen($data));
-    drupal_set_header('Content-disposition:attachment; filename="'.$output_name.'"');
-    drupal_set_header('Content-Transfer-Encoding: binary');
-    echo $data; 
-    exit;
+  $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
+  $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
+
+  $fillpdf_remote_service= variable_get('fillpdf_remote_service', TRUE);
+  $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
+  // use fillpdf-service.com's xmlrpc service (must be registered)
+  if($fillpdf_remote_service){
+    $api_key = variable_get('fillpdf_api_key', '0');
+    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
+    if($result->error == true)
+      drupal_goto(); //after setting error message
+    $data = base64_decode($result->data);
+  }
+
+  // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
+  elseif ($fillpdf_local_service) {
+    $require = drupal_get_path('module', 'fillpdf').'/lib/JavaBridge/java/Java.inc';
+    require_once($require);
+    try {
+      $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
+      foreach($fields as $key=>$field){
+        $fillpdf->text($key, $field);
+      }
+    }
+    catch (JavaException $e) {
+      drupal_set_message(java_truncate((string)$e), 'error');
+      drupal_goto(); //after setting error message
+    }
+    $data = java_values(base64_decode($fillpdf->toByteArray()));
+  }
+
+  // Use PDFTK to merge the two
+  else {
+    $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info);
+  }
+
+  // Log this, could be useful
+  watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
+    '%user' => $user->name,
+    '%form' => $fillpdf_info->title,
+    '%node' => $node->title,
+  ));
+
+  if (!empty($fillpdf_info->destination_path)) {
+    $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
+    $path_exists = file_check_directory($destination_path, FILE_CREATE_DIRECTORY);
+    if ($path_exists === FALSE) {
+      watchdog('fillpdf', "The path %destination_path does not exist and could not be
+        automatically created. Therefore, the previous submission was not saved. If
+        the URL contained download=1, then the PDF was still sent to the user's browser.
+        If the destination path looks wrong and you have used tokens, check that you have
+        used the correct token and that it is available to Fill PDF at the time of PDF
+        generation.", array('%destination_path' => $destination_path));
+    }
+    else {
+      // Full steam ahead!
+      file_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
+    }
+    if ($force_download === FALSE) {
+      // Allow the "destination" query string parameter to be used
+      // e.g. fillpdf?nid=1&fid=1&destination=node/1
+      // If no destination is provided, drupal_goto() will send the
+      // user to the front page.
+      drupal_goto();
+    }
+  }
+
+  drupal_set_header('Pragma: public');
+  drupal_set_header('Expires: 0');
+  drupal_set_header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+  drupal_set_header('Content-type:application/pdf');
+  drupal_set_header('Content-Length: ' , strlen($data));
+  drupal_set_header('Content-disposition:attachment; filename="'.$output_name.'"');
+  drupal_set_header('Content-Transfer-Encoding: binary');
+  echo $data;
+  exit;
 }
 
 /**
@@ -620,5 +628,40 @@ function _fillpdf_process_destination_path($destination_path, $token_objects) {
     $destination_path = token_replace($destination_path, $type, $token_objects[$type]);
   }
   return $destination_path;
+}
+
+function _fillpdf_replacements_to_array($replacements) {
+  $standardized_replacements = str_replace(array("\r\n", "\r"), "\n", $replacements);
+  $lines = explode("\n", $standardized_replacements);
+  $return = array();
+  foreach ($lines as $replacement) {
+    if (!empty($replacement)) {
+      $split = explode('|', $replacement);
+      $return[$split[0]] = preg_replace('|<br />|', '
+', $split[1]);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Apply any field value transformations defined via the UI.
+ * Note that the replacement arguments need to already have been run through
+ *   _fillpdf_replacements_to_array().
+ * @see _fillpdf_replacements_to_array().
+ */
+function _fillpdf_transform_field_value($value, $pdf_replacements, $field_replacements) {
+  if (empty($pdf_replacements) && empty($field_replacements)) {
+    return $value;
+  }
+  elseif (!empty($field_replacements) && isset($field_replacements[$value])) {
+    return $field_replacements[$value];
+  }
+  elseif (!empty($pdf_replacements) && isset($pdf_replacements[$value])) {
+    return $pdf_replacements[$value];
+  }
+  else {
+    return $value;
+  }
 }
 
