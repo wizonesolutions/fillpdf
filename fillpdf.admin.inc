@@ -305,6 +305,18 @@ function fillpdf_form_edit(&$form_state, $fid) {
     '#type' => 'markup',
     '#value' => '<br/><br/>'.theme('table', $header, $rows, array('id' => 'fillpdf_fields')),
   );
+
+  $form['export_fields'] = array(
+    '#prefix' => '<div>',
+    '#value' => l(t('Export these field mappings'), "admin/content/fillpdf/{$pdf_form->fid}/export"),
+    '#suffix' => '</div>',
+  );
+
+  $form['import_fields'] = array(
+    '#prefix' => '<div>',
+    '#value' => l(t('Import a previous export into this PDF'), "admin/content/fillpdf/{$pdf_form->fid}/import"),
+    '#suffix' => '</div>',
+  );
   
   return $form;
 }
@@ -569,14 +581,6 @@ function fillpdf_field_edit(&$form_state, $pdf_form, $field) {
     '#description' => t('The field key from the original PDF form.  You likely need Acrobat Pro to discover this.'),
     '#weight' => 1,
   );
-//  $form['type'] = array(
-//    '#type' => 'radios',
-//  '#options' => array('text','int'),
-//    '#title' => t('Type'),
-//    '#default_value' => ( ($field->type)?($field->type):0 ),
-//    '#description' => t('The type of PDF field.'),
-//    '#weight' => 3,
-//  );
   $form['value'] = array(
     '#type' => 'textarea',
     '#title' => t('Value'),

@@ -22,7 +22,7 @@ function fillpdf_help($path, $arg) {
       return $content;
     case 'admin/content/fillpdf':
       if (module_exists('help')) {
-        return t('See the !link for an explaination on dowloading these forms to PDF',
+        return t('See the !link for an explanation on downloading these forms to PDF',
           array('!link' => l(t('Documentation'), 'admin/help/fillpdf')));
       }
       else {
