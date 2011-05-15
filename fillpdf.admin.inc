@@ -183,10 +183,8 @@ function fillpdf_forms_submit($form, &$form_state) {
   else {
     drupal_set_message('Error saving file to ' . $dir, 'error');
   }
-
-  $fid = db_last_insert_id('fillpdf', 'fid');
-  db_query("INSERT INTO {fillpdf_forms} (fid, title, url) VALUES(%d, '%s', '%s')",
-    $fid, $file->filename, $file->filepath);
+  db_query("INSERT INTO {fillpdf_forms} (title, url) VALUES('%s', '%s')", $file->filename, $file->filepath);
+  $fid = db_last_insert_id('fillpdf_forms', 'fid');
   fillpdf_parse_pdf($fid);
   $form_state['redirect'] = "admin/content/fillpdf/$fid";
 }

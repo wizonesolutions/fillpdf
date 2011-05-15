@@ -11,7 +11,7 @@ function fillpdf_schema() {
   
   $schema['fillpdf_forms'] = array(
     'fields' => array(
-      'fid' =>     array('type' => 'int', 'length' => 10, 'unsigned' => TRUE, 'not null' => TRUE),
+      'fid' =>     array('type' => 'serial', 'not null' => TRUE),
       'title' =>   array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'url' =>  array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'destination_path' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
@@ -22,7 +22,7 @@ function fillpdf_schema() {
    
   $schema['fillpdf_fields'] = array(
     'fields' => array(
-      'fid' =>      array('type' => 'int', 'length' => 10, 'unsigned' => TRUE, 'not null' => TRUE),
+      'fid' =>      array('type' => 'int', 'not null' => TRUE),
       'pdf_key' =>  array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'label' =>    array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'value' =>    array('type' => 'text', 'size' => 'medium', 'not null' => TRUE),
@@ -54,6 +54,22 @@ function fillpdf_update_6002() {
   $ret = array();
   db_add_field($ret, 'fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
   db_add_field($ret, 'fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+  return $ret;
+}
+
+/**
+ * The people have spoken. Improve PostgreSQL support, at last.
+ */
+function fillpdf_update_6003() {
+  $ret = array();
+  db_drop_primary_key($ret, 'fillpdf_forms');
+  db_change_field($ret, 'fillpdf_forms', 'fid', 'fid',
+    array('type' => 'serial', 'not null' => TRUE),
+    array('primary key' => array('fid')));
+  db_drop_primary_key($ret, 'fillpdf_fields');
+  db_change_field($ret, 'fillpdf_fields', 'fid', 'fid',
+    array('type' => 'int', 'not null' => TRUE),
+    array('primary key' => array('fid', 'pdf_key')));
   return $ret;
 }
 
