@@ -149,7 +149,7 @@ function fillpdf_pdf_link($fid, $nids = null, $webform_arr = null, $sample = fal
 	}
 	$sample = $sample ? '&sample=true' : '';
 	
-	return url('', array('absolute'=>true))."fillpdf&fid={$fid}{$nids_uri}{$webforms_uri}{$sample}";
+	return url('', array('absolute'=>true))."fillpdf?fid={$fid}{$nids_uri}{$webforms_uri}{$sample}";
 }
 
 
