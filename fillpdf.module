@@ -5,7 +5,7 @@
  * Allows mappings of PDFs to site content
  */
 
-define("DEFAULT_SERVLET_URL", "http://fillpdf-service.com/xmlrpc.php");
+define("DEFAULT_SERVLET_URL", "http://fillpdf-service.wiz/xmlrpc.php");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 if(module_exists('webform')) //@@TODO refactor this, will post the webform_tokens module on D.O
@@ -186,7 +186,7 @@ function fillpdf_parse_uri(){
  */
 function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE, $skip_access_check = FALSE, $flatten = TRUE) {
   // Case 1: No $fid
-	if(is_null($fid)){
+	if (is_null($fid)) {
   	drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
   	drupal_goto();
   }
@@ -336,7 +336,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     $data = java_values(base64_decode($fillpdf->toByteArray()));
   }
 
-  // Use PDFTK to merge the two
+  // Use pdftk to merge the two
   else {
     $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info, 'url', $flatten);
   }
