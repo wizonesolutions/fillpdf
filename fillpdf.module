@@ -313,7 +313,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   // use fillpdf-service.com's xmlrpc service (must be registered)
   if($fillpdf_remote_service){
     $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key, $flatten);
+    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_enhanced', base64_encode($pdf_data), $fields, $api_key, $flatten);
     if($result->error == true)
       drupal_goto(); //after setting error message
     $data = base64_decode($result->data);
