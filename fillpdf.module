@@ -306,7 +306,6 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       // --- webform token replacements
       if (!empty($webforms)) {
         foreach ($webforms as $webform) {
-          //            $submission = node_load($submission->nid);
           $token = token_replace($obj->value, array('webform' => $webform['submission']));
           if ($token) {
             break;
@@ -358,6 +357,8 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   else {
     $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info);
   }
+
+  if ($webform_arr) $node = $webform['webform'];
 
   // Log this, could be useful
   watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(

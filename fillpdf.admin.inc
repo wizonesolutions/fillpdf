@@ -589,7 +589,7 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
   );
   $form['tokens_fieldset']['tokens'] = array(
     '#theme' => 'token_tree',
-    '#token_types' => array('node'),
+    '#token_types' => array('node', 'webform'),
   );
 
   $form['submit'] = array(
