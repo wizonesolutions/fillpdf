@@ -376,7 +376,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   drupal_set_header('Expires: 0');
   drupal_set_header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
   drupal_set_header('Content-type:application/pdf');
-  drupal_set_header('Content-Length: ' , strlen($data));
+  drupal_set_header('Content-Length: ' . strlen($data));
   drupal_set_header('Content-disposition:attachment; filename="'.$output_name.'"');
   drupal_set_header('Content-Transfer-Encoding: binary');
   echo $data;
