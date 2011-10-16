@@ -189,8 +189,10 @@ function fillpdf_parse_uri() {
     'fid' => '',
     'sample' => '',
     'download' => '',
+    'flatten' => '',
   );
   $force_download = FALSE;
+  $flatten = TRUE;
 
   //this function called multiple times, cut down on DB calls
   //    static $get;if($get)return $get;
@@ -208,7 +210,10 @@ function fillpdf_parse_uri() {
   if (isset($_GET['download']) && (int) $_GET['download'] == 1) {
     $force_download = TRUE;
   }
-  fillpdf_merge_pdf($fid, $nids, $webforms, $sample, $force_download);
+  if (isset($_GET['flatten']) && (int) $_GET['flatten'] == 0) {
+    $flatten = FALSE;
+  }
+  fillpdf_merge_pdf($fid, $nids, $webforms, $sample, $force_download, $flatten);
 }
 
 /**
@@ -217,7 +222,7 @@ function fillpdf_parse_uri() {
  * or not.
  * @seealso fillpdf_pdf_link for $_GET params
  */
-function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE, $skip_access_check = FALSE) {
+function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE, $skip_access_check = FALSE, $flatten = TRUE) {
   // Case 1: No $fid
   if (is_null($fid)) {
     drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
@@ -347,7 +352,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   // use fillpdf-service.com's xmlrpc service (must be registered)
   if ($fillpdf_remote_service) {
     $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf', base64_encode($pdf_data), $fields, $api_key);
+    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_enhanced', base64_encode($pdf_data), $fields, $api_key, $flatten);
     if ($result->error == true) {
       drupal_goto();
     } //after setting error message
@@ -373,7 +378,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 
   // Use PDFTK to merge the two
   else {
-    $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info);
+    $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info, 'url', $flatten);
   }
 
   if ($webform_arr) $node = $webform['webform'];
@@ -475,7 +480,7 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
  * @param string $mode A special flag to control the behavior of this function. URL mode merges using a PDF on the
  *   file system and Stream mode merges using the value of $fillpdf directly. Possible values: url, stream.
  */
-function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url') {
+function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatten = TRUE) {
   $data = NULL;
   // Try to prepare the data so that the $method part can process it without caring too much about merge tool
   switch ($mode) {
@@ -494,7 +499,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url') {
       // Generate the file
       $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_RENAME);
       // Now feed this to pdftk and save the result to a variable
-      $data = shell_exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - flatten drop_xfa');
+      $data = shell_exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - ' . ($flatten ? 'flatten ' : '') . 'drop_xfa');
       file_delete($xfdffile);
       if ($mode == 'stream') {
         file_delete($filename);
