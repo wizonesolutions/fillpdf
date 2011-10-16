@@ -235,14 +235,42 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $form['pdf_info']['sample_populate'] = array(
     '#type' => 'item',
     '#title' => 'Sample PDF',
-    '#description' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)),
+    '#description' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)) . '<br />' . 
+    t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
   );
   $form['pdf_info']['form_id'] = array(
     '#type' => 'item',
     '#title' => 'Form Info',
     '#description' => "Form ID: [$fid].  Populate this form with node IDs, such as /fillpdf?fid=$fid&nid=10<br/>",
   );
-
+  $form['destination_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom path for generated PDFs'),
+    '#description' => t("<p>By default, filled PDFs are not saved to disk; they are simply sent
+      directly to the browser for download. Enter a path here to change this behavior (tokens allowed).
+      <strong>Warning! Unless you include the &download=1 flag in the Fill PDF URL, PDFs will only
+      be saved to disk <em>and won't</em> be sent to the browser as well.</strong></p><p>The path
+      you specify must be in one of the following two formats:<br />
+        <ul>
+          <li><em>path/to/directory</em> (path will be treated as relative to
+          your <em>files</em> directory)</li>
+          <li><em>/absolute/path/to/directory</em> (path will be treated as relative to your entire
+          filesystem)</li>
+        </ul>
+      Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"),
+    '#maxlength' => 255,
+    '#default_value' => $pdf_form->destination_path,
+  );
+  $form['tokens_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Tokens',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['tokens_fieldset']['tokens'] = array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('node', 'webform'),
+  );
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -252,7 +280,6 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#type' => 'submit',
     '#value' => t('Delete'),
   );
-  //$form['#pdf_form'] = &$pdf_form;
   $form['#pdf_form'] = $pdf_form;
 
   // @@TODO: order by weight, and add dragable ala http://www.computerminds.co.uk/quick-guide-using-drupal-add-tabledrag-and-enjoying-jquery-drag-and-drop-loveliness
@@ -304,6 +331,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
     db_update('fillpdf_forms')
   ->fields(array(
       'title' => $form_state['values']['title'],
+      'destination_path' => $form_state['values']['destination_path'],
     ))
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();

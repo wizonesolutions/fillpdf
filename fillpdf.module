@@ -187,8 +187,10 @@ function fillpdf_parse_uri() {
     'webform' => '',
     'webforms' => '',
     'fid' => '',
-    'sample' => ''
+    'sample' => '',
+    'download' => '',
   );
+  $force_download = FALSE;
 
   //this function called multiple times, cut down on DB calls
   //    static $get;if($get)return $get;
@@ -202,24 +204,27 @@ function fillpdf_parse_uri() {
   if ( $_GET['webform'] || $_GET['webforms'] ) {
     $webforms = ( $_GET['webform'] ? array($_GET['webform']) : $_GET['webforms'] );
   }
-
-  fillpdf_merge_pdf($fid, $nids, $webforms, $sample);
+  
+  if (isset($_GET['download']) && (int) $_GET['download'] == 1) {
+    $force_download = TRUE;
+  }
+  fillpdf_merge_pdf($fid, $nids, $webforms, $sample, $force_download);
 }
 
-
 /**
- * Documentation stub
  * @return doesn't return anything, actually constructs a page from scratch (pdf content-type)
+ * and sends it to the browser or saves it, depending on if a custom path is configured
+ * or not.
  * @seealso fillpdf_pdf_link for $_GET params
  */
-function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null) {
+function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE) {
   // Case 1: No $fid
   if (is_null($fid)) {
     drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
     drupal_goto();
   }
 
-  $fillpdf_info = db_query("SELECT title, url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  $fillpdf_info = db_query("SELECT title, url, destination_path FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
   // Case 2: Only $fid -- just give them empty pdf
   if (!empty($nodes) && !empty($webforms) && !is_null($sample)) {
     $host = url('', array('absolute' => true));
@@ -265,12 +270,14 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     drupal_exit();
   }
 
-  $fields = array();
+  $fields = $token_objects = array();
   $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid = :fid", array(':fid' => $fid));
   foreach ($query as $obj) {
     // Fill a sample PDF & return
     if ($sample == 'true') {
       $fields[$obj->pdf_key] = $obj->pdf_key;
+      // If sampling, return to the form edit page
+      $_GET['destination'] = "admin/structure/fillpdf/$fid";
     }
     else {
       // multiple nids, #516840
@@ -283,6 +290,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
         foreach ($nodes as $node) {
           $token = token_replace($obj->value, array('node' => $node));
           if ($token) {
+            $token_objects['node'] = $node;
             break;
           }
         }
@@ -308,6 +316,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
         foreach ($webforms as $webform) {
           $token = token_replace($obj->value, array('webform' => $webform['submission']));
           if ($token) {
+            $token_objects['webform'] = $webform['submission'];
             break;
           }
         }
@@ -321,8 +330,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     }
   }
 
-  $download_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) . '.pdf';
-  //$download_name = preg_match('|\/[^\/].*$|',$fillpdf_info->url);
+  $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
   $fillpdf_remote_service = variable_get('fillpdf_remote_service', TRUE);
   $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
@@ -360,19 +368,46 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 
   if ($webform_arr) $node = $webform['webform'];
 
-  // Log this, could be useful
-  watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
-    '%user' => $user->name,
-    '%form' => $fillpdf_info->title,
-    '%node' => $node->title,
-  ));
+  if (!empty($node)) { 
+    // Log this, could be useful
+    watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
+      '%user' => $user->name,
+      '%form' => $fillpdf_info->title,
+      '%node' => $node->title,
+    ));
+  }
+
+  if (!empty($fillpdf_info->destination_path)) {
+    $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
+    $path_exists = file_prepare_directory($destination_path, FILE_CREATE_DIRECTORY);
+    if ($path_exists === FALSE) {
+      watchdog('fillpdf', "The path %destination_path does not exist and could not be
+        automatically created. Therefore, the previous submission was not saved. If
+        the URL contained download=1, then the PDF was still sent to the user's browser.
+        If the destination path looks wrong and you have used tokens, check that you have
+        used the correct token and that it is available to Fill PDF at the time of PDF
+        generation.",
+        array('%destination_path' => $destination_path));
+    }
+    else {
+      // Full steam ahead!
+      file_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
+    }
+    if ($force_download === FALSE) {
+      // Allow the "destination" query string parameter to be used
+      // e.g. fillpdf?nid=1&fid=1&destination=node/1
+      // If no destination is provided, drupal_goto() will send the
+      // user to the front page.
+      drupal_goto();
+    }
+  }
 
   drupal_add_http_header("Pragma", "public");
   drupal_add_http_header('Expires', 0);
   drupal_add_http_header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
   drupal_add_http_header('Content-type', 'application-download');
   drupal_add_http_header('Content-Length', strlen($data));
-  drupal_add_http_header('Content-disposition', 'attachment; filename="' . $download_name . '"');
+  drupal_add_http_header('Content-disposition', 'attachment; filename="' . $output_name . '"');
   drupal_add_http_header('Content-Transfer-Encoding', 'binary');
   echo $data;
   drupal_exit();
@@ -617,5 +652,33 @@ function fillpdf_get_fields($fid) {
     );
   }
   return $return;
+}
+
+function _fillpdf_process_destination_path($destination_path, $token_objects) {
+  // Two formats of $destination_path are possible:
+  //   1) /absolute/path/to/directory
+  //   2) path/below/files/directory
+  // So, first: Does it begin with a forward slash?
+  $orig_path = $destination_path;
+  $destination_path = trim($orig_path);
+  // Replace any applicable tokens
+  $types = array();
+  if (isset($token_objects['node'])) {
+    $types[] = 'node';
+  }
+  elseif (isset($token_objects['webform'])) {
+    $types[] = 'webform';
+  }
+  foreach ($types as $type) {
+    $destination_path = token_replace($destination_path, array($type => $token_objects[$type]));
+  }
+  if (substr($destination_path, 0, 1) == '/') {
+    // No further modifications needed
+  }
+  else {
+    // Slap on the files directory in front and return it
+    $destination_path = file_build_uri($destination_path);
+  }
+  return $destination_path;
 }
 

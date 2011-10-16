@@ -29,6 +29,11 @@ function fillpdf_schema() {
         'length' => 255,
         'not null' => TRUE,
       ),
+      'destination_path' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE
+      ),
     ),
     'primary key' => array('fid'),
   );
@@ -77,3 +82,9 @@ function fillpdf_uninstall() {
 
 }
 
+/**
+ * Add field to store destination path for saving PDFs as files.
+ */
+function fillpdf_update_7001() {
+  db_add_field('fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+}
