@@ -297,7 +297,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       if (!empty($nodes)) {
         foreach ($nodes as $node) {
           $token = token_replace($obj->value, array('node' => $node));
-          if ($token) {
+          if ($token && $token != $obj->value) {
             $token_objects['node'] = $node;
             break;
           }
