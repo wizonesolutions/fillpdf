@@ -46,6 +46,17 @@ function fillpdf_settings($form, &$form_state) {
     '#default_value' => variable_get('fillpdf_api_key', ''),
     '#description' => t(''),
   );
+  $form['remote']['fillpdf_remote_protocol'] = array(
+    '#type' => 'radios',
+    '#title' => t('Use SSL?'),
+    '#description' => t('It is recommended to select <em>Yes</em> for this option. Doing so will help prevent
+      sensitive information in your PDFs from being intercepted in transit.'),
+    '#default_value' => variable_get('fillpdf_remote_protocol', 'http'),
+    '#options' => array(
+      'http' => t('No'),
+      'https' => t('Yes'),
+      ),
+    );
   if (variable_get('fillpdf_api_key', '') == '') {
     $form['remote']['warning'] = array(
       '#type' => 'markup',
