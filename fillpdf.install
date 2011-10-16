@@ -34,6 +34,11 @@ function fillpdf_schema() {
         'length' => 255,
         'not null' => FALSE
       ),
+      'replacements' => array(
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE
+      ),
     ),
     'primary key' => array('fid'),
   );
@@ -61,6 +66,11 @@ function fillpdf_schema() {
         'size' => 'medium',
         'not null' => TRUE,
       ),
+      'replacements' => array(
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE
+      ),
     ),
     'primary key' => array('fid', 'pdf_key'),
   );
@@ -87,4 +97,12 @@ function fillpdf_uninstall() {
  */
 function fillpdf_update_7001() {
   db_add_field('fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+}
+
+/**
+ * Add fields to store token replacements. 
+ */
+function fillpdf_update_7002() {
+  db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+  db_add_field('fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
 }
