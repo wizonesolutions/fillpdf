@@ -217,7 +217,7 @@ function fillpdf_parse_uri() {
  * or not.
  * @seealso fillpdf_pdf_link for $_GET params
  */
-function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE) {
+function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = null, $force_download = FALSE, $skip_access_check = FALSE) {
   // Case 1: No $fid
   if (is_null($fid)) {
     drupal_set_message('Fillpdf Form ID required to print a PDF', 'warning');
@@ -265,9 +265,11 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     }
   }
 
-  if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
-    drupal_access_denied();
-    drupal_exit();
+  if ($skip_access_check !== TRUE) {
+    if (!fillpdf_merge_pdf_access($nodes, $webforms)) {
+      drupal_access_denied();
+      drupal_exit();
+    }
   }
 
   $fields = $token_objects = array();
