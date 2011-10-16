@@ -339,17 +339,17 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#markup' => '<br/><br/>' . theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'fillpdf_fields'))),
   );
 
-  //  $form['tokens_fieldset'] = array(
-  //    '#type' => 'fieldset',
-  //    '#title' => 'Tokens',
-  //    '#collapsible' => TRUE,
-  //    '#collapsed' => TRUE,
-  //    '#weight' => 1,
-  //  );
-  //  $form['tokens_fieldset']['tokens'] = array(
-  //    '#value' => theme('token_help'),
-  //  );
+  $form['export_fields'] = array(
+    '#prefix' => '<div>',
+    '#markup' => l(t('Export these field mappings'), "admin/structure/fillpdf/{$pdf_form->fid}/export"),
+    '#suffix' => '</div>',
+  );
 
+  $form['import_fields'] = array(
+    '#prefix' => '<div>',
+    '#markup' => l(t('Import a previous export into this PDF'), "admin/structure/fillpdf/{$pdf_form->fid}/import"),
+    '#suffix' => '</div>',
+  );
 
   return $form;
 }
