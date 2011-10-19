@@ -652,12 +652,16 @@ function _fillpdf_xmlrpc_request($url, $method) {
  * Retrieve the PDF's fields.
  */
 function fillpdf_get_fields($fid) {
-  $result = db_query('select * from {fillpdf_fields} where fid = %d', $fid);
-  $return = array();
+  $result = db_query('select * from {fillpdf_fields} where fid = :fid', array(':fid' => $fid));
+  $return = array(
+    'pdf_key' => '',
+    'label' => '',
+    'value' => ''
+  );
   foreach ($result as $result_array) {
-    $return[$result_array['pdf_key']] = array(
-      'label' => $result_array['label'],
-      'value' => $result_array['value'],
+    $return[$result_array->pdf_key] = array(
+      'label' => $result_array->label,
+      'value' => $result_array->value,
     );
   }
   return $return;
