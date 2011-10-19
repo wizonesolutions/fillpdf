@@ -8,12 +8,6 @@
 define("DEFAULT_SERVLET_URL", variable_get('fillpdf_remote_protocol', 'http') . "://fillpdf-service.com/xmlrpc.php");
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
-if (module_exists('webform')) {
-  // TODO: Someone wanna convert this to D7 syntax?
-  // Instructions here: http://drupal.org/documentation/modules/token/update/6/7
-  // module_load_include('inc', 'fillpdf', 'webform_tokens');
-}
-
 /**
  * Implements hook_help().
  */
