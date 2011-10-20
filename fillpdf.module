@@ -295,7 +295,8 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       // --- node token replacements
       if (!empty($nodes)) {
         foreach ($nodes as $node) {
-          $token = token_replace($obj->value, array('node' => $node));
+          // The third parameter says to clear the value if no token can be generated
+          $token = token_replace($obj->value, array('node' => $node), array('clear' => TRUE));
           if ($token && $token != $obj->value) {
             $token_objects['node'] = $node;
             break;
@@ -320,7 +321,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
       // --- webform token replacements
       if (!empty($webforms)) {
         foreach ($webforms as $webform) {
-          $token = token_replace($obj->value, array('webform' => $webform['submission']));
+          $token = token_replace($obj->value, array('webform' => $webform['submission']), array('clear' => TRUE));
           if ($token) {
             $token_objects['webform'] = $webform['submission'];
             break;
@@ -683,7 +684,7 @@ function _fillpdf_process_destination_path($destination_path, $token_objects) {
     $types[] = 'webform';
   }
   foreach ($types as $type) {
-    $destination_path = token_replace($destination_path, array($type => $token_objects[$type]));
+    $destination_path = token_replace($destination_path, array($type => $token_objects[$type]), array('clear' => TRUE));
   }
   if (substr($destination_path, 0, 1) == '/') {
     // No further modifications needed
