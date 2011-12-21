@@ -207,7 +207,7 @@ function fillpdf_parse_uri() {
   if (isset($_GET['flatten']) && (int) $_GET['flatten'] == 0) {
     $flatten = FALSE;
   }
-  fillpdf_merge_pdf($fid, $nids, $webforms, $sample, $force_download, $flatten);
+  fillpdf_merge_pdf($fid, $nids, $webforms, $sample, $force_download, FALSE, $flatten);
 }
 
 /**
