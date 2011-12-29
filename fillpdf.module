@@ -200,7 +200,7 @@ function fillpdf_parse_uri() {
   if ( $_GET['webform'] || $_GET['webforms'] ) {
     $webforms = ( $_GET['webform'] ? array($_GET['webform']) : $_GET['webforms'] );
   }
-  
+
   if (isset($_GET['download']) && (int) $_GET['download'] == 1) {
     $force_download = TRUE;
   }
@@ -246,11 +246,8 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
   if (module_exists('webform') && is_array($webform_arr)) {
 
     // Load the submissions inc depending on webform-2.x or webform-3.x
-    $webform_info_file = drupal_parse_info_file(drupal_get_path('module', 'webform') . '/webform.info');
-    if (strstr($webform_info_file['version'], "6.x-2") === FALSE) {
-      module_load_include('inc', 'webform', 'includes/webform.submissions');
-    }
-    else {
+    $included = module_load_include('inc', 'webform', 'includes/webform.submissions');
+    if ($included === FALSE) {
       module_load_include('inc', 'webform', 'webform_submissions');
     }
 
@@ -378,7 +375,7 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
 
   if ($webform_arr) $node = $webform['webform'];
 
-  if (!empty($node)) { 
+  if (!empty($node)) {
     // Log this, could be useful
     watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
       '%user' => $user->name,
