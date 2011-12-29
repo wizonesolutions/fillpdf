@@ -337,6 +337,14 @@ function fillpdf_merge_pdf($fid, $nids = null, $webform_arr = null, $sample = nu
     }
   }
 
+  // Provide hook_fillpdf_merge_fields_alter() to let other modules
+  // alter fields before pdf generation.
+  $context = array(
+    'nodes' => $nodes,
+    'webforms' => $webforms,
+  );
+  drupal_alter('fillpdf_merge_fields_alter', $fields, $context);
+
   $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) .'.pdf';
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
   $fillpdf_remote_service = variable_get('fillpdf_remote_service', TRUE);
