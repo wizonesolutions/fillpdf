@@ -31,7 +31,6 @@ function escape_string($str) {
   return $str;
 }
 
-
 function print_fields($info) {
   $fields = array();
   $str = '';
@@ -39,7 +38,7 @@ function print_fields($info) {
     $arr = explode('.', $field);
     $str .= '$fields';
     foreach ($arr as $node) {
-      $str .= "['{$node}']";
+      $str .= "['" . escape_string($node) . "']";
     }
     $str .= "='" . escape_string($val) . "';";
   }
