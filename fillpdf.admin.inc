@@ -38,7 +38,7 @@ function fillpdf_settings($form, &$form_state) {
   $form['remote']['fillpdf_remote_service'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use fillpdf-service.com'),
-    '#default_value' => variable_get('fillpdf_remote_service', true),
+    '#default_value' => variable_get('fillpdf_remote_service', TRUE),
   );
   $form['remote']['fillpdf_api_key'] = array(
     '#type' => 'textfield',
@@ -73,7 +73,7 @@ function fillpdf_settings($form, &$form_state) {
   $form['local']['fillpdf_local_service'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use locally-installed PHP/JavaBridge'),
-    '#default_value' => (variable_get('fillpdf_local_service', true)),
+    '#default_value' => (variable_get('fillpdf_local_service', TRUE)),
   );
   if (!(file_exists(drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc'))) {
     $form['local']['warning'] = array(
@@ -91,9 +91,9 @@ function fillpdf_settings($form, &$form_state) {
   $form['local_php']['fillpdf_local_php'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use locally-installed pdftk'),
-    '#default_value' => (variable_get('fillpdf_local_php', true)),
+    '#default_value' => (variable_get('fillpdf_local_php', TRUE)),
   );
-  //TODO: Modify to add check for pdftk installed
+  // TODO: Modify to add check for pdftk installed
 
   $js = <<<JS
 Drupal.behaviors.fillpdfSettingsCheckboxes = {
@@ -156,7 +156,7 @@ function fillpdf_forms_admin($form, &$form_state) {
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Upload'),
     '#weight' => 15,
   );
 
@@ -174,7 +174,7 @@ function fillpdf_forms_admin_validate($form, &$form_state) {
     form_set_error('url', t('A PDF must be provided.'));
   }
 
-  //from includes/file.inc, line 634, but can't use that function because file not an object yet	
+  // from includes/file.inc, line 634, but can't use that function because file not an object yet
   if (!preg_match('/\.pdf$/i', $file)) {
     form_set_error('url', t('Only PDF files are allowed'));
   }
@@ -193,7 +193,7 @@ function fillpdf_forms_admin_submit($form, &$form_state) {
   // $validators not working, so I just checked manually in fillpdf_forms_validate()
   $validators = array('file_validate_extensions' => array('pdf'));
   if ($file = file_save_upload('upload_pdf', $validators, $dir, FILE_EXISTS_REPLACE)) {
-    drupal_set_message('<strong>' . $file->filename . '</strong> was successfully uploaded');
+    drupal_set_message(t('<strong>@filename</strong> was successfully uploaded.', array('@filename' => $file->filename)));
     $file->status = FILE_STATUS_PERMANENT;
     $file = file_save($file);
     // Does this file already exist in {fillpdf_forms}? If so, don't re-insert it.
@@ -215,8 +215,8 @@ function fillpdf_forms_admin_submit($form, &$form_state) {
     fillpdf_parse_pdf($fid);
   }
   else {
-    //commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
-    drupal_set_message('Error saving file to ' . $dir, 'error');
+    // commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
+    drupal_set_message(t('Error saving file to @dir', array('@dir' => $dir)), 'error');
   }
 
   $form_state['redirect'] = "admin/structure/fillpdf/$fid";
@@ -246,7 +246,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $form['pdf_info'] = array(
     '#type' => 'fieldset',
     '#title' => 'PDF Form information',
-    '#collapsed' => true,
+    '#collapsed' => TRUE,
   );
   $form['pdf_info']['submitted_pdf'] = array(
     '#type' => 'item',
@@ -256,7 +256,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $form['pdf_info']['sample_populate'] = array(
     '#type' => 'item',
     '#title' => 'Sample PDF',
-    '#description' => l("See which fields are which in this PDF", fillpdf_pdf_link($fid, null, null, true)) . '<br />' . 
+    '#description' => l(t('See which fields are which in this PDF.'), fillpdf_pdf_link($fid, NULL, NULL, TRUE)) . '<br />' .
     t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
   );
   $form['pdf_info']['form_id'] = array(
@@ -308,7 +308,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Update'),
   );
   $form['delete'] = array(
     '#type' => 'submit',
@@ -325,9 +325,9 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $rows = array();
   foreach ($q as $field) {
     $row = array(
-      check_plain($field->label), //editable
+      check_plain($field->label), // editable
       check_plain($field->pdf_key),
-      $field->value, //editable, expandable
+      $field->value, // editable, expandable
       ($field->replacements ? 'Yes' : 'No'),
       l(t('Edit'), "admin/structure/fillpdf/$fid/edit/{$field->pdf_key}"),
       l(t('Delete'), "admin/structure/fillpdf/$fid/delete/{$field->pdf_key}"),
@@ -372,8 +372,8 @@ function fillpdf_form_edit_submit($form, &$form_state) {
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();
     $form_state['redirect'] = "admin/structure/fillpdf/{$form['#pdf_form']->fid}";
-    drupal_set_message('Successfully updated form');
-    //$form_state['nid'] = $node->nid;
+    drupal_set_message(t('Successfully updated form.'));
+    // $form_state['nid'] = $node->nid;
   }
 }
 
@@ -408,7 +408,7 @@ function fillpdf_form_delete_confirm_submit($form, &$form_state) {
   db_delete('fillpdf_forms')
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();
-  drupal_set_message('Your form has been deleted.');
+  drupal_set_message(t('Your form has been deleted.'));
   $form_state['redirect'] = 'admin/structure/fillpdf';
 }
 
@@ -602,10 +602,10 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
   if ($op == 'add') {
     drupal_set_title($pdf_form->title);
   }
-  else if ($op != 'edit') {
+  elseif ($op != 'edit') {
     return fillpdf_form_overview($pdf_form);
   }
-  else if ($pdf_key) {
+  elseif ($pdf_key) {
     $field = db_query("SELECT * FROM {fillpdf_fields} WHERE pdf_key = :pdf_key AND fid = :fid", array(':pdf_key' => $pdf_key, ':fid' => $fid))->fetch();
     if (!$field) {
       drupal_not_found();
@@ -673,7 +673,7 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Update'),
     '#weight' => 9,
   );
 
@@ -719,7 +719,7 @@ function fillpdf_field_edit_submit($form, &$form_state) {
     fillpdf_update_field($form['#pdf_form'], $edit_field, $form['#pdf_field']->pdf_key);
   }
   else {
-    //add a new field
+    // add a new field
     $edit_field = (object) $form_state['values'];
     db_insert('fillpdf_fields')
     ->fields(array(
@@ -767,8 +767,8 @@ function fillpdf_field_delete_confirm_submit($form, &$form_state) {
   ->condition('fid', $form['#pdf_field']->fid)
   ->condition('pdf_key', $form['#pdf_field']->pdf_key)
   ->execute();
-  drupal_set_message('Your field has been deleted.');
-  //return 'admin/structure/fillpdf/'. $form['#pdf_field']->fid;
+  drupal_set_message(t('Your field has been deleted.'));
+  // return 'admin/structure/fillpdf/'. $form['#pdf_field']->fid;
   $form_state['redirect'] = 'admin/structure/fillpdf/' . $form['#pdf_field']->fid;
 }
 

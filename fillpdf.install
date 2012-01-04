@@ -100,7 +100,7 @@ function fillpdf_update_7001() {
 }
 
 /**
- * Add fields to store token replacements. 
+ * Add fields to store token replacements.
  */
 function fillpdf_update_7002() {
   db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
