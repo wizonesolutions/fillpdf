@@ -403,7 +403,12 @@ function fillpdf_form_export($pdf_form) {
       'replacements' => $field->replacements,
     );
   }
-  $fillpdf_code = fillpdf_form_export_encode($export_array);
+  if (function_exists('json_decode')) {
+    $fillpdf_code = json_encode($export_array);
+  }
+  else {
+    $fillpdf_code = serialize($export_array);
+  }
   return drupal_get_form('fillpdf_export_form', $fillpdf_code);
 }
 
@@ -420,47 +425,6 @@ function fillpdf_export_form($form_state, $code) {
     ),
   );
   return $form;
-}
-
-/**
- * Build Fill PDF configuration code string recursively
- * Code borrowed from Node Export (http://drupal.org/project/node_export). Thanks, Node Export!
- */
-function fillpdf_form_export_encode($var, $iteration = 0) {
-  $tab = '';
-  for ($i = 0; $i < $iteration; $i++) {
-    $tab = $tab ."  ";
-  }
-  $iteration++;
-  if (is_object($var)) {
-    $var = (array)$var;
-    $var['#_export_fillpdf_form_encode_object'] = '1';
-  }
-  if (is_array($var)) {
-    $empty = empty($var);
-    $code = "array(". ($empty ? '' : "\n");
-    foreach ($var as $key => $value) {
-      $out = $tab ."  '". $key ."' => ". fillpdf_form_export_encode($value, $iteration) .",\n";
-      drupal_alter('fillpdf_form_export_encode', $out, $tab, $key, $value, $iteration);
-      $code .= $out;
-    }
-    $code .= ($empty ? '' : $tab) .")";
-    return $code;
-  }
-  else {
-    if (is_string($var)) {
-      return "'". addslashes($var) ."'";
-    }
-    elseif (is_numeric($var)) {
-      return $var;
-    }
-    elseif (is_bool($var)) {
-      return ($var ? 'TRUE' : 'FALSE');
-    }
-    else {
-      return 'NULL';
-    }
-  }
 }
 
 /**
@@ -501,9 +465,39 @@ function fillpdf_form_import_form(&$form_state, $pdf_form) {
   return $form;
 }
 
+/**
+ * mixed fillpdf_safe_unserialize(string $serialized)
+ * Safely unserialize, that is, only unserialize strings, numbers, and arrays, not objects
+ * This prevents the __wakeup method from being called since it could contain arbitrary code.
+ *
+ * @license Public Domain
+ * @author dcz (at) phpbb-seo (dot) com
+ */
+function fillpdf_safe_unserialize($serialized) {
+  // unserialize will return false for object declared with small cap o
+  // as well as if there is any ws between O and :
+  if (is_string($serialized) && strpos($serialized, "\0") === FALSE) {
+    if (strpos($serialized, 'O:') === FALSE) {
+      // the easy case, nothing to worry about; let unserialize do the job
+      return @unserialize($serialized);
+    }
+    elseif (!preg_match('/(^|;|{|})O:[0-9]+:"/', $serialized)) {
+      // in case we did have a string with O: in it,
+      // but it was not a true serialized object
+      return @unserialize($serialized);
+    }
+  }
+  return FALSE;
+}
+
 function fillpdf_form_import_form_validate($form, &$form_state) {
-  $mappings = fillpdf_form_export_decode($form_state['values']['code']);
-  if (!is_array($mappings) || empty($mappings)) {
+  if (function_exists('json_decode')) {
+    $mappings = json_decode($form_state['values']['code'], TRUE);
+  }
+  else {
+    $mappings = fillpdf_safe_unserialize($form_state['values']['code']);
+  }
+  if (empty($mappings) || !is_array($mappings)) {
     form_set_error('code', t('There was a problem processing your Fill PDF Field Mappings code. Please do a fresh export from the source and try pasting it again.'));
   }
   else {
@@ -530,16 +524,6 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
   }
   drupal_set_message(t('Successfully imported matching PDF field keys. If any field mappings failed to import, they are listed above.'));
   $form_state['redirect'] = "admin/content/fillpdf/{$pdf_form->fid}";
-}
-
-/**
- * Evaluate and return decoded string. Borrowed from Node Export module.
- */
-function fillpdf_form_export_decode($string) {
-  $array = eval('return '. $string .';');
-  // $return = fillpdf_form_export_decode_objects($array); // (wizonesolutions) Not needed since we simply process an array upon import.
-  $return = $array;
-  return $return;
 }
 
 /* ---------------- Fields Edit --------------------*/
