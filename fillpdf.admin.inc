@@ -436,7 +436,7 @@ function fillpdf_form_export($pdf_form) {
       'replacements' => $field->replacements,
     );
   }
-  $fillpdf_code = fillpdf_form_export_encode($export_array);
+  $fillpdf_code = json_encode($export_array);
   return drupal_get_form('fillpdf_export_form', $fillpdf_code);
 }
 
@@ -456,47 +456,6 @@ function fillpdf_export_form($form, $form_state, $code) {
     ),
   );
   return $form;
-}
-
-/**
- * Build Fill PDF configuration code string recursively
- * Code borrowed from Node Export (http://drupal.org/project/node_export). Thanks, Node Export!
- */
-function fillpdf_form_export_encode($var, $iteration = 0) {
-  $tab = '';
-  for ($i = 0; $i < $iteration; $i++) {
-    $tab = $tab . "  ";
-  }
-  $iteration++;
-  if (is_object($var)) {
-    $var = (array) $var;
-    $var['#_export_fillpdf_form_encode_object'] = '1';
-  }
-  if (is_array($var)) {
-    $empty = empty($var);
-    $code = "array(" . ($empty ? '' : "\n");
-    foreach ($var as $key => $value) {
-      $out = $tab . "  '" . $key . "' => " . fillpdf_form_export_encode($value, $iteration) . ",\n";
-      drupal_alter('fillpdf_form_export_encode', $out, $tab, $key, $value, $iteration);
-      $code .= $out;
-    }
-    $code .= ($empty ? '' : $tab) . ")";
-    return $code;
-  }
-  else {
-    if (is_string($var)) {
-      return "'" . addslashes($var) . "'";
-    }
-    elseif (is_numeric($var)) {
-      return $var;
-    }
-    elseif (is_bool($var)) {
-      return ($var ? 'TRUE' : 'FALSE');
-    }
-    else {
-      return 'NULL';
-    }
-  }
 }
 
 /**
@@ -541,8 +500,8 @@ function fillpdf_form_import_form($form, &$form_state, $pdf_form) {
  * Check the syntax of the code the user is trying to import
  */
 function fillpdf_form_import_form_validate($form, &$form_state) {
-  $mappings = fillpdf_form_export_decode($form_state['values']['code']);
-  if (!is_array($mappings) || empty($mappings)) {
+  $mappings = json_decode($form_state['values']['code'], TRUE);
+  if (empty($mappings) || !is_array($mappings)) {
     form_set_error('code', t('There was a problem processing your Fill PDF Field Mappings code. Please do a fresh export from the source and try pasting it again.'));
   }
   else {
@@ -572,16 +531,6 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
   }
   drupal_set_message(t('Successfully imported matching PDF field keys. If any field mappings failed to import, they are listed above.'));
   $form_state['redirect'] = "admin/structure/fillpdf/{$pdf_form->fid}";
-}
-
-/**
- * Evaluate and return decoded string. Borrowed from Node Export module.
- */
-function fillpdf_form_export_decode($string) {
-  $array = eval('return ' . $string . ';');
-  // $return = fillpdf_form_export_decode_objects($array); // (wizonesolutions) Not needed since we simply process an array upon import.
-  $return = $array;
-  return $return;
 }
 
 /* ---------------- Fields Edit --------------------*/
