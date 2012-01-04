@@ -18,13 +18,13 @@
  */
 function create_xfdf($file, $info, $enc = 'UTF-8') {
   $data = '<?xml version="1.0" encoding="' . $enc . '"?>' . "\n" .
-      '<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">' . "\n" .
+    '<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">' . "\n" .
     '<fields>' . "\n";
   $data .= print_fields($info);
   $data .= '</fields>' . "\n" .
-      '<ids original="' . md5($file) . '" modified="' . REQUEST_TIME . '" />' . "\n" .
-      '<f href="' . $file . '" />' . "\n" .
-      '</xfdf>' . "\n";
+    '<ids original="' . md5($file) . '" modified="' . REQUEST_TIME . '" />' . "\n" .
+    '<f href="' . $file . '" />' . "\n" .
+    '</xfdf>' . "\n";
   return $data;
 }
 
@@ -57,7 +57,6 @@ function print_fields($info) {
 }
 
 function print_fields_recurse($field, $val, &$str) {
-
   $str .= '<field name="' . $field . '">' . "\n";
   if (is_array($val)) {
     foreach ($val as $field => $val) {
