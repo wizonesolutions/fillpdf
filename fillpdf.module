@@ -178,14 +178,14 @@ function fillpdf_pdf_link($fid, $nids = NULL, $webform_arr = NULL, $sample = FAL
 function fillpdf_parse_uri() {
   // Avoid undefined index warnings, but don't clobber existing values
   $_GET += array(
-    'nid' => '',
-    'nids' => '',
-    'webform' => '',
-    'webforms' => '',
-    'fid' => '',
-    'sample' => '',
-    'download' => '',
-    'flatten' => '',
+    'nid' => NULL,
+    'nids' => NULL,
+    'webform' => NULL,
+    'webforms' => NULL,
+    'fid' => NULL,
+    'sample' => NULL,
+    'download' => NULL,
+    'flatten' => NULL,
   );
   $force_download = FALSE;
   $flatten = TRUE;
