@@ -256,9 +256,9 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     }
 
     foreach ($webform_arr as $webform) {
-      if (!$webform['sid']) { // user didn't specify submission-id, meaning they want most recent
+      if (empty($webform['sid'])) { // User did not specify submission ID, meaning they want most recent.
         $webform['sid'] = db_query('SELECT sid FROM {webform_submissions}
-          WHERE nid=%d AND uid=%d ORDER BY submitted desc', $webform['nid'], $user->uid)->fetchField();
+          WHERE nid = :nid AND uid = :uid ORDER BY submitted DESC', array(':nid' => (int) $webform['nid'], ':uid' => (int) $user->uid))->fetchField();
       }
       $webforms[] = array(
         'webform' => node_load($webform['nid']),
