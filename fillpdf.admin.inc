@@ -21,30 +21,44 @@ define('FILLPDF_REPLACEMENTS_DESCRIPTION', t("<p>Tokens, such as those from CCK,
  * Settings form for user to place API Key
  */
 function fillpdf_settings($form, &$form_state) {
-  $form['settings_help'] = array(
-    '#type' => 'markup',
-    '#value' => t("
-	    This module requires one of several external PDF manipulation tools -- you can:<ul>
-        <li>Sign up for <a href='http://fillpdf-service.com'>Fillpdf as-a-service</a>, and plug your API key in here; <strong>or</strong>
-        <li>Deploy locally -- You'll need a VPS or dedicated server so you can deploy PHP/JavaBridge on Tomcat (see README.txt), then select \"Use Local Service\"
-        <li>Use a local installation of the pdftk program - you'll need a VPS or a dedicated server so you can install pdftk (see README.txt), then select \"Use locally-installed pdftk\"
-      </ul>
-	   "),
+  // Assemble service options. Warning messages will be added next as needed.
+  $options = array(
+    'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
+    'local' => t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
+    'remote' => t('Use fillpdf-service.com: Sign up for <a href="http://fillpdf-service.com">Fill PDF as-a-service</a>.'),
+  );
+
+  // Check for JavaBridge.
+  if (!(file_exists(drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc'))) {
+    $options['local'] .= '<div class="messages warning">' . t('JavaBridge is not installed locally.') . '</div>';
+  }
+
+  // Check for pdftk.
+  $output = array();
+  $status = NULL;
+  exec('pdftk', $output, $status);
+  if (in_array($status, array(126, 127))) {
+    $options['pdftk'] .= '<div class="messages warning">' . t('pdftk is not properly installed.') . '</div>';
+  }
+  unset($output);
+  unset($status);
+
+  $form['fillpdf_service'] = array(
+    '#type' => 'radios',
+    '#title' => t('PDF-filling service'),
+    '#description' => t('This module requires the use of one of several external PDF manipulation tools. Choose the service you would like to use.'),
+    '#default_value' => variable_get('fillpdf_service'),
+    '#options' => $options,
   );
   $form['remote'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Use Remote Service'),
-  );
-  $form['remote']['fillpdf_remote_service'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use fillpdf-service.com'),
-    '#default_value' => variable_get('fillpdf_remote_service', TRUE),
+    '#title' => t('Configure fillpdf-service.com'),
   );
   $form['remote']['fillpdf_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('API Key'),
     '#default_value' => variable_get('fillpdf_api_key', ''),
-    '#description' => t(''),
+    '#description' => t('You need to sign up for an API key at <a href="http://fillpdf-service.com">fillpdf-service.com</a>'),
   );
   $form['remote']['fillpdf_remote_protocol'] = array(
     '#type' => 'radios',
@@ -56,66 +70,7 @@ function fillpdf_settings($form, &$form_state) {
       'http' => t('No'),
       'https' => t('Yes'),
       ),
-    );
-  if (variable_get('fillpdf_api_key', '') == '') {
-    $form['remote']['warning'] = array(
-      '#type' => 'markup',
-      '#prefix' => "<div class='warning'>",
-      '#suffix' => "</div>",
-      '#value' => t("You need to sign up for an API key at <a href='http://fillpdf-service.com'>fillpdf-service.com</a>"),
-    );
-  }
-
-  $form['local'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Use Local Service'),
   );
-  $form['local']['fillpdf_local_service'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use locally-installed PHP/JavaBridge'),
-    '#default_value' => (variable_get('fillpdf_local_service', TRUE)),
-  );
-  if (!(file_exists(drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc'))) {
-    $form['local']['warning'] = array(
-      '#type' => 'markup',
-      '#prefix' => "<div class='warning'>",
-      '#suffix' => "</div>",
-      '#value' => t("JavaBridge isn't installed locally.  See README.txt for setting it up."),
-    );
-  }
-
-  $form['local_php'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Use Local pdftk'),
-  );
-  $form['local_php']['fillpdf_local_php'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use locally-installed pdftk'),
-    '#default_value' => (variable_get('fillpdf_local_php', TRUE)),
-  );
-  // TODO: Modify to add check for pdftk installed
-
-  $js = <<<JS
-Drupal.behaviors.fillpdfSettingsCheckboxes = {
-  attach: function (context) {
-    (function ($) {
-      $("input#edit-fillpdf-remote-service").click(function(){
-        $("input#edit-fillpdf-local-service").attr('checked', false);
-        $("input#edit-fillpdf-local-php").attr('checked', false);
-      });
-      $("input#edit-fillpdf-local-service").change(function(){
-        $("input#edit-fillpdf-remote-service").attr('checked', false);
-        $("input#edit-fillpdf-local-php").attr('checked', false);
-      });
-      $("input#edit-fillpdf-local-php").change(function(){
-        $("input#edit-fillpdf-local-service").attr('checked', false);
-        $("input#edit-fillpdf-remote-service").attr('checked', false);
-      });
-    })(jQuery);
-  }
-};
-JS;
-  drupal_add_js($js, array('type' => 'inline', 'scope' => JS_DEFAULT));
 
   return system_settings_form($form);
 }

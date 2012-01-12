@@ -351,38 +351,39 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 
   $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) . '.pdf';
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
-  $fillpdf_remote_service = variable_get('fillpdf_remote_service', TRUE);
-  $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
-  // use fillpdf-service.com's xmlrpc service (must be registered)
-  if ($fillpdf_remote_service) {
-    $api_key = variable_get('fillpdf_api_key', '0');
-    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_enhanced', base64_encode($pdf_data), $fields, $api_key, $flatten);
-    if ($result->error == TRUE) {
-      drupal_goto();
-    } //after setting error message
-    $data = base64_decode($result->data);
-  }
+  switch (variable_get('fillpdf_service')) {
+    case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
+      $api_key = variable_get('fillpdf_api_key', '0');
+      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_enhanced', base64_encode($pdf_data), $fields, $api_key, $flatten);
+      if ($result->error == TRUE) {
+        drupal_goto();
+      } // after setting error message
+      $data = base64_decode($result->data);
+      break;
 
-  // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
-  elseif ($fillpdf_local_service) {
-    $require = drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc';
-    require_once DRUPAL_ROOT . '/' . $require;
-    try {
-      $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
-      foreach ($fields as $key => $field) {
-        $fillpdf->text($key, $field);
+    case 'local': // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
+      $require = drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc';
+      require_once DRUPAL_ROOT . '/' . $require;
+      try {
+        $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
+        foreach ($fields as $key => $field) {
+          $fillpdf->text($key, $field);
+        }
       }
-    }
-    catch (JavaException $e) {
-      drupal_set_message(check_plain(java_truncate((string) $e)), 'error');
-      drupal_goto(); //after setting error message
-    }
-    $data = java_values(base64_decode($fillpdf->toByteArray()));
-  }
+      catch (JavaException $e) {
+        drupal_set_message(check_plain(java_truncate((string) $e)), 'error');
+        drupal_goto(); // after setting error message
+      }
+      $data = java_values(base64_decode($fillpdf->toByteArray()));
+      break;
 
-  // Use PDFTK to merge the two
-  else {
-    $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info, 'url', $flatten);
+    case 'pdftk': // Use PDFTK to merge the two
+      $data = fillpdf_execute_merge('pdftk', $fields, $fillpdf_info, 'url', $flatten);
+      break;
+
+    default:
+      drupal_set_message(t('Fill PDF is not configured.'), 'error');
+      drupal_goto();
   }
 
   if ($webform_arr) $node = $webform['webform'];
@@ -529,35 +530,35 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatt
 function fillpdf_parse_pdf($fid) {
   $filename = db_query("SELECT url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetchField();
   $content = _fillpdf_get_file_contents($filename, "<front>");
-  $fillpdf_remote_service = variable_get('fillpdf_remote_service', TRUE);
-  $fillpdf_local_service = variable_get('fillpdf_local_service', TRUE);
+  switch (variable_get('fillpdf_service')) {
+    case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
+      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
+      if ($result->error == TRUE) {
+        drupal_goto('admin/structure/fillpdf');
+      } // after setting error message
+      $fields = $result->data;
+      break;
 
-  // use fillpdf-service.com's xmlrpc service (must be registered)
-  if ($fillpdf_remote_service) {
-    $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
-    if ($result->error == TRUE) {
-      drupal_goto("admin/structure/fillpdf");
-    } //after setting error message
-    $fields = $result->data;
-  }
+    case 'local': // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
+      $require = drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc';
+      require_once DRUPAL_ROOT . '/' . $require;
+      try {
+        $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
+        $fields = java_values($fillpdf->parse());
+      }
+      catch (JavaException $e) {
+        drupal_set_message(check_plain(java_truncate((string) $e)), 'error');
+        drupal_goto('admin/structure/fillpdf'); // after setting error message
+      }
+      break;
 
-  // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
-  elseif ($fillpdf_local_service) {
-    $require = drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc';
-    require_once DRUPAL_ROOT . '/' . $require;
-    try {
-      $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($content), 'bytes');
-      $fields = java_values($fillpdf->parse());
-    }
-    catch (JavaException $e) {
-      drupal_set_message(check_plain(java_truncate((string) $e)), 'error');
-      drupal_goto("admin/structure/fillpdf"); //after setting error message
-    }
-  }
+    case 'pdftk': // use pdftk program (must be installed locally)
+      $fields = fillpdf_execute_parse('pdftk', $filename);
+      break;
 
-  //use pdftk program (must be installed locally)
-  else {
-    $fields = fillpdf_execute_parse('pdftk', $filename);
+    default:
+      drupal_set_message(t('Fill PDF is not configured.'), 'error');
+      drupal_goto('admin/structure/fillpdf');
   }
 
   //create fields

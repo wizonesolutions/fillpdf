@@ -93,6 +93,10 @@ function fillpdf_uninstall() {
 }
 
 /**
+ * Implements hook_update_N().
+ */
+
+/**
  * Add field to store destination path for saving PDFs as files.
  */
 function fillpdf_update_7001() {
@@ -105,4 +109,28 @@ function fillpdf_update_7001() {
 function fillpdf_update_7002() {
   db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
   db_add_field('fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+}
+
+/**
+ * Convert legacy configuration variables to new fillpdf_service variable and delete.
+ */
+function fillpdf_update_7003() {
+  $default = FALSE;
+  global $conf;
+  foreach (array('fillpdf_remote_service', 'fillpdf_local_service', 'fillpdf_local_php') as $variable_name) {
+    if (isset($conf[$variable_name])) {
+      if ($conf[$variable_name]) {
+        $default = $variable_name;
+      }
+      variable_del($variable_name);
+    }
+  }
+  if ($default) {
+    $variable_name_map = array(
+      'fillpdf_local_php' => 'pdftk',
+      'fillpdf_local_service' => 'local',
+      'fillpdf_remote_service' => 'remote',
+    );
+    variable_set('fillpdf_service', $variable_name_map[$default]);
+  }
 }
