@@ -411,7 +411,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     }
     else {
       // Full steam ahead!
-      file_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
+      file_unmanaged_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
     }
     if ($force_download === FALSE) {
       // Allow the "destination" query string parameter to be used
@@ -495,7 +495,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatt
       $filename = $fillpdf->url;
       break;
     case 'stream':
-      $filename = file_save_data($fillpdf, file_directory_temp() . '/pdf_data.pdf', FILE_EXISTS_RENAME);
+      $filename = file_unmanaged_save_data($fillpdf, file_directory_temp() . '/pdf_data.pdf', FILE_EXISTS_RENAME);
       break;
   }
   switch ($method) {
@@ -509,7 +509,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatt
       $data = shell_exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - ' . ($flatten ? 'flatten ' : '') . 'drop_xfa');
       file_delete($xfdffile);
       if ($mode == 'stream') {
-        file_delete($filename);
+        file_unmanaged_delete($filename);
       }
       break;
   }
@@ -589,7 +589,7 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
       $filename = $fillpdf;
       break;
     case 'stream':
-      $filename = file_save_data($fillpdf, file_directory_temp() . '/pdf_data.pdf', FILE_EXISTS_RENAME);
+      $filename = file_unmanaged_save_data($fillpdf, file_directory_temp() . '/pdf_data.pdf', FILE_EXISTS_RENAME);
       break;
   }
   // Use exec() to call pdftk (because it will be easier to go line-by-line parsing the output) and pass $content via stdin. Retrieve the fields with dump_data_fields.
@@ -619,7 +619,7 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
     }
   }
   if ($mode == 'stream') {
-    file_delete($filename);
+    file_unmanaged_delete($filename);
   }
   return $fields;
 }
