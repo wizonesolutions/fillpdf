@@ -634,7 +634,7 @@ function fillpdf_field_edit_submit($form, &$form_state) {
       'fid' => $form_state['values']['#pdf_form']->fid,
       'label' => $form_state['values']['label'],
       'pdf_key' => $form_state['values']['pdf_key'],
-      'value' => $form_state['values']['value'],
+      'value' => empty($form_state['values']['value']) ? '' : $form_state['values']['value'],
       'replacements' => $form_state['values']['replacements'],
     ))
     ->execute();
@@ -688,7 +688,7 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   ->fields(array(
     'label' => $field->label,
     'pdf_key' => $field->pdf_key,
-    'value' => $field->value,
+    'value' => empty($field->value) ? '' : $field->value,
     'replacements' => $field->replacements,
   ))
   ->condition('fid', $pdf_form->fid)
