@@ -546,7 +546,11 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#type' => 'textarea',
     '#title' => t('Value'),
     '#default_value' => $field->value,
-    '#description' => t('The content that will populate this field when the PDF is printed/saved.  This content pulls data via tokens, see below for available tokens.'),
+    '#description' => t('<p>The content that will populate this field when the PDF is printed/saved.
+      This content pulls data via tokens, see below for available tokens.</p>
+      <p>To fill this field with an image, use the special pseudo-token <strong>[stamp:field_name]</strong>.
+      If your <em>Image</em> field is named <em>field_image</em>, then you would use
+      <strong>[stamp:field_image]</strong>.</p>'),
     '#weight' => 4,
   );
   $form['tokens_fieldset'] = array(

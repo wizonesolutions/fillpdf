@@ -304,15 +304,20 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
           }
         }
         $transform_string = TRUE;
+        // TODO: Fix *everything* here.
         // if they're populating with an imagefield
-        //@@TODO: check if an image (not another pdf or some-such)_
-        if (strstr($obj->value, 'filefield-fid]')) {
-          module_load_include('inc', 'filefield', 'field_file');
-          $filefield = field_file_load($token);
-          $file_bytes = _fillpdf_get_file_contents($filefield['filepath']);
-          $str = base64_encode($file_bytes);
+        //TODO: check if an image (not another pdf or some-such)_
+        if (strstr($obj->value, '[stamp:')) {
+          // HACK: Use a pseudo-token to stamp images.
+
+          // Find the two sides of the square bracket contents.
+          // 7 is the length of [stamp:. We don't want the brackets themselves.
+          $left_side = strpos($obj->value, '[stamp:') + 7;
+          $right_side = strpos($obj->value, ']');
+          $field_name = substr($obj->value, $left_side, $right_side - $left_side);
+          $image_path = $node->{$field_name}[$node->language][0]['uri'];
           $transform_string = FALSE;
-          $fields[$obj->pdf_key] = '{image}' . $str;
+          $fields[$obj->pdf_key] = '{image}' . drupal_realpath($image_path);
         }
         else {
         }
@@ -367,7 +372,14 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       try {
         $fillpdf = new java('com.ocdevel.FillpdfService', base64_encode($pdf_data), 'bytes');
         foreach ($fields as $key => $field) {
-          $fillpdf->text($key, $field);
+          if (substr($field, 0, 7) == '{image}') {
+            // Remove {image} marker.
+            $image_filepath = substr($field, 7);
+            $fillpdf->image($key, $image_filepath, "file");
+          }
+          else {
+            $fillpdf->text($key, $field);
+          }
         }
       }
       catch (JavaException $e) {
