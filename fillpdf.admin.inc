@@ -65,10 +65,10 @@ function fillpdf_settings($form, &$form_state) {
     '#title' => t('Use SSL?'),
     '#description' => t('It is recommended to select <em>Yes</em> for this option. Doing so will help prevent
       sensitive information in your PDFs from being intercepted in transit.'),
-    '#default_value' => variable_get('fillpdf_remote_protocol', 'http'),
+    '#default_value' => variable_get('fillpdf_remote_protocol', 'https'),
     '#options' => array(
-      'http' => t('No'),
       'https' => t('Yes'),
+      'http' => t('No'),
       ),
   );
 
