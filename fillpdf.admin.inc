@@ -1,4 +1,4 @@
-<?php
+e?php
 
 /**
  * @file
@@ -62,13 +62,13 @@ function fillpdf_settings($form, &$form_state) {
   );
   $form['remote']['fillpdf_remote_protocol'] = array(
     '#type' => 'radios',
-    '#title' => t('Use SSL?'),
-    '#description' => t('It is recommended to select <em>Yes</em> for this option. Doing so will help prevent
-      sensitive information in your PDFs from being intercepted in transit.'),
+    '#title' => t('Use HTTPS?'),
+    '#description' => t('It is recommended to select <em>Use HTTPS</em> for this option. Doing so will help prevent
+      sensitive information in your PDFs from being intercepted in transit between your server and the remote service.'),
     '#default_value' => variable_get('fillpdf_remote_protocol', 'https'),
     '#options' => array(
-      'https' => t('Yes'),
-      'http' => t('No'),
+      'https' => t('Use HTTPS'),
+      'http' => t('Do not use HTTPS'),
       ),
   );
 
