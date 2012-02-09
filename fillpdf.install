@@ -24,6 +24,11 @@ function fillpdf_schema() {
         'length' => 255,
         'not null' => TRUE,
       ),
+      'default_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
       'url' => array(
         'type' => 'varchar',
         'length' => 255,
@@ -134,3 +139,11 @@ function fillpdf_update_7003() {
     variable_set('fillpdf_service', $variable_name_map[$default]);
   }
 }
+
+/**
+ * Add field to store default NID.
+ */
+function fillpdf_update_7004() {
+  db_add_field('fillpdf_forms', 'default_nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE));
+}
+

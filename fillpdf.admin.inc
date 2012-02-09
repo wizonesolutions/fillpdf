@@ -1,4 +1,4 @@
-e?php
+<?php
 
 /**
  * @file
@@ -194,6 +194,14 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#required' => TRUE,
   );
 
+  $form['default_nid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Node ID'),
+    '#description' => t('When filling a PDF, use this node for the data source if no node is specified in the Fill PDF URL.'),
+    '#maxlength' => 10,
+    '#default_value' => $pdf_form->default_nid,
+  );
+
   // @@TODO:
   // They can upload a PDF any time, but fields will only be generated on add.  Don't want to purge existing fields,
   // however a user might have accidently uploaded an old template and discover much later (if it's substantially different, just
@@ -321,6 +329,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
     db_update('fillpdf_forms')
   ->fields(array(
       'title' => $form_state['values']['title'],
+      'default_nid' => (int) $form_state['values']['default_nid'] > 0 ? (int) $form_state['values']['default_nid'] : NULL,
       'destination_path' => $form_state['values']['destination_path'],
       'replacements' => $form_state['values']['replacements'],
     ))
@@ -695,3 +704,4 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   ->condition('pdf_key', $old_key)
   ->execute();
 }
+

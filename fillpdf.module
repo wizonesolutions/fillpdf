@@ -227,7 +227,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     drupal_goto();
   }
 
-  $fillpdf_info = db_query("SELECT title, url, destination_path, replacements FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  $fillpdf_info = db_query("SELECT title, default_nid, url, destination_path, replacements FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
   $fillpdf_info->replacements = _fillpdf_replacements_to_array($fillpdf_info->replacements);
 
   // Case 2: Only $fid -- just give them empty pdf
@@ -240,6 +240,29 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   global $user;
 
   $nodes = $webforms = array();
+
+  // If $webform_arr contains entries with an sid, but not an nid, set the nid to the default.
+  if (!empty($fillpdf_info->default_nid) && is_array($webform_arr)) {
+    foreach (array_keys($webform_arr) as $key) {
+      if (empty($webform_arr[$key]['nid'])) {
+        $webform_arr[$key]['nid'] = $fillpdf_info->default_nid;
+      }
+    }
+  }
+
+  // If no nid is given, use the default.
+  if (!empty($fillpdf_info->default_nid) && empty($nids) && empty($webform_arr)) {
+    $default_node = node_load($fillpdf_info->default_nid);
+    if ($default_node) {
+      if (empty($default_node->webform)) { // Default node is a non-webform node.
+        $nodes[] = $default_node;
+      }
+      else { // Default node is a webform.
+        $webform_arr = array(array('nid' => $fillpdf_info->default_nid, 'node' => $default_node));
+      }
+    }
+  }
+
   // Nodes
   if (is_array($nids)) {
     foreach ($nids as $nid) {
@@ -256,14 +279,16 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     }
 
     foreach ($webform_arr as $webform) {
-      if (empty($webform['sid'])) { // User did not specify submission ID, meaning they want most recent.
-        $webform['sid'] = db_query('SELECT sid FROM {webform_submissions}
-          WHERE nid = :nid AND uid = :uid ORDER BY submitted DESC', array(':nid' => (int) $webform['nid'], ':uid' => (int) $user->uid))->fetchField();
+      if (!empty($webform['nid'])) {
+        if (empty($webform['sid'])) { // User did not specify submission ID, meaning they want most recent.
+          $webform['sid'] = db_query('SELECT sid FROM {webform_submissions}
+            WHERE nid = :nid AND uid = :uid ORDER BY submitted DESC', array(':nid' => $webform['nid'], ':uid' => $user->uid))->fetchField();
+        }
+        $webforms[] = array(
+          'webform' => empty($webform['node']) ? node_load($webform['nid']) : $webform['node'],
+          'submission' => webform_get_submission($webform['nid'], $webform['sid']),
+        );
       }
-      $webforms[] = array(
-        'webform' => node_load($webform['nid']),
-        'submission' => webform_get_submission($webform['nid'], $webform['sid']),
-      );
     }
   }
 
