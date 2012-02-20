@@ -544,6 +544,9 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatt
       $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_RENAME);
       // Now feed this to pdftk and save the result to a variable
       $data = shell_exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - ' . ($flatten ? 'flatten ' : '') . 'drop_xfa');
+      if ($data === NULL) {
+        drupal_set_message(t('pdftk not properly installed. No PDF generated.'), 'error');
+      }
       file_delete($xfdffile);
       if ($mode == 'stream') {
         file_unmanaged_delete($filename);
@@ -631,7 +634,16 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
   }
   // Use exec() to call pdftk (because it will be easier to go line-by-line parsing the output) and pass $content via stdin. Retrieve the fields with dump_data_fields.
   $output = array();
-  exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' dump_data_fields', $output);
+  $status = NULL;
+  exec('pdftk ' . escapeshellarg(drupal_realpath($filename)) . ' dump_data_fields', $output, $status);
+  if (in_array($status, array(126, 127))) {
+    drupal_set_message(t('pdftk not properly installed.'), 'error');
+    return array();
+  }
+  elseif (count($output) === 0) {
+    drupal_set_message(t('PDF does not contain fillable fields.'), 'warning');
+    return array();
+  }
 
   // Build a simple map of dump_data_fields keys to our own array keys
   $data_fields_map = array(
