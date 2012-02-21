@@ -213,9 +213,30 @@ function fillpdf_parse_uri() {
 }
 
 /**
- * @return doesn't return anything, actually constructs a page from scratch (pdf content-type)
- * and sends it to the browser or saves it, depending on if a custom path is configured
- * or not.
+ * Constructs a page from scratch (pdf content-type) and sends it to the
+ * browser or saves it, depending on if a custom path is configured or not.
+ *
+ * @param $fid
+ *   The integer ID of the PDF.
+ * @param $nids
+ *   Array of integer IDs of the CCK nodes from which to draw data.
+ * @param $webform_arr
+ *   Array of integer IDs of the Webform nodes from which to draw data.
+ * @param $sample
+ *   If "true" (exact string), each field will be filled with its field name.
+ * @param $force_download
+ *   Boolean. If TRUE, always send a PDF to the browser, even if a
+ *   destination_path is set for the PDF.
+ * @param $skip_access_check
+ *   Boolean. If TRUE, do not do any access checks. Allow the user to download
+ *   any PDF with data from any node. Only use when access checks are being
+ *   done some other way.
+ * @param $flatten
+ *   Boolean. If TRUE, flatten the PDF so that fields cannot be edited.
+ *   Otherwise leave fields editable.
+ *
+ * @return
+ *   Nothing.
  *
  * @see fillpdf_pdf_link()
  * for $_GET params
