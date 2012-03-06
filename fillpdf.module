@@ -453,8 +453,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 
   if (!empty($node)) {
     // Log this, could be useful
-    watchdog('fillpdf', 'User %user has generated form %form for node %node.', array(
-      '%user' => $user->name,
+    watchdog('fillpdf', 'User generated form "%form" for node "%node".', array(
       '%form' => $fillpdf_info->title,
       '%node' => $node->title,
     ));
