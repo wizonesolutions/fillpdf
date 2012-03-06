@@ -234,6 +234,14 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#description' => l(t('See which fields are which in this PDF.'), fillpdf_pdf_link($fid, NULL, NULL, TRUE)) . '<br />' .
     t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
   );
+  if (!empty($pdf_form->default_nid)) {
+    $form['pdf_info']['populate_default'] = array(
+      '#type' => 'item',
+      '#title' => 'Fill PDF from default node',
+      '#description' => l(t('Download this PDF filled with data from the default node (@node).', array('@node' => $pdf_form->default_nid)), fillpdf_pdf_link($fid)) . '<br />' .
+      t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
+    );
+  }
   $form['pdf_info']['form_id'] = array(
     '#type' => 'item',
     '#title' => 'Form Info',
