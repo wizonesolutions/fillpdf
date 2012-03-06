@@ -399,7 +399,11 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   );
   drupal_alter('fillpdf_merge_fields_alter', $fields, $context);
 
-  $output_name = preg_replace('/[^a-zA-Z0-9_]/', '', $fillpdf_info->title) . '.pdf';
+  // Generate the filename of downloaded PDF from title of the PDF set in admin/structure/fillpdf/%fid
+  $output_name = str_replace(' ', '_', $fillpdf_info->title);
+  $output_name = preg_replace('/\.pdf$/i', '', $output_name);
+  $output_name = preg_replace('/[^a-zA-Z0-9_.-]+/', '', $output_name) . '.pdf';
+
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
   switch (variable_get('fillpdf_service')) {
     case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
