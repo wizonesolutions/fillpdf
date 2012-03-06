@@ -311,10 +311,12 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
           $webform['sid'] = db_query('SELECT sid FROM {webform_submissions}
             WHERE nid = :nid AND uid = :uid ORDER BY submitted DESC', array(':nid' => $webform['nid'], ':uid' => $user->uid))->fetchField();
         }
-        $webforms[] = array(
-          'webform' => empty($webform['node']) ? node_load($webform['nid']) : $webform['node'],
-          'submission' => webform_get_submission($webform['nid'], $webform['sid']),
-        );
+        if ($webform['sid'] !== FALSE) {
+          $webforms[] = array(
+            'webform' => empty($webform['node']) ? node_load($webform['nid']) : $webform['node'],
+            'submission' => webform_get_submission($webform['nid'], $webform['sid']),
+          );
+        }
       }
     }
   }
@@ -370,8 +372,6 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
           $image_path = $node->{$field_name}[$node->language][0]['uri'];
           $transform_string = FALSE;
           $fields[$obj->pdf_key] = '{image}' . drupal_realpath($image_path);
-        }
-        else {
         }
       }
       // /--- node token replacements ---
@@ -450,7 +450,9 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       drupal_goto();
   }
 
-  if ($webform_arr) $node = $webform['webform'];
+  if ($webform_arr && isset($webform['webform'])) {
+    $node = $webform['webform'];
+  }
 
   if (!empty($node)) {
     // Log this, could be useful
