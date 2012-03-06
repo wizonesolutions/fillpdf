@@ -21,6 +21,8 @@ define('FILLPDF_REPLACEMENTS_DESCRIPTION', t("<p>Tokens, such as those from CCK,
  * Settings form for user to place API Key
  */
 function fillpdf_settings($form, &$form_state) {
+  $fillpdf_service = variable_get('fillpdf_service');
+
   // Assemble service options. Warning messages will be added next as needed.
   $options = array(
     'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
@@ -47,12 +49,14 @@ function fillpdf_settings($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('PDF-filling service'),
     '#description' => t('This module requires the use of one of several external PDF manipulation tools. Choose the service you would like to use.'),
-    '#default_value' => variable_get('fillpdf_service'),
+    '#default_value' => $fillpdf_service,
     '#options' => $options,
   );
   $form['remote'] = array(
     '#type' => 'fieldset',
     '#title' => t('Configure fillpdf-service.com'),
+    '#collapsible' => TRUE,
+    '#collapsed' => $fillpdf_service !== 'remote',
   );
   $form['remote']['fillpdf_api_key'] = array(
     '#type' => 'textfield',
@@ -71,6 +75,8 @@ function fillpdf_settings($form, &$form_state) {
       'http' => t('Do not use HTTPS'),
       ),
   );
+
+  drupal_add_js(drupal_get_path('module', 'fillpdf') . '/fillpdf.js');
 
   return system_settings_form($form);
 }
