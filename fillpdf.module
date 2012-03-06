@@ -249,6 +249,12 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   }
 
   $fillpdf_info = db_query("SELECT title, default_nid, url, destination_path, replacements FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  // Case 1.5: $fid is not valid.
+  if ($fillpdf_info === FALSE) {
+    drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
+    drupal_not_found();
+    drupal_exit();
+  }
   $fillpdf_info->replacements = _fillpdf_replacements_to_array($fillpdf_info->replacements);
 
   // Case 2: Only $fid -- just give them empty pdf

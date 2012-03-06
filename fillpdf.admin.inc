@@ -192,6 +192,12 @@ function fillpdf_forms_admin_submit($form, &$form_state) {
 function fillpdf_form_edit($form, &$form_state, $fid) {
   $pdf_form = db_query("SELECT * FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
 
+  if ($pdf_form === FALSE) {
+    drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
+    drupal_not_found();
+    drupal_exit();
+  }
+
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
