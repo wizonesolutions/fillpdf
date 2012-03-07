@@ -321,7 +321,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     }
   }
 
-  $fields = $token_objects = array();
+  $fields = $token_objects = $image_data = array();
   $query = db_query("SELECT * FROM {fillpdf_fields} WHERE fid = :fid", array(':fid' => $fid));
   foreach ($query as $obj) {
     $obj->replacements = _fillpdf_replacements_to_array($obj->replacements);
@@ -365,6 +365,12 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
           $image_path = $node->{$field_name}[$node->language][0]['uri'];
           $transform_string = FALSE;
           $fields[$obj->pdf_key] = '{image}' . drupal_realpath($image_path);
+          $image_path_info = pathinfo(drupal_realpath($image_path));
+          // Store the image data to transmit to the remote service if necessary
+          $image_data[$obj->pdf_key] = array(
+            'data' => base64_encode(file_get_contents(drupal_realpath($image_path))),
+            'filenamehash' => md5($image_path_info['filename']) . '.' . $image_path_info['extension'],
+          );
         }
       }
       // /--- node token replacements ---
@@ -408,7 +414,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   switch (variable_get('fillpdf_service')) {
     case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
       $api_key = variable_get('fillpdf_api_key', '0');
-      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_enhanced', base64_encode($pdf_data), $fields, $api_key, $flatten);
+      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'merge_pdf_v3', base64_encode($pdf_data), $fields, $api_key, $flatten, $image_data);
       if ($result->error == TRUE) {
         drupal_goto();
       } // after setting error message
