@@ -435,7 +435,18 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
         drupal_set_message(check_plain(java_truncate((string) $e)), 'error');
         drupal_goto(); // after setting error message
       }
-      $data = java_values(base64_decode($fillpdf->toByteArray()));
+      try {
+        if ($flatten) {
+          $data = java_values(base64_decode($fillpdf->toByteArray()));
+        }
+        else {
+          $data = java_values(base64_decode($fillpdf->toByteArrayUnflattened()));
+        }
+      }
+      catch (JavaException $e) {
+        drupal_set_message(java_truncate((string)$e), 'error');
+        drupal_goto(); //after setting error message
+      }
       break;
 
     case 'pdftk': // Use PDFTK to merge the two
