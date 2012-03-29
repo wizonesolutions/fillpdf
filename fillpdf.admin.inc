@@ -398,7 +398,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
   ->execute();
   if ($file = $_FILES['files']['name']['upload_pdf']) {
     // Export the current field mappings to a variable
-    $mappings = fillpdf_generate_mappings($form['#pdf_form']);
+    $mappings = fillpdf_generate_mappings($form['#pdf_form'], TRUE);
 
     // Save the uploaded file; this also re-parses it
     _fillpdf_save_upload('upload_pdf', $form['#pdf_form']->fid);
@@ -481,7 +481,7 @@ function fillpdf_generate_mappings($pdf_form, $skip_encoding = FALSE) {
       'replacements' => $field->replacements,
     );
   }
-  return ($skip_encoding === FALSE ? $export_array : json_encode($export_array));
+  return ($skip_encoding === FALSE ? json_encode($export_array) : $export_array);
 }
 
 /**
@@ -561,7 +561,7 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
   $pdf_form->fid = $form_state['values']['fid'];
   $mappings = $form_state['values']['mappings'];
 
-  fillpdf_import_mappings($mappings);
+  fillpdf_import_mappings($pdf_form, $mappings);
   $form_state['redirect'] = "admin/structure/fillpdf/{$pdf_form->fid}";
 }
 
