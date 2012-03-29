@@ -88,15 +88,20 @@ function fillpdf_settings($form, &$form_state) {
  * Manage your existing forms, or upload a new one
  */
 function fillpdf_forms_admin($form, &$form_state) {
-  $result = db_query("SELECT title, fid FROM {fillpdf_forms} ORDER BY title");
-  $header = array(t('Title'), array(
+  $result = db_query("SELECT title, url, fid FROM {fillpdf_forms} ORDER BY title");
+  $header = array(
+    t('Title'),
+    t('Location'),
+    array(
       'data' => t('Operations'),
       'colspan' => '4',
-    ));
+    ),
+  );
   $rows = array();
   foreach ($result as $pdf_form) {
     $row = array(
       check_plain($pdf_form->title),
+      check_plain($pdf_form->url),
       l(t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
       l(t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
       l(t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
@@ -128,42 +133,56 @@ function fillpdf_forms_admin($form, &$form_state) {
  * Makes sure the Upload was provided (want to validate .pdf here too)
  */
 function fillpdf_forms_admin_validate($form, &$form_state) {
-
   // uploading anything?
   $file = $_FILES['files']['name']['upload_pdf'];
   if (!$file) {
     form_set_error('url', t('A PDF must be provided.'));
   }
 
+  $validate_file = _fillpdf_validate_upload($file);
+  if (isset($validate_file['#error'])) {
+    form_set_error('url', $validate_file['#message']);
+  }
+}
+
+function _fillpdf_validate_upload($file) {
   // from includes/file.inc, line 634, but can't use that function because file not an object yet
   if (!preg_match('/\.pdf$/i', $file)) {
-    form_set_error('url', t('Only PDF files are allowed'));
+    return array(
+      '#error' => TRUE,
+      '#message' => t('Only PDF files are allowed'),
+    );
   }
 
   // directory exist or writeable?
   $dir = file_build_uri('fillpdf');
   file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
 
+  return TRUE;
 }
 
 /**
  * Creates a new Form from the uploaded PDF, including parsed fields
  */
 function fillpdf_forms_admin_submit($form, &$form_state) {
+  $fid = _fillpdf_save_upload('upload_pdf');
+  if (is_numeric($fid)) {
+    $form_state['redirect'] = "admin/structure/fillpdf/$fid";
+  }
+}
+
+function _fillpdf_save_upload($form_key, $fid = NULL) {
   $dir = file_build_uri('fillpdf');
-  // $validators not working, so I just checked manually in fillpdf_forms_validate()
+  // $validators not working, so I just checked manually
+  // in fillpdf_forms_validate()
   $validators = array('file_validate_extensions' => array('pdf'));
-  if ($file = file_save_upload('upload_pdf', $validators, $dir, FILE_EXISTS_REPLACE)) {
+  if ($file = file_save_upload($form_key, $validators, $dir, FILE_EXISTS_RENAME)) {
     drupal_set_message(t('<strong>@filename</strong> was successfully uploaded.', array('@filename' => $file->filename)));
     $file->status = FILE_STATUS_PERMANENT;
     $file = file_save($file);
-    // Does this file already exist in {fillpdf_forms}? If so, don't re-insert it.
-    $exists = (bool) db_select('fillpdf_forms', 'ff')
-      ->fields('ff', array('fid'))
-      ->condition('fid', $file->fid)
-      ->execute()
-      ->fetchField();
-    if ($exists === FALSE) {
+    // Does this file already exist in {fillpdf_forms}?
+    // If so, don't re-insert it.
+    if (isset($fid) === FALSE) {
       db_insert('fillpdf_forms')
         ->fields(array(
           'fid' => $file->fid,
@@ -171,18 +190,24 @@ function fillpdf_forms_admin_submit($form, &$form_state) {
           'url' => $file->uri,
         ))
         ->execute();
+      $fid = $file->fid;
     }
-    $fid = $file->fid;
+    else {
+      db_update('fillpdf_forms')
+        ->fields(array(
+          'url' => $file->uri,
+        ))
+        ->condition('fid', $fid)
+        ->execute();
+    }
     fillpdf_parse_pdf($fid);
+    return $fid;
   }
   else {
     // commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
     drupal_set_message(t('Error saving file to @dir', array('@dir' => $dir)), 'error');
   }
-
-  $form_state['redirect'] = "admin/structure/fillpdf/$fid";
 }
-
 
 /* ---------------- Form Edit --------------------*/
 
@@ -197,6 +222,8 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     drupal_not_found();
     drupal_exit();
   }
+
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
 
   $form['title'] = array(
     '#type' => 'textfield',
@@ -227,6 +254,11 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#type' => 'item',
     '#title' => t('Uploaded PDF'),
     '#description' => $pdf_form->url,
+  );
+  $form['pdf_info']['upload_pdf'] = array(
+    '#type' => 'file',
+    '#title' => 'Update PDF template',
+    '#description' => 'Update the PDF template used by this form',
   );
   $form['pdf_info']['sample_populate'] = array(
     '#type' => 'item',
@@ -337,6 +369,15 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   return $form;
 }
 
+function fillpdf_form_edit_validate($form, &$form_state) {
+  if ($file = $_FILES['files']['name']['upload_pdf']) {
+    $validate_file = _fillpdf_validate_upload($file);
+    if (isset($validate_file['#error'])) {
+      form_set_error('url', $validate_file['#message']);
+    }
+  }
+}
+
 /**
  * Submit Edit or Delete for existing PDF form
  */
@@ -355,9 +396,21 @@ function fillpdf_form_edit_submit($form, &$form_state) {
     ))
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();
-    $form_state['redirect'] = "admin/structure/fillpdf/{$form['#pdf_form']->fid}";
-    drupal_set_message(t('Successfully updated form.'));
-    // $form_state['nid'] = $node->nid;
+  if ($file = $_FILES['files']['name']['upload_pdf']) {
+    // Export the current field mappings to a variable
+    $mappings = fillpdf_generate_mappings($form['#pdf_form']);
+
+    // Save the uploaded file; this also re-parses it
+    _fillpdf_save_upload('upload_pdf', $form['#pdf_form']->fid);
+
+    // Import the ones we just saved. This ensures there are
+    // orphaned mappings.
+    drupal_set_message(t('Your previous field mappings have been transferred to the new PDF template you uploaded. Review the messages below to make sure the results are what you expected.'));
+    fillpdf_import_mappings($form['#pdf_form'], $mappings);
+  }
+
+  $form_state['redirect'] = "admin/structure/fillpdf/{$form['#pdf_form']->fid}";
+  drupal_set_message(t('Successfully updated form.'));
   }
 }
 
@@ -404,8 +457,16 @@ function fillpdf_form_delete_confirm_submit($form, &$form_state) {
  * @param mixed $pdf_form The FillPDF form ID.
  */
 function fillpdf_form_export($pdf_form) {
+  $fillpdf_code = fillpdf_generate_mappings($pdf_form);
+  return drupal_get_form('fillpdf_export_form', $fillpdf_code);
+}
+
+function fillpdf_generate_mappings($pdf_form, $skip_encoding = FALSE) {
   if (is_numeric($pdf_form)) {
     $fid = db_query("SELECT * FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $pdf_form))->fetch();
+  }
+  else {
+    $fid = $pdf_form;
   }
   if (!$fid) {
     drupal_not_found();
@@ -420,8 +481,7 @@ function fillpdf_form_export($pdf_form) {
       'replacements' => $field->replacements,
     );
   }
-  $fillpdf_code = json_encode($export_array);
-  return drupal_get_form('fillpdf_export_form', $fillpdf_code);
+  return ($skip_encoding === FALSE ? $export_array : json_encode($export_array));
 }
 
 /**
@@ -500,6 +560,17 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
   $pdf_form = new stdClass();
   $pdf_form->fid = $form_state['values']['fid'];
   $mappings = $form_state['values']['mappings'];
+
+  fillpdf_import_mappings($mappings);
+  $form_state['redirect'] = "admin/structure/fillpdf/{$pdf_form->fid}";
+}
+
+/**
+ * Import an array of decoded Fill PDF mappings.
+ * For the format,
+ * @see fillpdf_generate_mappings()
+ */
+function fillpdf_import_mappings($pdf_form, $mappings) {
   $fields = fillpdf_get_fields($pdf_form->fid);
   $field_keys = array_keys($fields);
   // Process the mappings
@@ -514,7 +585,6 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
     }
   }
   drupal_set_message(t('Successfully imported matching PDF field keys. If any field mappings failed to import, they are listed above.'));
-  $form_state['redirect'] = "admin/structure/fillpdf/{$pdf_form->fid}";
 }
 
 /* ---------------- Fields Edit --------------------*/

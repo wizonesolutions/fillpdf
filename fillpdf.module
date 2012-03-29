@@ -643,6 +643,11 @@ function fillpdf_parse_pdf($fid) {
       drupal_goto('admin/structure/fillpdf');
   }
 
+  // Delete any existing fields (in case the PDF has been parsed before)
+  db_delete('fillpdf_fields')
+    ->condition('fid', $fid)
+    ->execute();
+
   //create fields
   foreach ((array) $fields as $key => $arr) {
     if ($arr['type']) { // Don't store "container" fields
