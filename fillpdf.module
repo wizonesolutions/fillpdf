@@ -103,7 +103,6 @@ function fillpdf_menu() {
     'page callback' => 'fillpdf_field',
     'page arguments' => array(4, 3, 5),
     'access arguments' => $access,
-    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/fillpdf/%/delete/%'] = array(
     'page callback' => 'drupal_get_form',
