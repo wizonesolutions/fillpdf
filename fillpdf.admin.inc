@@ -329,6 +329,11 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#type' => 'submit',
     '#value' => t('Delete'),
   );
+  $form['cancel'] = array(
+    '#type' => 'link',
+    '#title' => t('Cancel'),
+    '#href' => 'admin/structure/fillpdf',
+  );
   $form['#pdf_form'] = $pdf_form;
 
   // @@TODO: order by weight, and add dragable ala http://www.computerminds.co.uk/quick-guide-using-drupal-add-tabledrag-and-enjoying-jquery-drag-and-drop-loveliness
@@ -697,6 +702,13 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
       '#weight' => 10,
     );
   }
+
+  $form['cancel'] = array(
+    '#type' => 'link',
+    '#title' => t('Cancel'),
+    '#href' => 'admin/structure/fillpdf/' . $pdf_form->fid,
+    '#weight' => 11,
+  );
 
   $form['#pdf_field'] = $field;
   $form['#pdf_form'] = $pdf_form;
