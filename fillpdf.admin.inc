@@ -692,14 +692,6 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#weight' => 9,
   );
 
-  if ($field) {
-    $form['delete'] = array(
-      '#type' => 'submit',
-      '#value' => t('Delete'),
-      '#weight' => 10,
-    );
-  }
-
   $form['cancel'] = array(
     '#type' => 'link',
     '#title' => t('Cancel'),
