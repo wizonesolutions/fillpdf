@@ -350,7 +350,6 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
       $field->value, // editable, expandable
       ($field->replacements ? 'Yes' : 'No'),
       l(t('Edit'), "admin/structure/fillpdf/$fid/edit/{$field->pdf_key}"),
-      l(t('Delete'), "admin/structure/fillpdf/$fid/delete/{$field->pdf_key}"),
     );
     $rows[] = $row;
   }
@@ -736,10 +735,6 @@ function fillpdf_field_edit_validate($form, &$form_state) {
  */
 function fillpdf_field_edit_submit($form, &$form_state) {
   if ($form['#pdf_field']) {
-    if ($form_state['values']['op'] == t('Delete')) {
-      $form_state['redirect'] = 'admin/structure/fillpdf/' . $form['#pdf_form']->fid . '/delete/' . $form['#pdf_field']->pdf_key;
-      return;
-    }
     $edit_field = (object) $form_state['values'];
     fillpdf_update_field($form['#pdf_form'], $edit_field, $form['#pdf_field']->pdf_key);
   }
@@ -757,44 +752,6 @@ function fillpdf_field_edit_submit($form, &$form_state) {
     ->execute();
   }
   $form_state['redirect'] = 'admin/structure/fillpdf/' . $form['#pdf_form']->fid;
-}
-
-
-/**
- * Delete form.
- */
-function fillpdf_field_delete_confirm($form, &$form_state, $fid, $pdf_key) {
-  $pdf_form = db_query("SELECT * FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
-
-  if ($pdf_key) {
-    $field = db_query("SELECT * FROM {fillpdf_fields} WHERE pdf_key = :pdf_key AND fid = :fid", array(':pdf_key' => $pdf_key, ':fid' => $fid))->fetch();
-  }
-  if (!$field) {
-    drupal_not_found();
-    drupal_exit();
-  }
-
-  $form['#pdf_field'] = $field;
-  $form['#pdf_form'] = $pdf_form;
-
-  return confirm_form($form,
-    t('Are you sure you want to delete the field %pdf_key?', array('%pdf_key' => $field->pdf_key)),
-    'admin/structure/fillpdf/' . $pdf_form->fid,
-    t('This action cannot be undone.'), t('Delete'), t('Cancel')
-  );
-}
-
-/**
- * Process the deletion.
- */
-function fillpdf_field_delete_confirm_submit($form, &$form_state) {
-  db_delete('fillpdf_fields')
-  ->condition('fid', $form['#pdf_field']->fid)
-  ->condition('pdf_key', $form['#pdf_field']->pdf_key)
-  ->execute();
-  drupal_set_message(t('Your field has been deleted.'));
-  // return 'admin/structure/fillpdf/'. $form['#pdf_field']->fid;
-  $form_state['redirect'] = 'admin/structure/fillpdf/' . $form['#pdf_field']->fid;
 }
 
 /**
