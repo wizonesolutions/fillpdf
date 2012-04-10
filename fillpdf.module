@@ -648,7 +648,7 @@ function fillpdf_parse_pdf($fid) {
       $field = new stdClass();
       $field->fid = $fid;
       $field->pdf_key = $arr['name'];
-      $field->label = $arr['name'];
+      $field->label = NULL;
       $field->value = '';
       drupal_write_record('fillpdf_fields', $field);
     }
