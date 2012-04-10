@@ -634,21 +634,19 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
  * Edit a single field.
  */
 function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
+  $form['pdf_key'] = array(
+    '#type' => 'item',
+    '#title' => t('PDF Key'),
+    '#markup' => $field->pdf_key,
+    '#description' => t('The field key contained in the PDF form.'),
+    '#weight' => 0,
+  );
   $form['label'] = array(
     '#type' => 'textfield',
     '#title' => t('Label'),
     '#maxlength' => 255,
     '#default_value' => $field->label,
     '#description' => t('An optional label to help you identify the field.'),
-    '#weight' => 0,
-  );
-  $form['pdf_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('PDF Key'),
-    '#maxlength' => 255,
-    '#default_value' => $field->pdf_key,
-    '#required' => TRUE,
-    '#description' => t('The field key from the original PDF form.  You likely need Acrobat Pro to discover this.'),
     '#weight' => 1,
   );
   $form['value'] = array(
@@ -716,21 +714,6 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
 }
 
 /**
- * Validate the edited field.
- */
-function fillpdf_field_edit_validate($form, &$form_state) {
-  $pdf_form = db_query("SELECT * FROM {fillpdf_fields} WHERE fid = :fid AND pdf_key = :pdf_key", array(':fid' => $form['#pdf_form']->fid, ':pdf_key' => $form_state['values']['pdf_key']))->fetch();
-  if ($pdf_form) {
-    if ($form['#pdf_field'] && $form['#pdf_field']->pdf_key == $form_state['values']['pdf_key'] ) {
-      return;
-    }
-    else {
-      form_set_error('pdf_key', t('A field with this pdf_key already exists. Choose another pdf_key.'));
-    }
-  }
-}
-
-/**
  * Save changes to the database.
  */
 function fillpdf_field_edit_submit($form, &$form_state) {
@@ -761,7 +744,6 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   db_update('fillpdf_fields')
   ->fields(array(
     'label' => $field->label,
-    'pdf_key' => $field->pdf_key,
     'value' => empty($field->value) ? '' : $field->value,
     'replacements' => $field->replacements,
   ))
