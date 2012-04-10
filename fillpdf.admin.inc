@@ -614,7 +614,13 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
       drupal_not_found();
       drupal_exit();
     }
-    drupal_set_title($field->label);
+    if (!empty($field->label)) {
+      $title = $field->label;
+    }
+    else {
+      $title = $field->pdf_key;
+    }
+    drupal_set_title(t('Edit field mapping for %field_title', array('%field_title' => $title)), PASS_THROUGH);
   }
 
   return drupal_get_form('fillpdf_field_edit', $pdf_form, $field);
