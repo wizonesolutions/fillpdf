@@ -236,6 +236,14 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
       field supports tokens.</strong>'),
   );
 
+  $form['title_tokens_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Tokens',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['title_tokens_fieldset']['tokens'] = _fillpdf_admin_token_form();
   $form['default_nid'] = array(
     '#type' => 'textfield',
     '#title' => t('Default Node ID'),
@@ -312,10 +320,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['extra']['tokens_fieldset']['tokens'] = array(
-    '#theme' => 'token_tree',
-    '#token_types' => array('node', 'webform'),
-  );
+  $form['extra']['tokens_fieldset']['tokens'] = _fillpdf_admin_token_form();
   $form['extra']['replacements'] = array(
     '#type' => 'textarea',
     '#title' => t('Transform filled PDF field values'),
