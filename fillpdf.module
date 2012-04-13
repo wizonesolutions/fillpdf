@@ -336,17 +336,15 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       // --- node token replacements
       if (!empty($nodes)) {
         foreach ($nodes as $node) {
+          $token_objects['node'] = $node;
           // The third parameter says to clear the value if no token can be generated
           $token = token_replace($obj->value, array('node' => $node), array('clear' => TRUE));
           if ($token && $token != $obj->value) {
-            $token_objects['node'] = $node;
             break;
           }
         }
         $transform_string = TRUE;
-        // TODO: Fix *everything* here.
-        // if they're populating with an imagefield
-        //TODO: check if an image (not another pdf or some-such)_
+        // If they're populating with an Image field
         if (strstr($obj->value, '[stamp:')) {
           // HACK: Use a pseudo-token to stamp images.
 
@@ -371,9 +369,9 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       // --- webform token replacements
       if (!empty($webforms)) {
         foreach ($webforms as $webform) {
+          $token_objects['webform'] = $webform['submission'];
           $token = token_replace($obj->value, array('webform' => $webform['submission']), array('clear' => TRUE));
           if ($token) {
-            $token_objects['webform'] = $webform['submission'];
             break;
           }
         }
@@ -397,11 +395,6 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     'webforms' => $webforms,
   );
   drupal_alter('fillpdf_merge_fields_alter', $fields, $context);
-
-  // Generate the filename of downloaded PDF from title of the PDF set in admin/structure/fillpdf/%fid
-  $output_name = str_replace(' ', '_', $fillpdf_info->title);
-  $output_name = preg_replace('/\.pdf$/i', '', $output_name);
-  $output_name = preg_replace('/[^a-zA-Z0-9_.-]+/', '', $output_name) . '.pdf';
 
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
   switch (variable_get('fillpdf_service')) {
@@ -468,6 +461,10 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       '%node' => $node->title,
     ));
   }
+
+  // Generate the filename of downloaded PDF from title of the PDF set in
+  // admin/structure/fillpdf/%fid
+  $output_name = _fillpdf_process_filename($fillpdf_info->title, $token_objects);
 
   if (!empty($fillpdf_info->destination_path)) {
     $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
@@ -549,6 +546,19 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
   }
 
   return TRUE;
+}
+
+function _fillpdf_process_filename($original, $token_objects) {
+  // Replace tokens *before* sanitization
+  if (!empty($token_objects)) {
+    $original = token_replace($original, $token_objects);
+  }
+
+  $output_name = str_replace(' ', '_', $original);
+  $output_name = preg_replace('/\.pdf$/i', '', $output_name);
+  $output_name = preg_replace('/[^a-zA-Z0-9_.-]+/', '', $output_name) . '.pdf';
+
+  return $output_name;
 }
 
 /**

@@ -231,6 +231,9 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#maxlength' => 127,
     '#default_value' => $pdf_form->title,
     '#required' => TRUE,
+    '#description' => t('Enter a title for this mapping configuration.
+      This will also be used for deciding the filename of your PDF. <strong>This
+      field supports tokens.</strong>'),
   );
 
   $form['default_nid'] = array(
@@ -742,5 +745,12 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   ->condition('fid', $pdf_form->fid)
   ->condition('pdf_key', $old_key)
   ->execute();
+}
+
+function _fillpdf_admin_token_form() {
+  return array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('node', 'webform'),
+  );
 }
 
