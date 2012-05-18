@@ -241,7 +241,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     drupal_goto();
   }
 
-  $fillpdf_info = db_query("SELECT title, default_nid, url, destination_path, replacements FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  $fillpdf_info = db_query("SELECT title, default_nid, url, destination_path, replacements, destination_redirect FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
   // Case 1.5: $fid is not valid.
   if ($fillpdf_info === FALSE) {
     drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
@@ -480,9 +480,15 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     }
     else {
       // Full steam ahead!
-      file_unmanaged_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
+      $saved_file_path = file_unmanaged_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
     }
     if ($force_download === FALSE) {
+      if (isset($_GET['destination']) === FALSE) {
+        // Should we send the user directly to the saved PDF? If so, do that.
+        if ($fillpdf_info->destination_redirect) {
+          drupal_goto(file_create_url($saved_file_path));
+        }
+      }
       // Allow the "destination" query string parameter to be used
       // e.g. fillpdf?nid=1&fid=1&destination=node/1
       // If no destination is provided, drupal_goto() will send the

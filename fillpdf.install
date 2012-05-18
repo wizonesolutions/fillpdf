@@ -44,6 +44,11 @@ function fillpdf_schema() {
         'size' => 'normal',
         'not null' => FALSE
       ),
+      'destination_redirect' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
     ),
     'primary key' => array('fid'),
   );
@@ -145,5 +150,12 @@ function fillpdf_update_7003() {
  */
 function fillpdf_update_7004() {
   db_add_field('fillpdf_forms', 'default_nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE));
+}
+
+/**
+ * Add database field to hold "Redirect to saved file" setting.
+ */
+function fillpdf_update_7005() {
+  db_add_field('fillpdf_forms', 'destination_redirect', array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => FALSE));
 }
 

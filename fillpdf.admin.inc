@@ -314,6 +314,12 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#maxlength' => 255,
     '#default_value' => $pdf_form->destination_path,
   );
+  $form['extra']['destination_redirect'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect directly to PDF'),
+    '#description' => t("<strong>This setting is applicable only if a <em>Custom path for generated PDFs</em> is set.</strong> Instead of redirecting your visitors to the front page, it will redirect them directly to the PDF. However, if you pass Drupal's <em>destination</em> query string parameter, that will override this setting."),
+    '#default_value' => $pdf_form->destination_redirect,
+  );
   $form['extra']['tokens_fieldset'] = array(
     '#type' => 'fieldset',
     '#title' => 'Tokens',
@@ -405,6 +411,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
       'default_nid' => (int) $form_state['values']['default_nid'] > 0 ? (int) $form_state['values']['default_nid'] : NULL,
       'destination_path' => $form_state['values']['destination_path'],
       'replacements' => $form_state['values']['replacements'],
+      'destination_redirect' => $form_state['values']['destination_redirect'],
     ))
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();
