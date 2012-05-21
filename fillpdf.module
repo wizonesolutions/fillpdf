@@ -468,11 +468,12 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 
   if (!empty($fillpdf_info->destination_path)) {
     $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
-    $path_exists = file_prepare_directory($destination_path, FILE_CREATE_DIRECTORY);
+    $path_exists = file_prepare_directory($destination_path, FILE_CREATE_DIRECTORY + FILE_MODIFY_PERMISSIONS);
     if ($path_exists === FALSE) {
       watchdog('fillpdf', "The path %destination_path does not exist and could not be
         automatically created. Therefore, the previous submission was not saved. If
         the URL contained download=1, then the PDF was still sent to the user's browser.
+        If you were redirecting them to the PDF, they were sent to the homepage instead.
         If the destination path looks wrong and you have used tokens, check that you have
         used the correct token and that it is available to Fill PDF at the time of PDF
         generation.",
@@ -481,14 +482,17 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     else {
       // Full steam ahead!
       $saved_file_path = file_unmanaged_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
-    }
-    if ($force_download === FALSE) {
-      if (isset($_GET['destination']) === FALSE) {
-        // Should we send the user directly to the saved PDF? If so, do that.
-        if ($fillpdf_info->destination_redirect) {
-          drupal_goto(file_create_url($saved_file_path));
+      if ($force_download === FALSE) {
+        if (isset($_GET['destination']) === FALSE) {
+          // Should we send the user directly to the saved PDF? If so, do that.
+          if ($fillpdf_info->destination_redirect) {
+            drupal_goto(file_create_url($saved_file_path));
+          }
         }
       }
+    }
+
+    if ($force_download === FALSE) {
       // Allow the "destination" query string parameter to be used
       // e.g. fillpdf?nid=1&fid=1&destination=node/1
       // If no destination is provided, drupal_goto() will send the
