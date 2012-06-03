@@ -545,9 +545,6 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
 
   // Own webform submission?
   if (!(empty($webforms))) {
-    if (!($user->uid && (user_access('access own webform submissions') || user_access('access webform results') || user_access('access webform submissions')))) {
-      return FALSE;
-    }
     foreach ($webforms as $webform) {
       if ( !(webform_submission_access($webform['webform'], $webform['submission'], 'view')) ) {
         return FALSE;
