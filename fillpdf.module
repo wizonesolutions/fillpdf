@@ -822,8 +822,10 @@ function _fillpdf_replacements_to_array($replacements) {
   foreach ($lines as $replacement) {
     if (!empty($replacement)) {
       $split = explode('|', $replacement);
-      $return[$split[0]] = preg_replace('|<br />|', '
+      if (count($split) == 2) { // Sometimes it isn't; don't know why.
+        $return[$split[0]] = preg_replace('|<br />|', '
 ', $split[1]);
+      }
     }
   }
   return $return;
