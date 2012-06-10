@@ -533,6 +533,17 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 }
 
 /**
+ * Implementation of fillpdf_merge_pre_handle().
+ * Set up the data then invoke the Rules event.
+ */
+function fillpdf_fillpdf_merge_pre_handle($fillpdf) {
+  // @todo: Implement module_invoke_all() call in fillpdf_merge_pdf at
+  // appropriate place and implement Rules event invocation here.
+
+  rules_invoke_event('fillpdf_merge_pre_handle', $fillpdf);
+}
+
+/**
  * Make sure the user has access to data they want to populate the PDF
  */
 function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
