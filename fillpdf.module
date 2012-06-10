@@ -462,6 +462,24 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     ));
   }
 
+  // Allow modules to step in here and change the way the PDF is handled
+  // @todo: Convert function parameters to use $options
+  // and add those into $fillpdf_info.
+
+  // @todo: Abstract this setup code
+  $fillpdf_object = new stdClass();
+  $fillpdf_object->info = $fillpdf_info;
+  $fillpdf_object->data = $data;
+  $fillpdf_object->context = array(
+    'nodes' => $nodes,
+    'webforms' => $webforms,
+  );
+  $fillpdf_object->options = array(
+    'download' => $force_download,
+    'flatten' => $flatten,
+  );
+  module_invoke_all('fillpdf_merge_pre_handle', $fillpdf);
+
   // Generate the filename of downloaded PDF from title of the PDF set in
   // admin/structure/fillpdf/%fid
   $output_name = _fillpdf_process_filename($fillpdf_info->title, $token_objects);
