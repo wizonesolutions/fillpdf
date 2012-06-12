@@ -227,28 +227,34 @@ function fillpdf_parse_uri() {
  * @param $flatten
  *   Boolean. If TRUE, flatten the PDF so that fields cannot be edited.
  *   Otherwise leave fields editable.
+ * @param $handle
+ *   Boolean. If TRUE, handle the PDF, which usually consists of sending it to
+ *   the users's browser or saving it as a file.
  *
  * @return
- *   Nothing.
+ *   When $handle is FALSE, this function returns the variable it would have
+ *   used to invoke hook_fillpdf_merge_pre_handle().
+ *
+ *   When $handle is TRUE, it returns nothing.
  *
  * @see fillpdf_pdf_link()
  * for $_GET params
  */
-function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NULL, $force_download = FALSE, $skip_access_check = FALSE, $flatten = TRUE) {
+function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NULL, $force_download = FALSE, $skip_access_check = FALSE, $flatten = TRUE, $handle = TRUE) {
   // Case 1: No $fid
   if (is_null($fid)) {
     drupal_set_message(t('Fill PDF Form ID required to print a PDF.'), 'warning');
     drupal_goto();
   }
 
-  $fillpdf_info = db_query("SELECT title, default_nid, url, destination_path, replacements, destination_redirect FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  $fillpdf_info = fillpdf_load($fid);
+
   // Case 1.5: $fid is not valid.
   if ($fillpdf_info === FALSE) {
     drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
     drupal_not_found();
     drupal_exit();
   }
-  $fillpdf_info->replacements = _fillpdf_replacements_to_array($fillpdf_info->replacements);
 
   global $user;
 
@@ -462,7 +468,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     ));
   }
 
-  // Allow modules to step in here and change the way the PDF is handled
+  // Assemble some metadata that will be useful for the handling phase.
   // @todo: Convert function parameters to use $options
   // and add those into $fillpdf_info.
 
@@ -474,72 +480,144 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     'nodes' => $nodes,
     'webforms' => $webforms,
   );
+  $fillpdf_object->token_objects = $token_objects;
   $fillpdf_object->options = array(
     'download' => $force_download,
     'flatten' => $flatten,
   );
-  module_invoke_all('fillpdf_merge_pre_handle', $fillpdf);
 
+  if ($handle === TRUE) {
+    // Allow modules to step in here and change the way the PDF is handled
+    module_invoke_all('fillpdf_merge_pre_handle', $fillpdf_object);
+
+    // Perform the default action on the PDF - in other words, the one it was
+    // configured to do in the administrative area.
+    fillpdf_merge_handle_pdf($fillpdf_object->info, $fillpdf_object->data, $fillpdf_object->token_objects, 'default', $force_download);
+  }
+
+  // If not handling, then send back all the metadata to the caller.
+  else {
+    return $fillpdf_object;
+  }
+}
+
+/**
+ * Figure out what to do with the PDF and do it.
+ *
+ * @return Nothing.
+ * @param $pdf_info An object containing the loaded record from {fillpdf_forms}.
+ * @param $pdf_data A string containing the content of the merged PDF.
+ * @param $token_objects An array of objects to be used in replacing tokens.
+ * Here, specifically, it's for generating the filename of the handled PDF.
+ * @param $action One of the following keywords: default, download, save,
+ * redirect. These correspond to performing the configured action (from
+ * admin/structure/fillpdf/%), sending the PDF to the user's browser, saving it
+ * to a file, and saving it to a file and then redirecting the user's browser to
+ * the saved file.
+ * @param $force_download If set, this function will always end the request by
+ * sending the filled PDF to the user's browser.
+ */
+function fillpdf_merge_handle_pdf($pdf_info, $pdf_data, $token_objects, $action = 'download', $force_download = FALSE) {
+  if (in_array($action, array('default', 'download', 'save', 'redirect')) === FALSE) {
+    // Do nothing if the function is called with an invalid action.
+    return;
+  }
   // Generate the filename of downloaded PDF from title of the PDF set in
   // admin/structure/fillpdf/%fid
-  $output_name = _fillpdf_process_filename($fillpdf_info->title, $token_objects);
+  $output_name = _fillpdf_process_filename($pdf_info->title, $token_objects);
 
-  if (!empty($fillpdf_info->destination_path)) {
-    $destination_path = _fillpdf_process_destination_path($fillpdf_info->destination_path, $token_objects);
-    $path_exists = file_prepare_directory($destination_path, FILE_CREATE_DIRECTORY + FILE_MODIFY_PERMISSIONS);
-    if ($path_exists === FALSE) {
-      watchdog('fillpdf', "The path %destination_path does not exist and could not be
-        automatically created. Therefore, the previous submission was not saved. If
-        the URL contained download=1, then the PDF was still sent to the user's browser.
-        If you were redirecting them to the PDF, they were sent to the homepage instead.
-        If the destination path looks wrong and you have used tokens, check that you have
-        used the correct token and that it is available to Fill PDF at the time of PDF
-        generation.",
-        array('%destination_path' => $destination_path));
+  if ($action == 'default') {
+    // Determine the default action, then re-set $action to that.
+    if (empty($pdf_info->destination_path) === FALSE) {
+      $action = 'save';
     }
     else {
-      // Full steam ahead!
-      $saved_file_path = file_unmanaged_save_data($data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
-      if ($force_download === FALSE) {
-        if (isset($_GET['destination']) === FALSE) {
-          // Should we send the user directly to the saved PDF? If so, do that.
-          if ($fillpdf_info->destination_redirect) {
-            drupal_goto(file_create_url($saved_file_path));
-          }
-        }
-      }
-    }
-
-    if ($force_download === FALSE) {
-      // Allow the "destination" query string parameter to be used
-      // e.g. fillpdf?nid=1&fid=1&destination=node/1
-      // If no destination is provided, drupal_goto() will send the
-      // user to the front page.
-      drupal_goto();
+      $action = 'download';
     }
   }
 
-  drupal_add_http_header("Pragma", "public");
-  drupal_add_http_header('Expires', 0);
-  drupal_add_http_header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
-  drupal_add_http_header('Content-type', 'application-download');
-  // This must be strlen(), not drupal_strlen() because the length in bytes,
-  // not in characters, is what is needed here.
-  drupal_add_http_header('Content-Length', strlen($data));
-  drupal_add_http_header('Content-disposition', 'attachment; filename="' . $output_name . '"');
-  drupal_add_http_header('Content-Transfer-Encoding', 'binary');
-  echo $data;
-  drupal_exit();
+  // Initialize variable containing whether or not we send the user's browser to
+  // the saved PDF after saving it (if we are)
+  $redirect_to_file = FALSE;
+
+  // Get a load of this switch...they all just fall through!
+  switch ($action) {
+    case 'redirect':
+      $redirect_to_file = $pdf_info->destination_redirect;
+    case 'save':
+      fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name, !$force_download, $redirect_to_file);
+    // Fill PDF classic!
+    case 'download':
+      drupal_add_http_header("Pragma", "public");
+      drupal_add_http_header('Expires', 0);
+      drupal_add_http_header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+      drupal_add_http_header('Content-type', 'application-download');
+      // This must be strlen(), not drupal_strlen() because the length in bytes,
+      // not in characters, is what is needed here.
+      drupal_add_http_header('Content-Length', strlen($pdf_data));
+      drupal_add_http_header('Content-disposition', 'attachment; filename="' . $output_name . '"');
+      drupal_add_http_header('Content-Transfer-Encoding', 'binary');
+      echo $pdf_data;
+      drupal_exit();
+      break;
+  }
 }
 
+function fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name, $redirect = TRUE, $redirect_to_file = FALSE, $destination_path_override = NULL) {
+  if (isset($destination_path_override) && empty($destination_path_override) !== FALSE) {
+    $destination_path = $destination_path_override;
+  }
+  if (empty($pdf_info->destination_path) && empty($destination_path_override)) {
+    // If this function is called and the PDF isn't set up with a destination
+    // path, give it one.
+    $destination_path = 'fillpdf';
+  }
+  else {
+    $destination_path = $pdf_info->destination_path;
+  }
+  $destination_path = _fillpdf_process_destination_path($pdf_info->destination_path, $token_objects);
+  $path_exists = file_prepare_directory($destination_path, FILE_CREATE_DIRECTORY + FILE_MODIFY_PERMISSIONS);
+  if ($path_exists === FALSE) {
+    watchdog('fillpdf', "The path %destination_path does not exist and could not be
+      automatically created. Therefore, the previous submission was not saved. If
+      the URL contained download=1, then the PDF was still sent to the user's browser.
+      If you were redirecting them to the PDF, they were sent to the homepage instead.
+      If the destination path looks wrong and you have used tokens, check that you have
+      used the correct token and that it is available to Fill PDF at the time of PDF
+      generation.",
+      array('%destination_path' => $destination_path));
+  }
+  else {
+    // Full steam ahead!
+    $saved_file_path = file_unmanaged_save_data($pdf_data, $destination_path . "/$output_name", FILE_EXISTS_RENAME);
+    if ($redirect === TRUE) {
+      if (isset($_GET['destination']) === FALSE) {
+        // Should we send the user directly to the saved PDF? If so, do that.
+        if ($redirect_to_file) {
+          drupal_goto(file_create_url($saved_file_path));
+        }
+      }
+    }
+  }
+
+  if ($redirect === TRUE) {
+    // Allow the "destination" query string parameter to be used
+    // e.g. fillpdf?nid=1&fid=1&destination=node/1
+    // If no destination is provided, drupal_goto() will send the
+    // user to the front page.
+    drupal_goto();
+  }
+
+  return $saved_file_path;
+}
+
+// @todo: Put the hooks together
+// @todo: Document hooks
 /**
  * Implementation of fillpdf_merge_pre_handle().
  * Set up the data then invoke the Rules event.
  */
 function fillpdf_fillpdf_merge_pre_handle($fillpdf) {
-  // @todo: Implement module_invoke_all() call in fillpdf_merge_pdf at
-  // appropriate place and implement Rules event invocation here.
-
   rules_invoke_event('fillpdf_merge_pre_handle', $fillpdf);
 }
 
@@ -595,6 +673,10 @@ function _fillpdf_process_filename($original, $token_objects) {
   $output_name = preg_replace('/[^a-zA-Z0-9_.-]+/', '', $output_name) . '.pdf';
 
   return $output_name;
+}
+
+function fillpdf_build_filename($original, $token_objects) {
+  return _fillpdf_process_filename($original, $token_objects);
 }
 
 /**
@@ -845,19 +927,24 @@ function _fillpdf_process_destination_path($destination_path, $token_objects) {
 }
 
 function _fillpdf_replacements_to_array($replacements) {
-  $standardized_replacements = str_replace(array("\r\n", "\r"), "\n", $replacements);
-  $lines = explode("\n", $standardized_replacements);
-  $return = array();
-  foreach ($lines as $replacement) {
-    if (!empty($replacement)) {
-      $split = explode('|', $replacement);
-      if (count($split) == 2) { // Sometimes it isn't; don't know why.
-        $return[$split[0]] = preg_replace('|<br />|', '
+  if (empty($replacements) !== TRUE) {
+    $standardized_replacements = str_replace(array("\r\n", "\r"), "\n", $replacements);
+    $lines = explode("\n", $standardized_replacements);
+    $return = array();
+    foreach ($lines as $replacement) {
+      if (!empty($replacement)) {
+        $split = explode('|', $replacement);
+        if (count($split) == 2) { // Sometimes it isn't; don't know why.
+          $return[$split[0]] = preg_replace('|<br />|', '
 ', $split[1]);
+        }
       }
     }
+    return $return;
   }
-  return $return;
+  else {
+    return array();
+  }
 }
 
 /**
@@ -878,6 +965,29 @@ function _fillpdf_transform_field_value($value, $pdf_replacements, $field_replac
   }
   else {
     return $value;
+  }
+}
+
+/**
+ * Whoa, a load function! Fill PDF is growing up!
+ */
+function fillpdf_load($fid, $reset = FALSE) {
+  static $fillpdf = array();
+  if (isset($fillpdf[$fid]) && $reset === FALSE) {
+    // I'm a placeholder if statement!
+  }
+  else {
+    $fillpdf[$fid] = db_query("SELECT * FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
+  }
+  if ($fillpdf[$fid]) {
+    // Turn replacements (textarea content) into an array.
+    $fillpdf[$fid]->replacements = _fillpdf_replacements_to_array($fillpdf[$fid]->replacements);
+  }
+  if ($fillpdf[$fid]) {
+    return $fillpdf[$fid];
+  }
+  else {
+    return FALSE;
   }
 }
 
