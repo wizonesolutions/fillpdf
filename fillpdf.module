@@ -291,7 +291,8 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   // Webforms
   if (module_exists('webform') && is_array($webform_arr)) {
 
-    // Load the submissions inc depending on webform-2.x or webform-3.x
+    // Load the proper submission helper file and account for the different
+    // versions of Webform.
     $included = module_load_include('inc', 'webform', 'includes/webform.submissions');
     if ($included === FALSE) {
       module_load_include('inc', 'webform', 'webform_submissions');
