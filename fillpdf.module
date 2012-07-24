@@ -619,7 +619,9 @@ function fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name
  * Set up the data then invoke the Rules event.
  */
 function fillpdf_fillpdf_merge_pre_handle($fillpdf) {
-  rules_invoke_event('fillpdf_merge_pre_handle', $fillpdf);
+  if (module_exists('rules')) {
+    rules_invoke_event('fillpdf_merge_pre_handle', $fillpdf);
+  }
 }
 
 /**
