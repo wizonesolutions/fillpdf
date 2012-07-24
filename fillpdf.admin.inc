@@ -679,7 +679,7 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#type' => 'fieldset',
     '#title' => 'Tokens',
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
     '#weight' => 5,
   );
   $form['tokens_fieldset']['tokens'] = array(
