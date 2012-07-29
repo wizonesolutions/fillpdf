@@ -36,14 +36,10 @@ function fillpdf_settings($form, &$form_state) {
   }
 
   // Check for pdftk.
-  $output = array();
-  $status = NULL;
-  exec('pdftk', $output, $status);
-  if (in_array($status, array(126, 127))) {
+  $status = fillpdf_pdftk_check(variable_get('fillpdf_pdftk_path', 'pdftk'));
+  if ($status === FALSE) {
     $options['pdftk'] .= '<div class="messages warning">' . t('pdftk is not properly installed.') . '</div>';
   }
-  unset($output);
-  unset($status);
 
   $form['fillpdf_service'] = array(
     '#type' => 'radios',
@@ -75,10 +71,24 @@ function fillpdf_settings($form, &$form_state) {
       'http' => t('Do not use HTTPS'),
       ),
   );
+  $form['fillpdf_pdftk_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Configure path to pdftk'),
+    '#description' => t("If Fill PDF is not detecting your pdftk installation, you can specify the full path to the program here. Include the program name as well. For example, <em>/usr/bin/pdftk</em> is a valid value. You can almost always leave this field blank. If you should set it, you'll probably know."),
+    '#default_value' => variable_get('fillpdf_pdftk_path'),
+  );
 
   drupal_add_js(drupal_get_path('module', 'fillpdf') . '/fillpdf.js');
 
   return system_settings_form($form);
+}
+
+function fillpdf_settings_validate($form, &$form_state) {
+  $status = fillpdf_pdftk_check($form_state['values']['fillpdf_pdftk_path']);
+  if ($status === FALSE) {
+    form_set_error('fillpdf_pdftk_path', t('The path you have entered for
+    <em>pdftk</em> is invalid. Please enter a valid path.'));
+  }
 }
 
 
