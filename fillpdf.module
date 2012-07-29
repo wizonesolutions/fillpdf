@@ -360,17 +360,19 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
           $left_side = strpos($obj->value, '[stamp:') + 7;
           $right_side = strpos($obj->value, ']');
           $field_name = substr($obj->value, $left_side, $right_side - $left_side);
-          $image_path = $node->{$field_name}[$node->language][0]['uri'];
-          $transform_string = FALSE;
-          $fields[$obj->pdf_key] = '{image}' . drupal_realpath($image_path);
-          $image_path_info = pathinfo(drupal_realpath($image_path));
-          // Store the image data to transmit to the remote service if necessary
-          $file_data = file_get_contents(drupal_realpath($image_path));
-          if ($file_data) {
-            $image_data[$obj->pdf_key] = array(
-              'data' => base64_encode($file_data),
-              'filenamehash' => md5($image_path_info['filename']) . '.' . $image_path_info['extension'],
-            );
+          if (isset($node->{$field_name}[$node->language])) {
+            $image_path = $node->{$field_name}[$node->language][0]['uri'];
+            $transform_string = FALSE;
+            $fields[$obj->pdf_key] = '{image}' . drupal_realpath($image_path);
+            $image_path_info = pathinfo(drupal_realpath($image_path));
+            // Store the image data to transmit to the remote service if necessary
+            $file_data = file_get_contents(drupal_realpath($image_path));
+            if ($file_data) {
+              $image_data[$obj->pdf_key] = array(
+                'data' => base64_encode($file_data),
+                'filenamehash' => md5($image_path_info['filename']) . '.' . $image_path_info['extension'],
+              );
+            }
           }
         }
       }
