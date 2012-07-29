@@ -80,16 +80,13 @@ function fillpdf_menu() {
     'page callback' => 'fillpdf_form_export',
     'page arguments' => array(3),
     'access arguments' => $access,
-    'type' => MENU_CALLBACK,
   );
   $items['admin/structure/fillpdf/%/import'] = array(
     'title' => 'Import Fill PDF field mappings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_form_import_form', 3),
     'access arguments' => $access,
-    'type' => MENU_CALLBACK,
   );
-  //}else if (is_numeric(arg(4))) {
 
   // --------- Fields ------------------------
   $items['admin/structure/fillpdf/%/add'] = array(
@@ -104,7 +101,6 @@ function fillpdf_menu() {
     'page arguments' => array(4, 3, 5),
     'access arguments' => $access,
   );
-  //}
   return $items;
 }
 
