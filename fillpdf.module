@@ -1002,6 +1002,10 @@ function fillpdf_load($fid, $reset = FALSE) {
 }
 
 function fillpdf_pdftk_check($pdftk_path = 'pdftk') {
+  // An empty value means we should leave it to the PATH.
+  if (empty($pdftk_path)) {
+    $pdftk_path = 'pdftk';
+  }
   $output = array();
   $status = NULL;
   exec($pdftk_path, $output, $status);
