@@ -373,7 +373,9 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
       check_plain($field->pdf_key),
       $field->value, // editable, expandable
       ($field->replacements ? 'Yes' : 'No'),
-      l(t('Edit'), "admin/structure/fillpdf/$fid/edit/{$field->pdf_key}"),
+      // rawurlencode() is needed twice to fully protect "/". Otherwise, "/" is
+      // taken as a separator when looking for a match in hook_menu().
+      l(t('Edit'), "admin/structure/fillpdf/$fid/edit/" . rawurlencode(rawurlencode($field->pdf_key))),
     );
     $rows[] = $row;
   }
@@ -638,6 +640,7 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
     return fillpdf_form_overview($pdf_form);
   }
   elseif ($pdf_key) {
+    $pdf_key = rawurldecode(rawurldecode($pdf_key));
     $field = db_query("SELECT * FROM {fillpdf_fields} WHERE pdf_key = :pdf_key AND fid = :fid", array(':pdf_key' => $pdf_key, ':fid' => $fid))->fetch();
     if (!$field) {
       drupal_not_found();
