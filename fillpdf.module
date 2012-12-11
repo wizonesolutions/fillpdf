@@ -14,13 +14,12 @@ module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 function fillpdf_help($path, $arg) {
   switch ($path) {
     case 'admin/help#fillpdf':
-      $content = _fillpdf_get_file_contents(drupal_get_path('module', 'fillpdf') . '/README.txt');
-      $content = '<pre>' . check_plain($content) . '</pre>';
+      $content = t('See the <a href="!documentation">documentation on drupal.org</a> for a full description of and guide to this module.', array('!documentation' => url('http://drupal.org/documentation/modules/fillpdf')));
       return $content;
     case 'admin/structure/fillpdf':
       if (module_exists('help')) {
         return t('See the !link for an explanation on dowloading these forms to PDF',
-          array('!link' => l(t('Documentation'), 'admin/help/fillpdf')));
+          array('!link' => l(t('documentation'), 'http://drupal.org/documentation/modules/fillpdf')));
       }
       else {
         return t('Activate the help module if you need an ' .

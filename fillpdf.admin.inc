@@ -25,8 +25,8 @@ function fillpdf_settings($form, &$form_state) {
 
   // Assemble service options. Warning messages will be added next as needed.
   $options = array(
-    'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
-    'local' => t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
+    'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk: (!see_documentation).', array('!see_documentation' => l(t('see documentation'),  'http://drupal.org/documentation/modules/fillpdf'))),
+    'local' => t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat: (!see_documentation).', array('!see_documentation' => l(t('see documentation'),  'http://drupal.org/documentation/modules/fillpdf'))),
     'remote' => t('Use Fill PDF Service: Sign up for <a href="https://fillpdf-service.com">Fill PDF Service</a>.'),
   );
 
