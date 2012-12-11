@@ -27,7 +27,7 @@ function fillpdf_settings($form, &$form_state) {
   $options = array(
     'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
     'local' => t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat (') . l(t('see documentation'),  'admin/help/fillpdf') . t(').'),
-    'remote' => t('Use fillpdf-service.com: Sign up for <a href="https://fillpdf-service.com">Fill PDF Service</a>.'),
+    'remote' => t('Use Fill PDF Service: Sign up for <a href="https://fillpdf-service.com">Fill PDF Service</a>.'),
   );
 
   // Check for JavaBridge.
@@ -50,7 +50,7 @@ function fillpdf_settings($form, &$form_state) {
   );
   $form['remote'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Configure fillpdf-service.com'),
+    '#title' => t('Configure Fill PDF Service'),
     '#collapsible' => TRUE,
     '#collapsed' => $fillpdf_service !== 'remote',
   );
@@ -58,7 +58,7 @@ function fillpdf_settings($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('API Key'),
     '#default_value' => variable_get('fillpdf_api_key', ''),
-    '#description' => t('You need to sign up for an API key at <a href="https://fillpdf-service.com">fillpdf-service.com</a>'),
+    '#description' => t('You need to sign up for an API key at <a href="https://fillpdf-service.com">Fill PDF Service</a>'),
   );
   $form['remote']['fillpdf_remote_protocol'] = array(
     '#type' => 'radios',
