@@ -84,10 +84,12 @@ function fillpdf_settings($form, &$form_state) {
 }
 
 function fillpdf_settings_validate($form, &$form_state) {
-  $status = fillpdf_pdftk_check($form_state['values']['fillpdf_pdftk_path']);
-  if ($status === FALSE) {
-    form_set_error('fillpdf_pdftk_path', t('The path you have entered for
-    <em>pdftk</em> is invalid. Please enter a valid path.'));
+  if ($form_state['values']['fillpdf_pdftk_path']) {
+    $status = fillpdf_pdftk_check($form_state['values']['fillpdf_pdftk_path']);
+    if ($status === FALSE) {
+      form_set_error('fillpdf_pdftk_path', t('The path you have entered for
+      <em>pdftk</em> is invalid. Please enter a valid path.'));
+    }
   }
 }
 
