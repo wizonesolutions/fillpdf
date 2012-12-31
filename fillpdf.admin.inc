@@ -36,7 +36,7 @@ function fillpdf_settings($form, &$form_state) {
   }
 
   // Check for pdftk.
-  $status = fillpdf_pdftk_check(variable_get('fillpdf_pdftk_path', 'pdftk'));
+  $status = fillpdf_pdftk_check(fillpdf_pdftk_path());
   if ($status === FALSE) {
     $options['pdftk'] .= '<div class="messages warning">' . t('pdftk is not properly installed.') . '</div>';
   }

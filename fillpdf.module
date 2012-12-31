@@ -710,7 +710,7 @@ function fillpdf_execute_merge($method, $fields, $fillpdf, $mode = 'url', $flatt
       $xfdffile = file_save_data($xfdf, $xfdfname, FILE_EXISTS_RENAME);
 
       // Now feed this to pdftk and save the result to a variable
-      $path_to_pdftk = variable_get('fillpdf_pdftk_path', 'pdftk');
+      $path_to_pdftk = fillpdf_pdftk_path();
       ob_start();
       passthru($path_to_pdftk . ' ' . escapeshellarg(drupal_realpath($filename)) . ' fill_form ' . escapeshellarg(drupal_realpath($xfdffile->uri)) . ' output - ' . ($flatten ? 'flatten ' : '') . 'drop_xfa');
       $data = ob_get_clean();
@@ -807,7 +807,7 @@ function fillpdf_execute_parse($method, $fillpdf, $mode = 'url') {
       break;
   }
 
-  $path_to_pdftk = variable_get('fillpdf_pdftk_path', 'pdftk');
+  $path_to_pdftk = fillpdf_pdftk_path();
   $status = fillpdf_pdftk_check($path_to_pdftk);
   if ($status === FALSE) {
     drupal_set_message(t('pdftk not properly installed.'), 'error');
@@ -1012,5 +1012,15 @@ function fillpdf_pdftk_check($pdftk_path = 'pdftk') {
     return FALSE;
   }
   return TRUE;
+}
+
+// This is a convenience wrapper around variable_get(). It lets us **also**
+// return "pdftk" if the variable is empty, not just unset.
+function fillpdf_pdftk_path() {
+  $path_to_pdftk = variable_get('fillpdf_pdftk_path', 'pdftk');
+  if ($path_to_pdftk) {
+    return $path_to_pdftk;
+  }
+  return 'pdftk';
 }
 
