@@ -110,15 +110,21 @@ function fillpdf_uninstall() {
  * Add field to store destination path for saving PDFs as files.
  */
 function fillpdf_update_7001() {
-  db_add_field('fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+  if (!db_field_exists('fillpdf_forms', 'destination_path')) {
+    db_add_field('fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+  }
 }
 
 /**
  * Add fields to store token replacements.
  */
 function fillpdf_update_7002() {
-  db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
-  db_add_field('fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+  if (!db_field_exists('fillpdf_forms', 'replacements')) {
+    db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+  }
+  if (!db_field_exists('fillpdf_fields', 'replacements')) {
+    db_add_field('fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal', 'not null' => FALSE));
+  }
 }
 
 /**
@@ -149,13 +155,16 @@ function fillpdf_update_7003() {
  * Add field to store default NID.
  */
 function fillpdf_update_7004() {
-  db_add_field('fillpdf_forms', 'default_nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE));
+  if (!db_field_exists('fillpdf_forms', 'default_nid')) {
+    db_add_field('fillpdf_forms', 'default_nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE));
+  }
 }
 
 /**
  * Add database field to hold "Redirect to saved file" setting.
  */
 function fillpdf_update_7005() {
-  db_add_field('fillpdf_forms', 'destination_redirect', array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => FALSE));
+  if (!db_field_exists('fillpdf_forms', 'destination_redirect')) {
+    db_add_field('fillpdf_forms', 'destination_redirect', array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => FALSE));
+  }
 }
-
