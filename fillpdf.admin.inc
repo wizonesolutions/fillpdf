@@ -272,6 +272,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   );
 
   $form['title_tokens_fieldset']['tokens'] = _fillpdf_admin_token_form();
+
   $form['default_nid'] = array(
     '#type' => 'textfield',
     '#title' => t('Default Node ID'),
@@ -723,10 +724,7 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#collapsed' => FALSE,
     '#weight' => 5,
   );
-  $form['tokens_fieldset']['tokens'] = array(
-    '#theme' => 'token_tree',
-    '#token_types' => array('node', 'webform'),
-  );
+  $form['tokens_fieldset']['tokens'] = _fillpdf_admin_token_form();
   $form['suffix'] = array(
     '#type' => 'textarea',
     '#title' => t('Suffix'),
@@ -814,7 +812,8 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
 function _fillpdf_admin_token_form() {
   return array(
     '#theme' => 'token_tree',
-    '#token_types' => array('node', 'webform'),
+    '#token_types' => array('node', 'webform-tokens', 'submission'),
+    '#global_types' => FALSE,
   );
 }
 
