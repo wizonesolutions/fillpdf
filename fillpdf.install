@@ -69,15 +69,25 @@ function fillpdf_schema() {
         'length' => 255,
         'not null' => TRUE,
       ),
+      'prefix' => array(
+        'type' => 'varchar',
+        'length' => 4096,
+        'not null' => FALSE,
+      ),
       'value' => array(
         'type' => 'text',
         'size' => 'medium',
         'not null' => TRUE,
       ),
+      'suffix' => array(
+        'type' => 'varchar',
+        'length' => 4096,
+        'not null' => FALSE,
+      ),
       'replacements' => array(
         'type' => 'text',
         'size' => 'normal',
-        'not null' => FALSE
+        'not null' => FALSE,
       ),
     ),
     'primary key' => array('fid', 'pdf_key'),
@@ -164,5 +174,18 @@ function fillpdf_update_7004() {
 function fillpdf_update_7005() {
   if (!db_field_exists('fillpdf_forms', 'destination_redirect')) {
     db_add_field('fillpdf_forms', 'destination_redirect', array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => FALSE));
+  }
+}
+
+/**
+ * Add database fields for prefix and suffix.
+ */
+function fillpdf_update_7006() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_fields');
+  if (!db_field_exists('fillpdf_fields', 'prefix')) {
+    db_add_field('fillpdf_fields', 'prefix', $schema['fields']['prefix']);
+  }
+  if (!db_field_exists('fillpdf_fields', 'suffix')) {
+    db_add_field('fillpdf_fields', 'suffix', $schema['fields']['suffix']);
   }
 }

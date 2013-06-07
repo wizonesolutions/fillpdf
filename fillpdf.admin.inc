@@ -364,7 +364,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
 
   // @@TODO: order by weight, and add dragable ala http://www.computerminds.co.uk/quick-guide-using-drupal-add-tabledrag-and-enjoying-jquery-drag-and-drop-loveliness
   $q = db_query('SELECT * FROM {fillpdf_fields} WHERE fid = :fid', array(':fid' => $fid));
-  $header = array(t('Label'), t('PDF-field key'), t('Value'), t('Transformed'), array(
+  $header = array(t('Label'), t('PDF-field key'), t('Prefix'), t('Value'), t('Suffix'), t('Transformed'), array(
     'data' => t('Operations'),
     'colspan' => 2,
   ));
@@ -373,7 +373,9 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     $row = array(
       check_plain($field->label), // editable
       check_plain($field->pdf_key),
+      $field->prefix,
       $field->value, // editable, expandable
+      $field->suffix,
       ($field->replacements ? 'Yes' : 'No'),
       // rawurlencode() is needed twice to fully protect "/". Otherwise, "/" is
       // taken as a separator when looking for a match in hook_menu().
@@ -679,6 +681,13 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#description' => t('An optional label to help you identify the field.'),
     '#weight' => 1,
   );
+  $form['prefix'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Prefix'),
+    '#default_value' => $field->prefix,
+    '#description' => t('<p>If there is some text you always want to appear before the main value if it isn\'t empty, enter it here. <strong>This value only appears if the token pattern in <em>Value</em> doesn\'t result in blank text.</strong></p>'),
+    '#weight' => 3,
+  );
   $form['value'] = array(
     '#type' => 'textarea',
     '#title' => t('Value'),
@@ -701,12 +710,19 @@ function fillpdf_field_edit($form, &$form_state, $pdf_form, $field) {
     '#theme' => 'token_tree',
     '#token_types' => array('node', 'webform'),
   );
+  $form['suffix'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Suffix'),
+    '#default_value' => $field->suffix,
+    '#description' => t('<p>If there is some text you always want to appear after the main value if it isn\'t empty, enter it here. <strong>This value only appears if the token pattern in <em>Value</em> doesn\'t result in blank text.</strong></p>'),
+    '#weight' => 6,
+  );
   $form['extra'] = array(
     '#type' => 'fieldset',
     '#title' => t('Transform values on this field'),
     '#collapsible' => TRUE,
     '#collapsed' => ($field->replacements ? FALSE : TRUE),
-    '#weight' => 6,
+    '#weight' => 7,
   );
 
   $form['extra']['replacements'] = array(
@@ -748,11 +764,13 @@ function fillpdf_field_edit_submit($form, &$form_state) {
     $edit_field = (object) $form_state['values'];
     db_insert('fillpdf_fields')
     ->fields(array(
-      'fid' => $form_state['values']['#pdf_form']->fid,
-      'label' => $form_state['values']['label'],
-      'pdf_key' => $form_state['values']['pdf_key'],
-      'value' => empty($form_state['values']['value']) ? '' : $form_state['values']['value'],
-      'replacements' => $form_state['values']['replacements'],
+        'fid' => $form_state['values']['#pdf_form']->fid,
+        'label' => $form_state['values']['label'],
+        'pdf_key' => $form_state['values']['pdf_key'],
+        'prefix' => $form_state['values']['prefix'],
+        'value' => empty($form_state['values']['value']) ? '' : $form_state['values']['value'],
+        'suffix' => $form_state['values']['suffix'],
+        'replacements' => $form_state['values']['replacements'],
     ))
     ->execute();
   }
@@ -764,14 +782,16 @@ function fillpdf_field_edit_submit($form, &$form_state) {
  */
 function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
   db_update('fillpdf_fields')
-  ->fields(array(
-    'label' => $field->label,
-    'value' => empty($field->value) ? '' : $field->value,
-    'replacements' => $field->replacements,
-  ))
-  ->condition('fid', $pdf_form->fid)
-  ->condition('pdf_key', $old_key)
-  ->execute();
+    ->fields(array(
+      'label' => $field->label,
+      'prefix' => $field->prefix,
+      'value' => empty($field->value) ? '' : $field->value,
+      'suffix' => $field->suffix,
+      'replacements' => $field->replacements,
+    ))
+    ->condition('fid', $pdf_form->fid)
+    ->condition('pdf_key', $old_key)
+    ->execute();
 }
 
 function _fillpdf_admin_token_form() {

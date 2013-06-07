@@ -393,6 +393,16 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
         $fields[$obj->pdf_key] = $str;
       }
     }
+    
+    // Apply prefix and suffix, if applicable
+    if ($fields[$obj->pdf_key]) {
+      if ($obj->prefix) {
+        $fields[$obj->pdf_key] = $obj->prefix . $fields[$obj->pdf_key];
+      }
+      if ($obj->suffix) {
+        $fields[$obj->pdf_key] .= $obj->suffix;
+      }
+    }
   }
 
   // Provide hook_fillpdf_merge_fields_alter() to let other modules
