@@ -100,8 +100,9 @@ function fillpdf_settings_validate($form, &$form_state) {
  * Manage your existing forms, or upload a new one
  */
 function fillpdf_forms_admin($form, &$form_state) {
-  $result = db_query("SELECT title, url, fid FROM {fillpdf_forms} ORDER BY title");
+  $result = db_query("SELECT admin_title, title, url, fid FROM {fillpdf_forms} ORDER BY admin_title");
   $header = array(
+    t('Administrative title'),
     t('Title'),
     t('Location'),
     array(
@@ -112,6 +113,7 @@ function fillpdf_forms_admin($form, &$form_state) {
   $rows = array();
   foreach ($result as $pdf_form) {
     $row = array(
+      check_plain($pdf_form->admin_title),
       check_plain($pdf_form->title),
       check_plain($pdf_form->url),
       l(t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
@@ -237,14 +239,28 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
 
   $form['#attributes'] = array('enctype' => "multipart/form-data");
 
+  $form['admin_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Administrative title (optional)'),
+    '#maxlenth' => 512,
+    '#default_value' => $pdf_form->admin_title,
+    '#required' => FALSE,
+    '#description' => t('Enter the name of the form here, and it will be shown on the <a href="!form_overview">form
+      overview page</a>. It has no effect on functionality, but it can help you identify which form configuration
+      you want to edit.',
+      array(
+      '!form_overview' => url('admin/structure/fillpdf')
+    )),
+  );
+
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => t('Title'),
-    '#maxlength' => 127,
+    '#title' => t('Title (filename pattern)'),
+    '#maxlength' => 512,
     '#default_value' => $pdf_form->title,
     '#required' => TRUE,
     '#description' => t('Enter a title for this mapping configuration.
-      This will also be used for deciding the filename of your PDF. <strong>This
+      This will be used for deciding the filename of your PDF. <strong>This
       field supports tokens.</strong>'),
   );
 
@@ -428,6 +444,7 @@ function fillpdf_form_edit_submit($form, &$form_state) {
       'destination_path' => $form_state['values']['destination_path'],
       'replacements' => $form_state['values']['replacements'],
       'destination_redirect' => $form_state['values']['destination_redirect'],
+      'admin_title' => $form_state['values']['admin_title'],
     ))
   ->condition('fid', $form['#pdf_form']->fid)
   ->execute();

@@ -20,7 +20,7 @@ function fillpdf_schema() {
       ),
       'title' => array(
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 512,
         'not null' => TRUE,
       ),
       'default_nid' => array(
@@ -46,6 +46,11 @@ function fillpdf_schema() {
       'destination_redirect' => array(
         'type' => 'int',
         'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'admin_title' => array(
+        'type' => 'varchar',
+        'length' => 512,
         'not null' => FALSE,
       ),
     ),
@@ -188,4 +193,16 @@ function fillpdf_update_7006() {
   if (!db_field_exists('fillpdf_fields', 'suffix')) {
     db_add_field('fillpdf_fields', 'suffix', $schema['fields']['suffix']);
   }
+}
+
+/**
+ * Add administrative title; make title longer.
+ */
+function fillpdf_update_7101() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_forms');
+  if (!db_field_exists('fillpdf_forms', 'admin_title')) {
+    db_add_field('fillpdf_forms', 'admin_title', $schema['fields']['admin_title']);
+  }
+
+  db_change_field('fillpdf_forms', 'title', 'title', $schema['fields']['title']);
 }
