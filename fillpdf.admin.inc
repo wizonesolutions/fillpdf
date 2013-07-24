@@ -810,6 +810,13 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
 }
 
 function _fillpdf_admin_token_form() {
+  $token_types = array('node', 'webform-tokens', 'submission');
+
+  // If not using Webform Rules, then show potential Webform Tokens
+  // webform:-namespaced tokens.
+  if (module_exists('webform_rules') === FALSE) {
+    $token_types[] = 'webform';
+  }
   return array(
     '#theme' => 'token_tree',
     '#token_types' => array('node', 'webform-tokens', 'submission'),
