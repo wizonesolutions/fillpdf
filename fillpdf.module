@@ -396,9 +396,9 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
         $fields[$obj->pdf_key] = $str;
       }
     }
-    
+
     // Apply prefix and suffix, if applicable
-    if ($fields[$obj->pdf_key]) {
+    if (isset($fields[$obj->pdf_key]) && $fields[$obj->pdf_key]) {
       if ($obj->prefix) {
         $fields[$obj->pdf_key] = $obj->prefix . $fields[$obj->pdf_key];
       }
