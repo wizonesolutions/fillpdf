@@ -340,7 +340,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
         foreach ($nodes as $node) {
           $token_objects['node'] = $node;
           // The third parameter says to clear the value if no token can be generated
-          $token = token_replace($obj->value, array('node' => $node), array('clear' => TRUE));
+          $token = token_replace($obj->value, array('node' => $node), array('clear' => TRUE, 'sanitize' => FALSE));
           if ($token && $token != $obj->value) {
             break;
           }
@@ -380,7 +380,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
             'webform-submission' => $webform['submission'],
           );
 
-          $token = token_replace($obj->value, $token_objects, array('clear' => TRUE));
+          $token = token_replace($obj->value, $token_objects, array('clear' => TRUE, 'sanitize' => FALSE));
           if ($token) {
             break;
           }
