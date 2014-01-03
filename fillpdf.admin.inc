@@ -130,17 +130,17 @@ function fillpdf_forms_admin($form, &$form_state) {
 
   // Only show PDF upload form if fillpdf is configured.
   if (variable_get('fillpdf_service')) {
-  $form['#attributes'] = array('enctype' => "multipart/form-data");
-  $form['upload_pdf'] = array(
-    '#type' => 'file',
-    '#title' => 'Upload',
-    '#description' => 'Upload a PDF template to create a new form',
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Upload'),
-    '#weight' => 15,
-  );
+    $form['#attributes'] = array('enctype' => "multipart/form-data");
+    $form['upload_pdf'] = array(
+      '#type' => 'file',
+      '#title' => 'Upload',
+      '#description' => 'Upload a PDF template to create a new form',
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Upload'),
+      '#weight' => 15,
+    );
   }
   else {
     $form['message'] = array(
