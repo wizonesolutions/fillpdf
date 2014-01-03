@@ -123,6 +123,9 @@ function fillpdf_forms_admin($form, &$form_state) {
     );
     $rows[] = $row;
   }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No content available.'), 'colspan' => 7));
+  }
 
   $form['existing_forms'] = array(
     '#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'fillpdf'))),
