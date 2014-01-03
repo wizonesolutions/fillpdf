@@ -128,6 +128,8 @@ function fillpdf_forms_admin($form, &$form_state) {
     '#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'fillpdf'))),
   );
 
+  // Only show PDF upload form if fillpdf is configured.
+  if (variable_get('fillpdf_service')) {
   $form['#attributes'] = array('enctype' => "multipart/form-data");
   $form['upload_pdf'] = array(
     '#type' => 'file',
@@ -139,6 +141,13 @@ function fillpdf_forms_admin($form, &$form_state) {
     '#value' => t('Upload'),
     '#weight' => 15,
   );
+  }
+  else {
+    $form['message'] = array(
+      '#markup' => '<p>' . t('Before you can upload PDF files, you must !link.', array('!link' => l(t('configure Fill PDF'), 'admin/config/media/fillpdf'))) . '</p>',
+    );
+    drupal_set_message(t('Fill PDF is not configured.'), 'error');
+  }
 
   return $form;
 }
