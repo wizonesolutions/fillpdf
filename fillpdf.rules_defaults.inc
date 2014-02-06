@@ -16,7 +16,7 @@ function fillpdf_default_rules_configuration() {
         "DO" : [
           { "fillpdf_load" : {
               "USING" : { "fid" : "6" },
-              "PROVIDE" : { "fillpdf" : { "fillpdf" : "Fill PDF metadata" } }
+              "PROVIDE" : { "fillpdf" : { "fillpdf" : "FillPDF metadata" } }
             }
           },
           { "fillpdf_merge_webform" : {

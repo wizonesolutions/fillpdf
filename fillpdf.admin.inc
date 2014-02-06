@@ -27,7 +27,7 @@ function fillpdf_settings($form, &$form_state) {
   $options = array(
     'pdftk' => t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk: (!see_documentation).', array('!see_documentation' => l(t('see documentation'),  'http://drupal.org/documentation/modules/fillpdf'))),
     'local' => t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat: (!see_documentation).', array('!see_documentation' => l(t('see documentation'),  'http://drupal.org/documentation/modules/fillpdf'))),
-    'remote' => t('Use Fill PDF Service: Sign up for <a href="https://fillpdf-service.com">Fill PDF Service</a>.'),
+    'remote' => t('Use FillPDF Service: Sign up for <a href="https://fillpdf-service.com">FillPDF Service</a>.'),
   );
 
   // Check for JavaBridge.
@@ -50,7 +50,7 @@ function fillpdf_settings($form, &$form_state) {
   );
   $form['remote'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Configure Fill PDF Service'),
+    '#title' => t('Configure FillPDF Service'),
     '#collapsible' => TRUE,
     '#collapsed' => $fillpdf_service !== 'remote',
   );
@@ -58,7 +58,7 @@ function fillpdf_settings($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('API Key'),
     '#default_value' => variable_get('fillpdf_api_key', ''),
-    '#description' => t('You need to sign up for an API key at <a href="https://fillpdf-service.com">Fill PDF Service</a>'),
+    '#description' => t('You need to sign up for an API key at <a href="https://fillpdf-service.com">FillPDF Service</a>'),
   );
   $form['remote']['fillpdf_remote_protocol'] = array(
     '#type' => 'radios',
@@ -74,7 +74,7 @@ function fillpdf_settings($form, &$form_state) {
   $form['fillpdf_pdftk_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Configure path to pdftk'),
-    '#description' => t("If Fill PDF is not detecting your pdftk installation, you can specify the full path to the program here. Include the program name as well. For example, <em>/usr/bin/pdftk</em> is a valid value. You can almost always leave this field blank. If you should set it, you'll probably know."),
+    '#description' => t("If FillPDF is not detecting your pdftk installation, you can specify the full path to the program here. Include the program name as well. For example, <em>/usr/bin/pdftk</em> is a valid value. You can almost always leave this field blank. If you should set it, you'll probably know."),
     '#default_value' => variable_get('fillpdf_pdftk_path'),
   );
 
@@ -147,9 +147,9 @@ function fillpdf_forms_admin($form, &$form_state) {
   }
   else {
     $form['message'] = array(
-      '#markup' => '<p>' . t('Before you can upload PDF files, you must !link.', array('!link' => l(t('configure Fill PDF'), 'admin/config/media/fillpdf'))) . '</p>',
+      '#markup' => '<p>' . t('Before you can upload PDF files, you must !link.', array('!link' => l(t('configure FillPDF'), 'admin/config/media/fillpdf'))) . '</p>',
     );
-    drupal_set_message(t('Fill PDF is not configured.'), 'error');
+    drupal_set_message(t('FillPDF is not configured.'), 'error');
   }
 
   return $form;
@@ -244,7 +244,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $pdf_form = db_query("SELECT * FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetch();
 
   if ($pdf_form === FALSE) {
-    drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
+    drupal_set_message(t('Non-existent FillPDF Form ID.'), 'error');
     drupal_not_found();
     drupal_exit();
   }
@@ -288,7 +288,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
   $form['default_nid'] = array(
     '#type' => 'textfield',
     '#title' => t('Default Node ID'),
-    '#description' => t('When filling a PDF, use this node for the data source if no node is specified in the Fill PDF URL.'),
+    '#description' => t('When filling a PDF, use this node for the data source if no node is specified in the FillPDF URL.'),
     '#maxlength' => 10,
     '#default_value' => $pdf_form->default_nid,
   );
@@ -342,7 +342,7 @@ function fillpdf_form_edit($form, &$form_state, $fid) {
     '#title' => t('Custom path for generated PDFs'),
     '#description' => t("<p>By default, filled PDFs are not saved to disk; they are simply sent
       directly to the browser for download. Enter a path here to change this behavior (tokens allowed).
-      <strong>Warning! Unless you include the &download=1 flag in the Fill PDF URL, PDFs will only
+      <strong>Warning! Unless you include the &download=1 flag in the FillPDF URL, PDFs will only
       be saved to disk <em>and won't</em> be sent to the browser as well.</strong></p><p>The path
       you specify must be in one of the following two formats:<br />
         <ul>
@@ -550,16 +550,16 @@ function fillpdf_generate_mappings($pdf_form, $skip_encoding = FALSE) {
 }
 
 /**
- * Form for exporting Fill PDF field mappings
+ * Form for exporting FillPDF field mappings
  */
 function fillpdf_export_form($form, $form_state, $code) {
   $form = array();
   $form['export'] = array(
     '#type' => 'textarea',
-    '#title' => t('Fill PDF Form Mappings'),
+    '#title' => t('FillPDF Form Mappings'),
     '#default_value' => $code,
     '#rows' => 30,
-    '#description' => t('Copy this code and then on the site you want to import to, go to the Edit page for the Fill PDF form for which you want to import these mappings, and paste it in there.'),
+    '#description' => t('Copy this code and then on the site you want to import to, go to the Edit page for the FillPDF form for which you want to import these mappings, and paste it in there.'),
     '#attributes' => array(
       'style' => 'width: 97%;',
     ),
@@ -595,7 +595,7 @@ function fillpdf_form_import_form($form, &$form_state, $pdf_form) {
     '#type' => 'textarea',
     '#default_value' => '',
     '#rows' => 30,
-    '#description' => t('Cut and paste the results of a <em>Fill PDF Field Mappings export</em> here.'),
+    '#description' => t('Cut and paste the results of a <em>FillPDF Field Mappings export</em> here.'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -611,7 +611,7 @@ function fillpdf_form_import_form($form, &$form_state, $pdf_form) {
 function fillpdf_form_import_form_validate($form, &$form_state) {
   $mappings = json_decode($form_state['values']['code'], TRUE);
   if (empty($mappings) || !is_array($mappings)) {
-    form_set_error('code', t('There was a problem processing your Fill PDF Field Mappings code. Please do a fresh export from the source and try pasting it again.'));
+    form_set_error('code', t('There was a problem processing your FillPDF Field Mappings code. Please do a fresh export from the source and try pasting it again.'));
   }
   else {
     $form_state['values']['mappings'] = $mappings;
@@ -631,7 +631,7 @@ function fillpdf_form_import_form_submit($form, &$form_state) {
 }
 
 /**
- * Import an array of decoded Fill PDF mappings.
+ * Import an array of decoded FillPDF mappings.
  * For the format,
  * @see fillpdf_generate_mappings()
  */

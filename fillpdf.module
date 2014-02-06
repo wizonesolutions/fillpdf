@@ -46,8 +46,8 @@ function fillpdf_menu() {
 
   // ------- Config ---------------------------
   $items['admin/config/media/fillpdf'] = array(
-    'title' => 'Fill PDF settings',
-    'description' => 'Configure tool to use with Fill PDF',
+    'title' => 'FillPDF settings',
+    'description' => 'Configure tool to use with FillPDF',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_settings'),
     'access arguments' => $access,
@@ -56,7 +56,7 @@ function fillpdf_menu() {
 
   // --------- Form ------------------------
   $items['admin/structure/fillpdf'] = array(
-    'title' => 'Fill PDF',
+    'title' => 'FillPDF',
     'description' => 'Manage your PDFs',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_forms_admin'),
@@ -75,13 +75,13 @@ function fillpdf_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['admin/structure/fillpdf/%/export'] = array(
-    'title' => 'Export Fill PDF field mappings',
+    'title' => 'Export FillPDF field mappings',
     'page callback' => 'fillpdf_form_export',
     'page arguments' => array(3),
     'access arguments' => $access,
   );
   $items['admin/structure/fillpdf/%/import'] = array(
-    'title' => 'Import Fill PDF field mappings',
+    'title' => 'Import FillPDF field mappings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fillpdf_form_import_form', 3),
     'access arguments' => $access,
@@ -110,7 +110,7 @@ function fillpdf_permission() {
   return array(
     'administer pdfs' => array(
       'title' => t('Administer PDFs'),
-      'description' => t('Allows usage of the Fill PDF administration screen.'),
+      'description' => t('Allows usage of the FillPDF administration screen.'),
     ),
     'publish own pdfs' => array(
       'title' => t('Publish Own PDFs'),
@@ -238,7 +238,7 @@ function fillpdf_parse_uri() {
 function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NULL, $force_download = FALSE, $skip_access_check = FALSE, $flatten = TRUE, $handle = TRUE) {
   // Case 1: No $fid
   if (is_null($fid)) {
-    drupal_set_message(t('Fill PDF Form ID required to print a PDF.'), 'warning');
+    drupal_set_message(t('FillPDF Form ID required to print a PDF.'), 'warning');
     drupal_goto();
   }
 
@@ -246,7 +246,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 
   // Case 1.5: $fid is not valid.
   if ($fillpdf_info === FALSE) {
-    drupal_set_message(t('Non-existent Fill PDF Form ID.'), 'error');
+    drupal_set_message(t('Non-existent FillPDF Form ID.'), 'error');
     drupal_not_found();
     drupal_exit();
   }
@@ -466,7 +466,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
       break;
 
     default:
-      drupal_set_message(t('Fill PDF is not configured.'), 'error');
+      drupal_set_message(t('FillPDF is not configured.'), 'error');
       drupal_goto();
   }
 
@@ -560,7 +560,7 @@ function fillpdf_merge_handle_pdf($pdf_info, $pdf_data, $token_objects, $action 
       $redirect_to_file = $pdf_info->destination_redirect;
     case 'save':
       fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name, !$force_download, $redirect_to_file);
-    // Fill PDF classic!
+    // FillPDF classic!
     case 'download':
       drupal_add_http_header("Pragma", "public");
       drupal_add_http_header('Expires', 0);
@@ -597,7 +597,7 @@ function fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name
       the URL contained download=1, then the PDF was still sent to the user's browser.
       If you were redirecting them to the PDF, they were sent to the homepage instead.
       If the destination path looks wrong and you have used tokens, check that you have
-      used the correct token and that it is available to Fill PDF at the time of PDF
+      used the correct token and that it is available to FillPDF at the time of PDF
       generation.",
       array('%destination_path' => $destination_path));
   }
@@ -779,7 +779,7 @@ function fillpdf_parse_pdf($fid) {
       break;
 
     default:
-      drupal_set_message(t('Fill PDF is not configured.'), 'error');
+      drupal_set_message(t('FillPDF is not configured.'), 'error');
       drupal_goto('admin/structure/fillpdf');
   }
 
@@ -890,7 +890,7 @@ function _fillpdf_xmlrpc_request($url, $method) {
   elseif ($result == FALSE || xmlrpc_error()) {
     $error = xmlrpc_error();
     $ret->error = TRUE;
-    drupal_set_message(t('There was a problem contacting the Fill PDF service.
+    drupal_set_message(t('There was a problem contacting the FillPDF service.
       It may be down, or you may not have internet access. [ERROR @code: @message]',
       array('@code' => $error->code, '@message' => $error->message)), 'error');
   }
@@ -991,7 +991,7 @@ function _fillpdf_transform_field_value($value, $pdf_replacements, $field_replac
 }
 
 /**
- * Whoa, a load function! Fill PDF is growing up!
+ * Whoa, a load function! FillPDF is growing up!
  */
 function fillpdf_load($fid, $reset = FALSE) {
   static $fillpdf = array();

@@ -1,4 +1,4 @@
-name = Fill PDF
+name = FillPDF
 description = Allows users to populate PDF forms from submitted node data.
 package = Other
 core = 7.x

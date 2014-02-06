@@ -21,8 +21,8 @@
 function fillpdf_rules_data_info() {
   return array(
     'fillpdf' => array(
-      'label' => t('Fill PDF metadata'),
-      'group' => t('Fill PDF'),
+      'label' => t('FillPDF metadata'),
+      'group' => t('FillPDF'),
       'property info' => _fillpdf_rules_metadata_info(),
     ),
   );
@@ -30,21 +30,21 @@ function fillpdf_rules_data_info() {
 
 /**
  * Implements hook_rules_event_info().
- * @todo: Define the "Fill PDF has filled the PDF" event
+ * @todo: Define the "FillPDF has filled the PDF" event
  * @todo: Define the following events:
- *   - Fill PDF is about to prepare PDF-filling data (fillpdf_merge_pre_merge)
- *   - Fill PDF is ready to fill the PDF (fillpdf_merge_fields_alter)
+ *   - FillPDF is about to prepare PDF-filling data (fillpdf_merge_pre_merge)
+ *   - FillPDF is ready to fill the PDF (fillpdf_merge_fields_alter)
  */
 function fillpdf_rules_event_info() {
   $defaults = array(
-    'group' => t('Fill PDF'),
+    'group' => t('FillPDF'),
     'module' => 'fillpdf',
   );
   return array(
     'fillpdf_merge_pre_handle' => $defaults + array(
       'label' => t('Filled PDF is about to be handled'),
       'variables' => array(
-        'fillpdf' => array('type' => 'fillpdf', 'label' => 'Fill PDF metadata'),
+        'fillpdf' => array('type' => 'fillpdf', 'label' => 'FillPDF metadata'),
       ),
     )
   );;
@@ -56,27 +56,27 @@ function fillpdf_rules_event_info() {
  *   - Fill a PDF with data from content
  *   - Fill a PDF with data from Webform submissions
  *   - Send PDF to user's browser
- *   - Generate a Fill PDF link (saves new variable - could be useful for e-mail
+ *   - Generate a FillPDF link (saves new variable - could be useful for e-mail
  *   templates and such)
  */
 function fillpdf_rules_action_info() {
   $defaults = array(
-    'group' => t('Fill PDF'),
+    'group' => t('FillPDF'),
   );
   return array(
     'fillpdf_load' => $defaults + array(
-      'label' => t('Load a Fill PDF configuration'),
+      'label' => t('Load a FillPDF configuration'),
       'base' => 'fillpdf_rules_action_load_fillpdf',
       'provides' => array(
         'fillpdf' => array(
           'type' => 'fillpdf',
-          'label' => t('Fill PDF metadata'),
+          'label' => t('FillPDF metadata'),
         ),
       ),
       'parameter' => array(
         'fid' => array(
           'type' => 'integer',
-          'label' => t('Fill PDF Form ID'),
+          'label' => t('FillPDF Form ID'),
         )
       ),
     ),
@@ -88,13 +88,13 @@ function fillpdf_rules_action_info() {
       'parameter' => array(
         'fillpdf' => array(
           'type' => 'fillpdf',
-          'label' => t('Fill PDF metadata'),
+          'label' => t('FillPDF metadata'),
         ),
         'webform_nid' => array(
           'type' => 'integer',
           'label' => t('Webform Node ID'),
           'optional' => TRUE,
-          'description' => t('If you leave this blank, the <em>Default Node ID</em> from the Fill PDF configuration will be used.'),
+          'description' => t('If you leave this blank, the <em>Default Node ID</em> from the FillPDF configuration will be used.'),
         ),
         'webform_sids' => array(
           'type' => 'list<integer>',
@@ -106,12 +106,12 @@ function fillpdf_rules_action_info() {
     ),
     'fillpdf_handle_default' => $defaults + array(
       'label' => t('Perform the default action on the PDF'),
-      'description' => t('Handle the PDF according to its Fill PDF configuration.'),
+      'description' => t('Handle the PDF according to its FillPDF configuration.'),
       'base' => 'fillpdf_rules_action_handle_default',
       'parameter' => array(
         'fillpdf' => array(
           'type' => 'fillpdf',
-          'label' => t('Fill PDF metadata'),
+          'label' => t('FillPDF metadata'),
         )
       ),
     ),
@@ -127,7 +127,7 @@ function fillpdf_rules_action_info() {
       'parameter' => array(
         'fillpdf' => array(
           'type' => 'fillpdf',
-          'label' => t('Fill PDF metadata'),
+          'label' => t('FillPDF metadata'),
         )
       ),
     ),
@@ -171,7 +171,7 @@ function fillpdf_rules_action_load_fillpdf($fid) {
 }
 
 /**
- * Populates a loaded Fill PDF configuration's PDF with data.
+ * Populates a loaded FillPDF configuration's PDF with data.
  */
 function fillpdf_rules_action_merge_webform($fillpdf, $webform_nid = '', $webform_sids = array()) {
   $skip_access_check = FALSE;
