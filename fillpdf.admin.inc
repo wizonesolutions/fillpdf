@@ -808,7 +808,7 @@ function fillpdf_update_field(&$pdf_form, &$field, $old_key) {
     ->fields(array(
       'label' => $field->label,
       'prefix' => $field->prefix,
-      'value' => empty($field->value) ? '' : $field->value,
+      'value' => $field->value,
       'suffix' => $field->suffix,
       'replacements' => $field->replacements,
     ))
