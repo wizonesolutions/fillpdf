@@ -540,11 +540,7 @@ function fillpdf_generate_mappings($pdf_form, $skip_encoding = FALSE) {
   $fields = db_query('SELECT * FROM {fillpdf_fields} WHERE fid = :fid', array(':fid' => $fid->fid));
   $export_array = array();
   foreach ($fields as $field) {
-    $export_array[$field->pdf_key] = array(
-      'label' => $field->label,
-      'value' => $field->value,
-      'replacements' => $field->replacements,
-    );
+    $export_array[$field->pdf_key] = (array) $field;
   }
   return ($skip_encoding === FALSE ? json_encode($export_array) : $export_array);
 }
