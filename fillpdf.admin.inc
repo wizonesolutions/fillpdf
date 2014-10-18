@@ -664,7 +664,9 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
   }
 
   if ($op == 'add') {
-    drupal_set_title($pdf_form->title);
+    // @FIXME: drupal_set_title() has been removed in Drupal 8. Setting the title is now done in different ways depending on the context. For more information, see https://www.drupal.org/node/2067859
+// drupal_set_title($pdf_form->title);
+
   }
   elseif ($op != 'edit') {
     return fillpdf_form_overview($pdf_form);
@@ -682,7 +684,9 @@ function fillpdf_field($op, $fid, $pdf_key = NULL) {
     else {
       $title = $field->pdf_key;
     }
-    drupal_set_title(t('Edit field mapping for %field_title', array('%field_title' => $title)), PASS_THROUGH);
+    // @FIXME: drupal_set_title() has been removed in Drupal 8. Setting the title is now done in different ways depending on the context. For more information, see https://www.drupal.org/node/2067859
+// drupal_set_title(t('Edit field mapping for %field_title', array('%field_title' => $title)), PASS_THROUGH);
+
   }
 
   return drupal_get_form('fillpdf_field_edit', $pdf_form, $field);
@@ -822,7 +826,7 @@ function _fillpdf_admin_token_form() {
 
   // If not using Webform Rules, then show potential Webform Tokens
   // webform:-namespaced tokens.
-  if (module_exists('webform_rules') === FALSE) {
+  if (\Drupal::moduleHandler()->moduleExists('webform_rules') === FALSE) {
     $token_types[] = 'webform';
   }
   return array(

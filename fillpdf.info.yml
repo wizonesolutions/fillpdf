@@ -1,0 +1,8 @@
+name: 'FillPDF'
+type: module
+description: 'Allows users to populate PDF forms from website data.'
+core: 8.x
+package: Other
+version: VERSION
+dependencies:
+  - token

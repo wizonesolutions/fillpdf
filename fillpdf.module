@@ -17,7 +17,7 @@ function fillpdf_help($path, $arg) {
       $content = t('See the <a href="!documentation">documentation on drupal.org</a> for a full description of and guide to this module.', array('!documentation' => url('http://drupal.org/documentation/modules/fillpdf')));
       return $content;
     case 'admin/structure/fillpdf':
-      if (module_exists('help')) {
+      if (\Drupal::moduleHandler()->moduleExists('help')) {
         return t('See the !link for an explanation on dowloading these forms to PDF',
           array('!link' => l(t('documentation'), 'http://drupal.org/documentation/modules/fillpdf')));
       }
@@ -251,7 +251,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     drupal_exit();
   }
 
-  global $user;
+  $user = \Drupal::currentUser();
 
   $nodes = $webforms = array();
 
@@ -266,7 +266,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
 
   // If no nid is given, use the default.
   if (!empty($fillpdf_info->default_nid) && empty($nids) && empty($webform_arr)) {
-    $default_node = node_load($fillpdf_info->default_nid);
+    $default_node = \Drupal::entityManager()->getStorage('node')->load($fillpdf_info->default_nid);
     if ($default_node) {
       if (empty($default_node->webform)) { // Default node is a non-webform node.
         $nodes[] = $default_node;
@@ -280,11 +280,11 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
   // Nodes
   if (is_array($nids)) {
     foreach ($nids as $nid) {
-      $nodes[] = node_load($nid);
+      $nodes[] = \Drupal::entityManager()->getStorage('node')->load($nid);
     }
   }
   // Webforms
-  if (module_exists('webform') && is_array($webform_arr)) {
+  if (\Drupal::moduleHandler()->moduleExists('webform') && is_array($webform_arr)) {
 
     // Load the proper submission helper file and account for the different
     // versions of Webform.
@@ -301,7 +301,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
         }
         if ($webform['sid'] !== FALSE) {
           $webforms[] = array(
-            'webform' => empty($webform['node']) ? node_load($webform['nid']) : $webform['node'],
+            'webform' => empty($webform['node']) ? \Drupal::entityManager()->getStorage('node')->load($webform['nid']) : $webform['node'],
             'submission' => webform_get_submission($webform['nid'], $webform['sid']),
           );
         }
@@ -414,7 +414,7 @@ function fillpdf_merge_pdf($fid, $nids = NULL, $webform_arr = NULL, $sample = NU
     'nodes' => $nodes,
     'webforms' => $webforms,
   );
-  drupal_alter('fillpdf_merge_fields_alter', $fields, $context);
+  \Drupal::moduleHandler()->alter('fillpdf_merge_fields_alter', $fields, $context);
 
   $pdf_data = _fillpdf_get_file_contents($fillpdf_info->url, "<front>");
   switch (variable_get('fillpdf_service')) {
@@ -632,7 +632,7 @@ function fillpdf_save_to_file($pdf_info, $pdf_data, $token_objects, $output_name
  * Set up the data then invoke the Rules event.
  */
 function fillpdf_fillpdf_merge_pre_handle($fillpdf) {
-  if (module_exists('rules')) {
+  if (\Drupal::moduleHandler()->moduleExists('rules')) {
     rules_invoke_event('fillpdf_merge_pre_handle', $fillpdf);
   }
 }
@@ -648,7 +648,7 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
     return FALSE;
   }
 
-  global $user;
+  $user = \Drupal::currentUser();
   if (empty($webforms)) {
     foreach ($nodes as $node) {
       // own node?
@@ -660,7 +660,7 @@ function fillpdf_merge_pdf_access($nodes = array(), $webforms = array()) {
   else {
     foreach ($webforms as $webform) {
       // In this case, we only care that they can view the Webform
-      if (!(node_access('view', node_load($webform['webform']->nid)))) {
+      if (!(node_access('view', \Drupal::entityManager()->getStorage('node')->load($webform['webform']->nid)))) {
         return FALSE;
       }
     }

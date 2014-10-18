@@ -5,7 +5,7 @@
 function fillpdf_default_rules_configuration() {
   $default_rules = array();
   // Attach the filled PDF to an e-mail.
-  if (module_exists('mimemail') && module_exists('webform_rules') && module_exists('webform')) {
+  if (\Drupal::moduleHandler()->moduleExists('mimemail') && \Drupal::moduleHandler()->moduleExists('webform_rules') && \Drupal::moduleHandler()->moduleExists('webform')) {
     $default_rules['rules_webform_fillpdf_attachment'] = rules_import('{ "rules_send_webform_submission_confirmation_with_filled_pdf_as_attachment" : {
         "LABEL" : "Send Webform submission confirmation e-mail with filled PDF as attachment",
         "PLUGIN" : "reaction rule",
