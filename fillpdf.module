@@ -5,7 +5,9 @@
  * Allows mappings of PDFs to site content
  */
 
-define("DEFAULT_SERVLET_URL", variable_get('fillpdf_remote_protocol', 'http') . "://" . variable_get('fillpdf_remote_endpoint', "fillpdf-service.com/xmlrpc.php"));
+// @todo: Convert this after settings page
+//define("DEFAULT_SERVLET_URL", variable_get('fillpdf_remote_protocol', 'http') . "://" . variable_get('fillpdf_remote_endpoint', "fillpdf-service.com/xmlrpc.php"));
+define("DEFAULT_SERVLET_URL", 'https://fillpdf-service.com/xmlrpc.rpc'); // TODO: temporary
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 /**
@@ -31,6 +33,8 @@ function fillpdf_help($path, $arg) {
 
 /**
  * Implements hook_menu().
+ *
+ * @todo: Remove once converted.
  */
 function fillpdf_menu() {
   $access = array('administer pdfs');
@@ -102,27 +106,6 @@ function fillpdf_menu() {
   );
   return $items;
 }
-
-/**
- * Implements hook_permission().
- */
-function fillpdf_permission() {
-  return array(
-    'administer pdfs' => array(
-      'title' => t('Administer PDFs'),
-      'description' => t('Allows usage of the FillPDF administration screen.'),
-    ),
-    'publish own pdfs' => array(
-      'title' => t('Publish Own PDFs'),
-      'description' => t("Allows filling in and downloading PDFs with one's own site content."),
-    ),
-    'publish all pdfs' => array(
-      'title' => t('Publish All PDFs'),
-      'description' => t('Allows filling in and downloading PDFs with any site content.'),
-    ),
-  );
-}
-
 
 /**
  * Gets a link to the prinable PDF, merged with the passed-in data
@@ -1013,27 +996,10 @@ function fillpdf_load($fid, $reset = FALSE) {
   }
 }
 
-function fillpdf_pdftk_check($pdftk_path = 'pdftk') {
-  // An empty value means we should leave it to the PATH.
-  if (empty($pdftk_path)) {
-    $pdftk_path = 'pdftk';
-  }
-  $output = array();
-  $status = NULL;
-  exec($pdftk_path, $output, $status);
-  if (in_array($status, array(126, 127))) {
-    return FALSE;
-  }
-  return TRUE;
-}
-
 // This is a convenience wrapper around variable_get(). It lets us **also**
 // return "pdftk" if the variable is empty, not just unset.
 function fillpdf_pdftk_path() {
-  $path_to_pdftk = variable_get('fillpdf_pdftk_path', 'pdftk');
-  if ($path_to_pdftk) {
-    return $path_to_pdftk;
-  }
-  return 'pdftk';
+  // @todo: Move this to \Drupal\fillpdf\Component\Utility\FillPdf or somewhere depending on how I wind up using it in the main code. I wasn't sure at first, so I just left it procedural, but I would prefer, WORST-CASE, to pass in the $config object.
+  $path_to_pdftk = \Drupal::config('fillpdf.settings')->get('fillpdf_pdftk_path');
+  return $path_to_pdftk;
 }
-

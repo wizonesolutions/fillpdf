@@ -1,0 +1,11 @@
+administer pdfs:
+  title: 'Administer PDFs'
+  description: 'Allows usage of FillPDF administration screens.'
+
+publish own pdfs:
+  title: 'Publish own PDFs'
+  description: "Allows filling in and downloading PDFs with one's own site content."
+
+publish all pdfs:
+  title: 'Publish all PDFs'
+  description: 'Allows filling in and downloading PDFs with any site content.'

@@ -1,0 +1,5 @@
+fillpdf.settings:
+  title: FillPDF settings
+  description: "Configure tool to use with FillPDF."
+  route_name: fillpdf.settings
+  parent: system.admin_config_media

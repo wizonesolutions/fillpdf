@@ -1,0 +1,10 @@
+fillpdf.admin.settings:
+  version: VERSION
+  js:
+    fillpdf.js: {}
+  css:
+    component:
+      fillpdf.css: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
