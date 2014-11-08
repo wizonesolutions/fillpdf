@@ -224,8 +224,17 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
 
     if ($backend) {
       // Attempt to parse the fields in the PDF.
-      // TODO: Actually parse the PDF.
       $fields = $backend->parse($fillpdf_form);
+
+      // Save the fields that were parsed out (if any). If none were, set a
+      // warning message telling the user that.
+      foreach ($fields as $fillpdf_form_field) {
+        $fillpdf_form_field->save();
+      }
+
+      if (empty($fields)) {
+        drupal_set_message($this->t("No fields detected in PDF. Are you sure it contains editable fields?"), 'warning');
+      }
     }
   }
 }

@@ -10,6 +10,7 @@ use Drupal\Component\Annotation\Plugin;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Url;
+use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
 use Drupal\fillpdf\Entity\FillPdfFormField;
 use Drupal\fillpdf\FillPdfBackendPluginInterface;
@@ -56,13 +57,12 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
 
     $form_fields = array();
 
-    // TODO: Split out $result->data into an array of FillPdfField instances.
     foreach ((array) $fields as $key => $arr) {
       if ($arr['type']) { // Don't store "container" fields
         $arr['name'] = str_replace('&#0;', '', $arr['name']); // pdftk sometimes inserts random &#0; markers - strip these out. NOTE: This may break forms that actually DO contain this pattern, but 99%-of-the-time functionality is better than merge failing due to improper parsing.
         $field = FillPdfFormField::create(
           array(
-            'fillpdf_form' => $fillpdf_form->id(),
+            'fillpdf_form' => $fillpdf_form,
             'pdf_key' => $arr['name'],
             'value' => '',
           )
