@@ -5,75 +5,65 @@
  * Allows mappings of PDFs to site content
  */
 
-define('FILLPDF_REPLACEMENTS_DESCRIPTION', t("<p>Tokens, such as those from CCK, sometimes output values that need additional
-  processing prior to being sent to the PDF. A common example is when a key within a CCK <em>Allowed values</em>
-  configuration does not match the field name or option value in the PDF that you would like to be selected but you
-  do not want to change the <em>Allowed values</em> key.</p><p>This field will replace any matching values with the
-  replacements you specify. Specify <strong>one replacement per line</strong> in the format
-  <em>original value|replacement value</em>. For example, <em>yes|Y</em> will fill the PDF with
-  <strong><em>Y</em></strong> anywhere that <strong><em>yes</em></strong> would have originally
-  been used. <p>Note that omitting the <em>replacement value</em> will replace <em>original value</em>
-  with a blank, essentially erasing it.</p>"));
-
-/* ---------------- Form Create --------------------*/
-/**
- * Manage your existing forms, or upload a new one
- */
-function fillpdf_forms_admin($form, &$form_state) {
-  $result = db_query("SELECT admin_title, title, url, fid FROM {fillpdf_forms} ORDER BY admin_title");
-  $header = array(
-    t('Administrative title'),
-    t('Title'),
-    t('Location'),
-    array(
-      'data' => t('Operations'),
-      'colspan' => '4',
-    ),
-  );
-  $rows = array();
-  foreach ($result as $pdf_form) {
-    $row = array(
-      check_plain($pdf_form->admin_title),
-      check_plain($pdf_form->title),
-      check_plain($pdf_form->url),
-      l(t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
-      l(t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
-      l(t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
-      l(t('Import field mappings'), "admin/structure/fillpdf/$pdf_form->fid/import"),
-    );
-    $rows[] = $row;
-  }
-  if (!$rows) {
-    $rows[] = array(array('data' => t('No content available.'), 'colspan' => 7));
-  }
-
-  $form['existing_forms'] = array(
-    '#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'fillpdf'))),
-  );
-
-  // Only show PDF upload form if fillpdf is configured.
-  if (variable_get('fillpdf_service')) {
-    $form['#attributes'] = array('enctype' => "multipart/form-data");
-    $form['upload_pdf'] = array(
-      '#type' => 'file',
-      '#title' => 'Upload',
-      '#description' => 'Upload a PDF template to create a new form',
-    );
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Upload'),
-      '#weight' => 15,
-    );
-  }
-  else {
-    $form['message'] = array(
-      '#markup' => '<p>' . t('Before you can upload PDF files, you must !link.', array('!link' => l(t('configure FillPDF'), 'admin/config/media/fillpdf'))) . '</p>',
-    );
-    drupal_set_message(t('FillPDF is not configured.'), 'error');
-  }
-
-  return $form;
-}
+///* ---------------- Form Create --------------------*/
+///**
+// * Manage your existing forms, or upload a new one
+// */
+//function fillpdf_forms_admin($form, &$form_state) {
+//  $result = db_query("SELECT admin_title, title, url, fid FROM {fillpdf_forms} ORDER BY admin_title");
+//  $header = array(
+//    t('Administrative title'),
+//    t('Title'),
+//    t('Location'),
+//    array(
+//      'data' => t('Operations'),
+//      'colspan' => '4',
+//    ),
+//  );
+//  $rows = array();
+//  foreach ($result as $pdf_form) {
+//    $row = array(
+//      check_plain($pdf_form->admin_title),
+//      check_plain($pdf_form->title),
+//      check_plain($pdf_form->url),
+//      l(t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
+//      l(t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
+//      l(t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
+//      l(t('Import field mappings'), "admin/structure/fillpdf/$pdf_form->fid/import"),
+//    );
+//    $rows[] = $row;
+//  }
+//  if (!$rows) {
+//    $rows[] = array(array('data' => t('No content available.'), 'colspan' => 7));
+//  }
+//
+//  $form['existing_forms'] = array(
+//    '#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'fillpdf'))),
+//  );
+//
+//  // Only show PDF upload form if fillpdf is configured.
+//  if (variable_get('fillpdf_service')) {
+//    $form['#attributes'] = array('enctype' => "multipart/form-data");
+//    $form['upload_pdf'] = array(
+//      '#type' => 'file',
+//      '#title' => 'Upload',
+//      '#description' => 'Upload a PDF template to create a new form',
+//    );
+//    $form['submit'] = array(
+//      '#type' => 'submit',
+//      '#value' => t('Upload'),
+//      '#weight' => 15,
+//    );
+//  }
+//  else {
+//    $form['message'] = array(
+//      '#markup' => '<p>' . t('Before you can upload PDF files, you must !link.', array('!link' => l(t('configure FillPDF'), 'admin/config/media/fillpdf'))) . '</p>',
+//    );
+//    drupal_set_message(t('FillPDF is not configured.'), 'error');
+//  }
+//
+//  return $form;
+//}
 
 /**
  * Makes sure the Upload was provided (want to validate .pdf here too)

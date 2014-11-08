@@ -1,7 +1,19 @@
 fillpdf.settings:
   path: '/admin/config/media/fillpdf'
   defaults:
-    _form: '\Drupal\fillpdf\Form\FillpdfSettingsForm'
+    _form: '\Drupal\fillpdf\Form\FillPdfSettingsForm'
     _title: 'FillPDF settings'
   requirements:
     _permission: 'administer pdfs'
+  options:
+    _admin_route: TRUE
+
+fillpdf.forms_admin:
+  path: '/admin/structure/fillpdf'
+  defaults:
+    _form: '\Drupal\fillpdf\Form\FillPdfOverviewForm'
+    _title: 'FillPDF'
+  requirements:
+    _permission: 'administer pdfs'
+  options:
+    _admin_route: TRUE

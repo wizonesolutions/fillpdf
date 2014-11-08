@@ -1,1 +1,4 @@
 fillpdf_remote_protocol: https
+
+# Should not contain a protocol. That's what the above is for.
+fillpdf_remote_endpoint: fillpdf-service.com/xmlrpc.php

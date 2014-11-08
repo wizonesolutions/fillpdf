@@ -5,9 +5,8 @@
  * Allows mappings of PDFs to site content
  */
 
-// @todo: Convert this after settings page
 //define("DEFAULT_SERVLET_URL", variable_get('fillpdf_remote_protocol', 'http') . "://" . variable_get('fillpdf_remote_endpoint', "fillpdf-service.com/xmlrpc.php"));
-define("DEFAULT_SERVLET_URL", 'https://fillpdf-service.com/xmlrpc.rpc'); // TODO: temporary
+//define("DEFAULT_SERVLET_URL", 'https://fillpdf-service.com/xmlrpc.rpc');
 module_load_include('inc', 'fillpdf', 'fillpdf.admin');
 
 /**
@@ -46,16 +45,6 @@ function fillpdf_menu() {
     // Can't use access callback.  We need the arguments, but they're passed as $GET.  Will access-check in fillpdf_merge_pdf
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
-  );
-
-  // ------- Config ---------------------------
-  $items['admin/config/media/fillpdf'] = array(
-    'title' => 'FillPDF settings',
-    'description' => 'Configure tool to use with FillPDF',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('fillpdf_settings'),
-    'access arguments' => $access,
-    'type' => MENU_NORMAL_ITEM,
   );
 
   // --------- Form ------------------------
@@ -736,13 +725,13 @@ function fillpdf_parse_pdf($fid) {
   $filename = db_query("SELECT url FROM {fillpdf_forms} WHERE fid = :fid", array(':fid' => $fid))->fetchField();
   $content = _fillpdf_get_file_contents($filename, "<front>");
   switch (variable_get('fillpdf_service')) {
-    case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
-      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
-      if ($result->error == TRUE) {
-        drupal_goto('admin/structure/fillpdf');
-      } // after setting error message
-      $fields = $result->data;
-      break;
+//    case 'remote': // use fillpdf-service.com's xmlrpc service (must be registered)
+//      $result = _fillpdf_xmlrpc_request(DEFAULT_SERVLET_URL, 'parse_pdf_fields', base64_encode($content));
+//      if ($result->error == TRUE) {
+//        drupal_goto('admin/structure/fillpdf');
+//      } // after setting error message
+//      $fields = $result->data;
+//      break;
 
     case 'local': // use local php/java bridge (must have Tomcat & JavaBridge installed on VPS or dedicated
       $require = drupal_get_path('module', 'fillpdf') . '/lib/JavaBridge/java/Java.inc';

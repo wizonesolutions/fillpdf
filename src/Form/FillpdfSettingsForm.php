@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\fillpdf\Form\FillpdfSettingsForm.
+ * Contains \Drupal\fillpdf\Form\FillPdfSettingsForm.
  */
 namespace Drupal\fillpdf\Form;
 use Drupal\Core\Form\ConfigFormBase;
@@ -11,20 +11,20 @@ use Drupal\Core\Url;
 
 use Drupal\fillpdf\Component\Utility\Fillpdf;
 
-class FillpdfSettingsForm extends ConfigFormBase {
+class FillPdfSettingsForm extends ConfigFormBase {
   public function getFormId() {
     return 'fillpdf_settings';
   }
 
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('fillpdf.settings');
-    $fillpdf_service = $config->get('fillpdf_service');
+    $fillpdf_service = $config->get('fillpdf_service_backend');
 
     // Assemble service options. Warning messages will be added next as needed.
     $options = array(
       'pdftk' => $this->t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'),  Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
       'local' => $this->t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'),  Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
-      'remote' => $this->t('Use FillPDF Service: Sign up for <a href="https://fillpdf-service.com">FillPDF Service</a>.'),
+      'fillpdf_service' => $this->t('Use FillPDF Service: Sign up for <a href="https://fillpdf-service.com">FillPDF Service</a>.'),
     );
 
     // Check for JavaBridge.
@@ -38,26 +38,26 @@ class FillpdfSettingsForm extends ConfigFormBase {
       $options['pdftk'] .= '<div class="messages warning">' . $this->t('pdftk is not properly installed.') . '</div>';
     }
 
-    $form['fillpdf_service'] = array(
+    $form['fillpdf_service_backend'] = array(
       '#type' => 'radios',
       '#title' => $this->t('PDF-filling service'),
       '#description' => $this->t('This module requires the use of one of several external PDF manipulation tools. Choose the service you would like to use.'),
-      '#default_value' => $fillpdf_service,
+      '#default_value' => !empty($fillpdf_service) ? $fillpdf_service : 'fillpdf_service',
       '#options' => $options,
     );
-    $form['remote'] = array(
+    $form['fillpdf_service'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Configure FillPDF Service'),
       '#collapsible' => TRUE,
-      '#collapsed' => $fillpdf_service !== 'remote',
+      '#collapsed' => $fillpdf_service !== 'fillpdf_service',
     );
-    $form['remote']['fillpdf_api_key'] = array(
+    $form['fillpdf_service']['fillpdf_api_key'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('API Key'),
       '#default_value' => $config->get('fillpdf_api_key', ''),
       '#description' => $this->t('You need to sign up for an API key at <a href="https://fillpdf-service.com">FillPDF Service</a>'),
     );
-    $form['remote']['fillpdf_remote_protocol'] = array(
+    $form['fillpdf_service']['fillpdf_remote_protocol'] = array(
       '#type' => 'radios',
       '#title' => $this->t('Use HTTPS?'),
       '#description' => $this->t('It is recommended to select <em>Use HTTPS</em> for this option. Doing so will help prevent
@@ -96,7 +96,7 @@ class FillpdfSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Save form values.
     $this->config('fillpdf.settings')
-      ->set('fillpdf_service', $form_state->getValue('fillpdf_service'))
+      ->set('fillpdf_service_backend', $form_state->getValue('fillpdf_service_backend'))
       ->set('fillpdf_api_key', $form_state->getValue('fillpdf_api_key'))
       ->set('fillpdf_remote_protocol', $form_state->getValue('fillpdf_remote_protocol'))
       ->set('fillpdf_pdftk_path', $form_state->getValue('fillpdf_pdftk_path'))

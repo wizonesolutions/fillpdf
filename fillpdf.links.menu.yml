@@ -3,3 +3,9 @@ fillpdf.settings:
   description: "Configure tool to use with FillPDF."
   route_name: fillpdf.settings
   parent: system.admin_config_media
+
+fillpdf.forms_admin:
+  title: FillPDF
+  description: Manage your PDFs
+  route_name: fillpdf.forms_admin
+  parent: system.admin_structure

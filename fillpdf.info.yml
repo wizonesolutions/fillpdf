@@ -5,4 +5,6 @@ core: 8.x
 package: Other
 version: VERSION
 dependencies:
+  - file
+  - link
   - token
