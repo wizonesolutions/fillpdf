@@ -6,6 +6,7 @@
 namespace Drupal\fillpdf\Form;
 
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\String;
@@ -26,10 +27,13 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
   protected $backendManager;
 
   /** @var ModuleHandlerInterface $module_handler */
-  protected $module_handler;
+  protected $moduleHandler;
 
   /** @var AccountInterface $current_user */
-  protected $current_user;
+  protected $currentUser;
+
+  /** @var \Drupal\Core\Entity\Query\QueryFactory $entityQuery */
+  protected $entityQuery;
 
   /**
    * Returns a unique string identifying the form.
@@ -41,11 +45,12 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     return 'fillpdf_forms_admin';
   }
 
-  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManagerInterface $backend_manager, AccountInterface $current_user) {
+  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManagerInterface $backend_manager, AccountInterface $current_user, QueryFactory $entity_query) {
     parent::__construct();
     $this->backendManager = $backend_manager;
     $this->moduleHandler = $module_handler;
     $this->currentUser = $current_user;
+    $this->entityQuery = $entity_query;
   }
 
   /**
@@ -56,7 +61,8 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
       // Load the plugin manager.
       $container->get('module_handler'),
       $container->get('plugin.manager.fillpdf_backend'),
-      $container->get('current_user')
+      $container->get('current_user'),
+      $container->get('entity.query')
     );
   }
 
@@ -73,12 +79,13 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // @todo: Convert to using data from entity or something.
-//    $result = db_query("SELECT admin_title, title, url, fid FROM {fillpdf_forms} ORDER BY admin_title");
-    $result = array();
+    $result_ids = $this->entityQuery->get('fillpdf_form')
+      ->execute();
+
     $header = array(
       $this->t('Administrative title'),
       $this->t('Title'),
-     $this->t('Location'),
+      $this->t('Location'),
       array(
         'data' => t('Operations'),
         'colspan' => '4',
@@ -92,20 +99,27 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
       '#empty' => $this->t('No content available.'),
     );
 
+    $result = array();
+    if ($result_ids) {
+      $result = FillPdfForm::loadMultiple($result_ids);
+    }
+
     foreach ($result as $pdf_form) {
       $row = array(
-        String::checkPlain($pdf_form->admin_title),
-        String::checkPlain($pdf_form->title),
-        String::checkPlain($pdf_form->url),
+        String::checkPlain($pdf_form->admin_title->value),
+        String::checkPlain($pdf_form->title->value),
+        String::checkPlain(File::load($pdf_form->file->target_id)->uri->value),
         // @todo: Convert to routes.
-        $this->l($this->t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
-        $this->l($this->t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
-        $this->l($this->t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
-        $this->l($this->t('Import field mappings'), "admin/structure/fillpdf/$pdf_form->fid/import"),
+//        $this->l($this->t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
+//        $this->l($this->t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
+//        $this->l($this->t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
+//        $this->l($this->t('Import field mappings'), "admin/structure/fillpdf/$pdf_form->fid/import"),
       );
-      // @todo: Convert to adding the rows to the table like on
+
       $rows[] = $row;
     }
+
+    $form['existing_forms']['#rows'] = $rows;
 
     $config = $this->config('fillpdf.settings');
     // Only show PDF upload form if fillpdf is configured.
