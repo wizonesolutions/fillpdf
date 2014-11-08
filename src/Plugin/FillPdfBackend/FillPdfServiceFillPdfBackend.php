@@ -38,8 +38,6 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
 
   /**
    * @inheritdoc
-   * @param \Drupal\fillpdf\FillPdfFormInterface $fillpdf_form
-   * @return array
    */
   public function parse(FillPdfFormInterface $fillpdf_form) {
     // @todo: Is there a better way to do this?
