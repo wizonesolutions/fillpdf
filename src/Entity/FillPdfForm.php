@@ -44,6 +44,10 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t('The UUID of the FillPdfForm entity.'))
       ->setReadOnly(TRUE);
 
+    $fields['title'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Filename pattern'))
+      ->setDescription(t('The pattern to use for serving populated PDF files.'));
+
     $fields['file'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('The associated managed file.'))
       ->setDescription(t('The associated managed file.'))
