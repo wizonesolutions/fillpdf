@@ -2,3 +2,6 @@ services:
   plugin.manager.fillpdf_backend:
     class: Drupal\fillpdf\FillPdfBackendManager
     parent: default_plugin_manager
+
+  fillpdf.link_manipulator:
+    class: Drupal\fillpdf\Service\FillPdfLinkManipulator

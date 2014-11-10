@@ -17,3 +17,10 @@ fillpdf.forms_admin:
     _permission: 'administer pdfs'
   options:
     _admin_route: TRUE
+
+fillpdf.populate_pdf:
+  path: '/fillpdf'
+  defaults:
+    _content: '\Drupal\fillpdf\Controller\HandlePdfController::populatePdf'
+  requirements:
+    _custom_access: '\Drupal\fillpdf\FillPdfAccessController::checkLink'
