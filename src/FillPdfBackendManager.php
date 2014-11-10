@@ -29,7 +29,7 @@ class FillPdfBackendManager extends DefaultPluginManager implements FillPdfBacke
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
     // @todo: Add a future FillPdfBackendPluginInterface to this?
-    parent::__construct('Plugin/FillPdfBackend', $namespaces, $module_handler);
+    parent::__construct('Plugin/FillPdfBackend', $namespaces, $module_handler, '\Drupal\fillpdf\FillPdfBackendPluginInterface');
     $this->alterInfo('fillpdf_backend_info');
     $this->setCacheBackend($cache_backend, 'fillpdf_backend_info_plugins');
   }
