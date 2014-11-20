@@ -21,6 +21,6 @@ fillpdf.forms_admin:
 fillpdf.populate_pdf:
   path: '/fillpdf'
   defaults:
-    _content: '\Drupal\fillpdf\Controller\HandlePdfController::populatePdf'
+    _controller: '\Drupal\fillpdf\Controller\HandlePdfController::populatePdf'
   requirements:
     _custom_access: '\Drupal\fillpdf\FillPdfAccessController::checkLink'

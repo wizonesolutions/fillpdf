@@ -12,7 +12,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
-class FillPdfBackendManager extends DefaultPluginManager implements FillPdfBackendManagerInterface {
+class FillPdfBackendManager extends DefaultPluginManager {
 
   /**
    * Constructs a FillPdfBackendManager object.
@@ -28,7 +28,6 @@ class FillPdfBackendManager extends DefaultPluginManager implements FillPdfBacke
    *   The module handler to invoke the alter hook with.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    // @todo: Add a future FillPdfBackendPluginInterface to this?
     parent::__construct('Plugin/FillPdfBackend', $namespaces, $module_handler, '\Drupal\fillpdf\FillPdfBackendPluginInterface');
     $this->alterInfo('fillpdf_backend_info');
     $this->setCacheBackend($cache_backend, 'fillpdf_backend_info_plugins');

@@ -14,7 +14,8 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\file\Entity\File;
 use Drupal\fillpdf\Entity\FillPdfForm;
-use Drupal\fillpdf\FillPdfBackendManagerInterface;
+use Drupal\fillpdf\Entity\FillPdfFormField;
+use Drupal\fillpdf\FillPdfBackendManager;
 use Drupal\fillpdf\FillPdfBackendPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -22,7 +23,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
   /**
    * The backend manager (finds the filling plugin the user selected).
    *
-   * @var \Drupal\fillpdf\FillPdfBackendManagerInterface
+   * @var \Drupal\fillpdf\FillPdfBackendManager
    */
   protected $backendManager;
 
@@ -45,7 +46,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     return 'fillpdf_forms_admin';
   }
 
-  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManagerInterface $backend_manager, AccountInterface $current_user, QueryFactory $entity_query) {
+  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManager $backend_manager, AccountInterface $current_user, QueryFactory $entity_query) {
     parent::__construct();
     $this->backendManager = $backend_manager;
     $this->moduleHandler = $module_handler;
@@ -228,27 +229,21 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     $config = $this->config('fillpdf.settings');
     $fillpdf_service = $config->get('fillpdf_service_backend');
 
-    try {
-      /** @var FillPdfBackendPluginInterface $backend */
-      $backend = $this->backendManager->createInstance($fillpdf_service, $config->get());
+    /** @var FillPdfBackendPluginInterface $backend */
+    $backend = $this->backendManager->createInstance($fillpdf_service, $config->get());
+
+    // Attempt to parse the fields in the PDF.
+    $fields = $backend->parse($fillpdf_form);
+
+    // Save the fields that were parsed out (if any). If none were, set a
+    // warning message telling the user that.
+    foreach ($fields as $fillpdf_form_field) {
+      /** @var FillPdfFormField $fillpdf_form_field */
+      $fillpdf_form_field->save();
     }
-    catch (PluginNotFoundException $exception) {
-      $backend = NULL;
-    }
 
-    if ($backend) {
-      // Attempt to parse the fields in the PDF.
-      $fields = $backend->parse($fillpdf_form);
-
-      // Save the fields that were parsed out (if any). If none were, set a
-      // warning message telling the user that.
-      foreach ($fields as $fillpdf_form_field) {
-        $fillpdf_form_field->save();
-      }
-
-      if (empty($fields)) {
-        drupal_set_message($this->t("No fields detected in PDF. Are you sure it contains editable fields?"), 'warning');
-      }
+    if (empty($fields)) {
+      drupal_set_message($this->t("No fields detected in PDF. Are you sure it contains editable fields?"), 'warning');
     }
   }
 }

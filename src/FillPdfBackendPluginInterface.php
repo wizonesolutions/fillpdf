@@ -38,9 +38,9 @@ interface FillPdfBackendPluginInterface {
    *     'Field 1' => 'value',
    *     'Checkbox Field' => 'On',
    *   );
-   * @param array $options @todo: Define
+   * @param array $context @todo: Define
    * @return string The raw file contents of the new PDF; the caller has to
    *   handle saving or serving the file accordingly.
    */
-  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $fields, array $options);
+  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $fields, array $context);
 }
