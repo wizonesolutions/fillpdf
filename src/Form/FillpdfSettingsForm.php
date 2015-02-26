@@ -104,4 +104,15 @@ class FillPdfSettingsForm extends ConfigFormBase {
 
     parent::submitForm($form, $form_state);
   }
+
+  /**
+   * Gets the configuration names that will be editable.
+   *
+   * @return array
+   *   An array of configuration object names that are editable if called in
+   *   conjunction with the trait's config() method.
+   */
+  protected function getEditableConfigNames() {
+    return ['fillpdf.settings'];
+  }
 }
