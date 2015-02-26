@@ -5,7 +5,6 @@
   */
 
 namespace Drupal\fillpdf;
-use Drupal\file\FileInterface;
 
 /**
  * Defines the required interface for all FillPDF Backend plugins.

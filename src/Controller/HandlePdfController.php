@@ -75,7 +75,7 @@ class HandlePdfController extends ControllerBase {
     // @todo: When Rules integration ported, emit an event or whatever.
 
     // TODO: Take the appropriate action on the PDF.
-    $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, array());
+    return $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, array());
   }
 
   /**
