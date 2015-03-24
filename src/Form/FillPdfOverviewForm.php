@@ -215,6 +215,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     // based off that.
     /** @var \Drupal\file\FileInterface $file */
     $file = $form_state->getValue('upload_pdf');
+    $file->setPermanent();
     $file->save(); // Save the file so we can get an fid
 
     $fillpdf_form = FillPdfForm::create(array(
