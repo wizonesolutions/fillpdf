@@ -16,6 +16,9 @@ use Drupal\fillpdf\FillPdfFormInterface;
  * @ContentEntityType(
  *   id = "fillpdf_form",
  *   label = @Translation("FillPDF form"),
+ *   handlers = {
+ *     "views_data" = "Drupal\fillpdf\FillPdfFormViewsData",
+ *   },
  *   admin_permission = "administer pdfs",
  *   base_table = "fillpdf_forms",
  *   data_table = "fillpdf_forms_field_data",
