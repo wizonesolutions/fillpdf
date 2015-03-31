@@ -8,6 +8,7 @@ namespace Drupal\fillpdf\Entity;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Url;
 use Drupal\fillpdf\FillPdfFormInterface;
 
 /**
@@ -18,6 +19,10 @@ use Drupal\fillpdf\FillPdfFormInterface;
  *   label = @Translation("FillPDF form"),
  *   handlers = {
  *     "views_data" = "Drupal\fillpdf\FillPdfFormViewsData",
+ *     "form" = {
+ *       "edit" = "Drupal\fillpdf\Form\FillPdfFormForm",
+ *       "delete" = "Drupal\fillpdf\Form\FillPdfFormDeleteForm",
+ *     },
  *   },
  *   admin_permission = "administer pdfs",
  *   base_table = "fillpdf_forms",
@@ -47,31 +52,67 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t('The UUID of the FillPdfForm entity.'))
       ->setReadOnly(TRUE);
 
-    $fields['title'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Filename pattern'))
-      ->setDescription(t('The pattern to use for serving populated PDF files.'));
-
     $fields['file'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('The associated managed file.'))
       ->setDescription(t('The associated managed file.'))
       ->setSetting('target_type', 'file');
+
+//    /** @var UrlGeneratorInterface $url_generator */
+//    $url_generator = \Drupal::service('url_generator');
+    // @todo: Figure out how to do this the right way...I get a router rebuild error if I use $url_generator->generateFromRoute()
+    $overview_url = Url::fromUri('base://admin/structure/fillpdf')->toString();
+    // @todo: what is wrong with the below?
+    $fields['admin_title'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Administrative description'))
+      ->setDescription(t('Enter the name of the form here, and it will be shown on the <a href="@overview_url">form overview page</a>. It has no effect on functionality, but it can help you identify which form configuration you want to edit.', array('@overview_url' => $overview_url)))
+      ->setDisplayOptions('form', array(
+        'type' => 'string',
+        'weight' => 0,
+      ));
+
+    $fields['title'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Filename pattern'))
+      ->setDescription(t('Enter a title for this mapping configuration. This will be used for deciding the filename of your PDF. <strong>This field supports tokens.</strong>'))
+      ->setDisplayOptions('form', array(
+        'type' => 'string',
+        'weight' => 1,
+        ));
 
     // @todo: Revisit this...I would probably need to store the entity and bundle types as well.
 //    $fields['default_entity_id'] = BaseFieldDefinition::create('integer')
 //      ->setLabel(t('Default entity ID'))
 //      ->setDescription(t('The default entity ID to be filled from this FillPDF Form.'));
 
-    $fields['destination_path'] = BaseFieldDefinition::create('link')
-      ->setLabel(t('Destination file path for saving'))
-      ->setDescription(t('Subfolder in which to save the generated PDF.'));
+    // @todo: set display options on this
+    $fields['destination_path'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Where to save generated PDFs'))
+      ->setDescription(t("<p>By default, filled PDFs are not saved to disk; they are simply sent
+      directly to the browser for download. Enter a path here to change this behavior (tokens allowed).
+      <strong>Warning! Unless you include the &download=1 flag in the FillPDF URL, PDFs will only
+      be saved to disk <em>and won't</em> be sent to the browser as well.</strong></p><p>The path
+      you specify must be in one of the following two formats:<br />
+        <ul>
+          <li><em>path/to/directory</em> (path will be treated as relative to
+          your <em>files</em> directory)</li>
+          <li><em>/absolute/path/to/directory</em> (path will be treated as relative to your entire
+          filesystem)</li>
+        </ul>
+      Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"))
+      ->setDisplayOptions('form', array(
+        'type' => 'string',
+        'weight' => 3,
+      ));
 
     $fields['destination_redirect'] = BaseFieldDefinition::create('boolean')
-      ->setLabel(t('Redirect browser to saved PDF'))
-      ->setDescription(t("Whether to redirect the browser to the newly-saved PDF or not. By default, it's provided as a download. In some browsers, this will show the PDF in the browser windows; others will still prompt the user to download it."));
-
-    $fields['admin_title'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Administrative description'))
-      ->setDescription(t('A description to help administrators more easily distinguish FillPDF Forms.'));
+      ->setLabel(t('Redirect browser directly to saved PDF'))
+      ->setDescription(t("<strong>This setting is applicable only if <em>Where to save generated PDFs</em> is set.</strong> Instead of redirecting your visitors to the front page, it will redirect them directly to the PDF. However, if you pass Drupal's <em>destination</em> query string parameter, that will override this setting."))
+      ->setDisplayOptions('form', array(
+        'type' => 'boolean_checkbox',
+        'weight' => 4,
+        'settings' => array(
+          'display_label' => TRUE,
+        ),
+      ));
 
     return $fields;
   }

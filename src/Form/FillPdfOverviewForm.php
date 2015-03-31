@@ -205,5 +205,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     if (empty($fields)) {
       drupal_set_message($this->t("No fields detected in PDF. Are you sure it contains editable fields?"), 'warning');
     }
+
+    $form_state->setRedirect('entity.fillpdf_form.edit_form', array('fillpdf_form' => $fillpdf_form->id()));
   }
 }

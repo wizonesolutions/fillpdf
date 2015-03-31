@@ -24,3 +24,13 @@ fillpdf.populate_pdf:
     _controller: '\Drupal\fillpdf\Controller\HandlePdfController::populatePdf'
   requirements:
     _custom_access: '\Drupal\fillpdf\FillPdfAccessController::checkLink'
+
+entity.fillpdf_form.edit_form:
+  path: '/admin/structure/fillpdf/{fillpdf_form}'
+  defaults:
+    _entity_form: fillpdf_form.edit
+    _title: 'Edit FillPDF form'
+  requirements:
+    _permission: 'administer pdfs' # todo: do we have an administer own pdfs perm?
+  options:
+    _admin_route: TRUE
