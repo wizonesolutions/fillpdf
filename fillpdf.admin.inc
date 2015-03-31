@@ -65,85 +65,85 @@
 //  return $form;
 //}
 
-/**
- * Makes sure the Upload was provided (want to validate .pdf here too)
- */
-function fillpdf_forms_admin_validate($form, &$form_state) {
-  // uploading anything?
-  $file = $_FILES['files']['name']['upload_pdf'];
-  if (!$file) {
-    form_set_error('url', t('A PDF must be provided.'));
-  }
+///**
+// * Makes sure the Upload was provided (want to validate .pdf here too)
+// */
+//function fillpdf_forms_admin_validate($form, &$form_state) {
+//  // uploading anything?
+//  $file = $_FILES['files']['name']['upload_pdf'];
+//  if (!$file) {
+//    form_set_error('url', t('A PDF must be provided.'));
+//  }
+//
+//  $validate_file = _fillpdf_validate_upload($file);
+//  if (isset($validate_file['#error'])) {
+//    form_set_error('url', $validate_file['#message']);
+//  }
+//}
 
-  $validate_file = _fillpdf_validate_upload($file);
-  if (isset($validate_file['#error'])) {
-    form_set_error('url', $validate_file['#message']);
-  }
-}
+//function _fillpdf_validate_upload($file) {
+//  // from includes/file.inc, line 634, but can't use that function because file not an object yet
+//  if (!preg_match('/\.pdf$/i', $file)) {
+//    return array(
+//      '#error' => TRUE,
+//      '#message' => t('Only PDF files are allowed'),
+//    );
+//  }
+//
+//  // directory exist or writeable?
+//  $dir = file_build_uri('fillpdf');
+//  file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+//
+//  return TRUE;
+//}
 
-function _fillpdf_validate_upload($file) {
-  // from includes/file.inc, line 634, but can't use that function because file not an object yet
-  if (!preg_match('/\.pdf$/i', $file)) {
-    return array(
-      '#error' => TRUE,
-      '#message' => t('Only PDF files are allowed'),
-    );
-  }
-
-  // directory exist or writeable?
-  $dir = file_build_uri('fillpdf');
-  file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
-
-  return TRUE;
-}
-
-/**
- * Creates a new Form from the uploaded PDF, including parsed fields
- */
-function fillpdf_forms_admin_submit($form, &$form_state) {
-  $fid = _fillpdf_save_upload('upload_pdf');
-  if (is_numeric($fid)) {
-    $form_state['redirect'] = "admin/structure/fillpdf/$fid";
-  }
-}
-
-function _fillpdf_save_upload($form_key, $fid = NULL) {
-  $dir = file_build_uri('fillpdf');
-  // $validators not working, so I just checked manually
-  // in fillpdf_forms_validate()
-  $validators = array('file_validate_extensions' => array('pdf'));
-  if ($file = file_save_upload($form_key, $validators, $dir, FILE_EXISTS_RENAME)) {
-    drupal_set_message(t('<strong>@filename</strong> was successfully uploaded.', array('@filename' => $file->filename)));
-    $file->status = FILE_STATUS_PERMANENT;
-    $file = file_save($file);
-    // Does this file already exist in {fillpdf_forms}?
-    // If so, don't re-insert it.
-    if (isset($fid) === FALSE) {
-      db_insert('fillpdf_forms')
-        ->fields(array(
-          'fid' => $file->fid,
-          'title' => $file->filename,
-          'url' => $file->uri,
-        ))
-        ->execute();
-      $fid = $file->fid;
-    }
-    else {
-      db_update('fillpdf_forms')
-        ->fields(array(
-          'url' => $file->uri,
-        ))
-        ->condition('fid', $fid)
-        ->execute();
-    }
-    fillpdf_parse_pdf($fid);
-    return $fid;
-  }
-  else {
-    // commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
-    drupal_set_message(t('Error saving file to @dir', array('@dir' => $dir)), 'error');
-  }
-}
+///**
+// * Creates a new Form from the uploaded PDF, including parsed fields
+// */
+//function fillpdf_forms_admin_submit($form, &$form_state) {
+//  $fid = _fillpdf_save_upload('upload_pdf');
+//  if (is_numeric($fid)) {
+//    $form_state['redirect'] = "admin/structure/fillpdf/$fid";
+//  }
+//}
+//
+//function _fillpdf_save_upload($form_key, $fid = NULL) {
+//  $dir = file_build_uri('fillpdf');
+//  // $validators not working, so I just checked manually
+//  // in fillpdf_forms_validate()
+//  $validators = array('file_validate_extensions' => array('pdf'));
+//  if ($file = file_save_upload($form_key, $validators, $dir, FILE_EXISTS_RENAME)) {
+//    drupal_set_message(t('<strong>@filename</strong> was successfully uploaded.', array('@filename' => $file->filename)));
+//    $file->status = FILE_STATUS_PERMANENT;
+//    $file = file_save($file);
+//    // Does this file already exist in {fillpdf_forms}?
+//    // If so, don't re-insert it.
+//    if (isset($fid) === FALSE) {
+//      db_insert('fillpdf_forms')
+//        ->fields(array(
+//          'fid' => $file->fid,
+//          'title' => $file->filename,
+//          'url' => $file->uri,
+//        ))
+//        ->execute();
+//      $fid = $file->fid;
+//    }
+//    else {
+//      db_update('fillpdf_forms')
+//        ->fields(array(
+//          'url' => $file->uri,
+//        ))
+//        ->condition('fid', $fid)
+//        ->execute();
+//    }
+//    fillpdf_parse_pdf($fid);
+//    return $fid;
+//  }
+//  else {
+//    // commented out because even though error if file doesn't upload right, not error if they dont' upload a file (& this is still triggered)
+//    drupal_set_message(t('Error saving file to @dir', array('@dir' => $dir)), 'error');
+//  }
+//}
 
 /* ---------------- Form Edit --------------------*/
 

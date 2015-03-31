@@ -16,7 +16,7 @@ class FillPdfFormViewsData extends EntityViewsData {
   public function getViewsData() {
     $data = parent::getViewsData();
 
-    $data['fillpdf_forms']['table']['group'] = t('FillPDF forms');
+    $data['fillpdf_forms']['table']['group'] = $data['fillpdf_forms']['table']['base']['title'] = t('FillPDF forms');
 
     $data['fillpdf_forms']['table']['base']['help'] = t('FillPDF forms are uploaded on the FillPDF administration page and are used by the FillPDF module.');
 

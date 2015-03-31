@@ -79,48 +79,8 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
    *   The form structure.
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    // @todo: Convert to using data from entity or something.
-    $result_ids = $this->entityQuery->get('fillpdf_form')
-      ->execute();
-
-    $header = array(
-      $this->t('Administrative title'),
-      $this->t('Title'),
-      $this->t('Location'),
-      array(
-        'data' => t('Operations'),
-        'colspan' => '4',
-      ),
-    );
-    $rows = array();
-    $form['existing_forms'] = array(
-      '#theme' => 'table',
-      '#header' => $header,
-      '#attributes' => array('id' => 'fillpdf'),
-      '#empty' => $this->t('No content available.'),
-    );
-
-    $result = array();
-    if ($result_ids) {
-      $result = FillPdfForm::loadMultiple($result_ids);
-    }
-
-    foreach ($result as $pdf_form) {
-      $row = array(
-        String::checkPlain($pdf_form->admin_title->value),
-        String::checkPlain($pdf_form->title->value),
-        String::checkPlain(File::load($pdf_form->file->target_id)->uri->value),
-        // @todo: Convert to routes.
-//        $this->l($this->t('Edit'), "admin/structure/fillpdf/$pdf_form->fid"),
-//        $this->l($this->t('Delete'), "admin/structure/fillpdf/$pdf_form->fid/delete"),
-//        $this->l($this->t('Export field mappings'), "admin/structure/fillpdf/$pdf_form->fid/export"),
-//        $this->l($this->t('Import field mappings'), "admin/structure/fillpdf/$pdf_form->fid/import"),
-      );
-
-      $rows[] = $row;
-    }
-
-    $form['existing_forms']['#rows'] = $rows;
+    // @todo: convert to OOP
+    $form['existing_forms'] = views_embed_view('fillpdf_forms', 'block_1');
 
     $config = $this->config('fillpdf.settings');
     // Only show PDF upload form if fillpdf is configured.
@@ -179,7 +139,6 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
             'uid' => $this->currentUser()->id(),
           ));
 
-          // TODO: test this
           $errors = file_validate_extensions($new_file, 'pdf');
 
           if (!empty($errors)) {
