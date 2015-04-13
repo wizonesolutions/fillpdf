@@ -29,7 +29,8 @@ use Drupal\fillpdf\FillPdfFormInterface;
  *   data_table = "fillpdf_forms_field_data",
  *   entity_keys = {
  *     "id" = "fid",
- *     "uuid" = "uuid"
+ *     "label" = "title",
+ *     "uuid" = "uuid",
  *   },
  * )
  */
@@ -57,8 +58,6 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t('The associated managed file.'))
       ->setSetting('target_type', 'file');
 
-//    /** @var UrlGeneratorInterface $url_generator */
-//    $url_generator = \Drupal::service('url_generator');
     // @todo: Figure out how to do this the right way...I get a router rebuild error if I use $url_generator->generateFromRoute()
     $overview_url = Url::fromUri('base://admin/structure/fillpdf')->toString();
     // @todo: what is wrong with the below?
@@ -100,7 +99,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"))
       ->setDisplayOptions('form', array(
         'type' => 'string',
-        'weight' => 3,
+        'weight' => 2,
       ));
 
     $fields['destination_redirect'] = BaseFieldDefinition::create('boolean')
@@ -108,7 +107,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t("<strong>This setting is applicable only if <em>Where to save generated PDFs</em> is set.</strong> Instead of redirecting your visitors to the front page, it will redirect them directly to the PDF. However, if you pass Drupal's <em>destination</em> query string parameter, that will override this setting."))
       ->setDisplayOptions('form', array(
         'type' => 'boolean_checkbox',
-        'weight' => 4,
+        'weight' => 3,
         'settings' => array(
           'display_label' => TRUE,
         ),
