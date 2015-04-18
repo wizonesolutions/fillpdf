@@ -26,7 +26,6 @@ use Drupal\fillpdf\FillPdfFormInterface;
  *   },
  *   admin_permission = "administer pdfs",
  *   base_table = "fillpdf_forms",
- *   data_table = "fillpdf_forms_field_data",
  *   entity_keys = {
  *     "id" = "fid",
  *     "label" = "title",

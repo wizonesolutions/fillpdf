@@ -27,7 +27,6 @@ use Drupal\fillpdf\FillPdfFormFieldInterface;
  *   },
  *   admin_permission = "administer pdfs",
  *   base_table = "fillpdf_fields",
- *   data_table = "fillpdf_fields_field_data",
  *   entity_keys = {
  *     "id" = "ffid",
  *     "uuid" = "uuid"
