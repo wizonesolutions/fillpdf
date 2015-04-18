@@ -73,7 +73,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t('Enter a title for this mapping configuration. This will be used for deciding the filename of your PDF. <strong>This field supports tokens.</strong>'))
       ->setDisplayOptions('form', array(
         'type' => 'string',
-        'weight' => 1,
+        'weight' => 10,
         ));
 
     // @todo: Revisit this...I would probably need to store the entity and bundle types as well.
@@ -98,7 +98,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"))
       ->setDisplayOptions('form', array(
         'type' => 'string',
-        'weight' => 2,
+        'weight' => 20,
       ));
 
     $fields['destination_redirect'] = BaseFieldDefinition::create('boolean')
@@ -106,7 +106,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t("<strong>This setting is applicable only if <em>Where to save generated PDFs</em> is set.</strong> Instead of redirecting your visitors to the front page, it will redirect them directly to the PDF. However, if you pass Drupal's <em>destination</em> query string parameter, that will override this setting."))
       ->setDisplayOptions('form', array(
         'type' => 'boolean_checkbox',
-        'weight' => 3,
+        'weight' => 30,
         'settings' => array(
           'display_label' => TRUE,
         ),
