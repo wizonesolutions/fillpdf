@@ -441,7 +441,7 @@ display:
             alter_text: true
             text: Edit
             make_link: true
-            path: 'fillpdf/{{ fillpdf_form }}/{{ ffid }}'
+            path: 'admin/structure/fillpdf/{{ fillpdf_form }}/{{ ffid }}'
             absolute: false
             external: false
             replace_spaces: false
@@ -497,13 +497,24 @@ display:
       header: {  }
       footer: {  }
       empty: {  }
-      relationships: {  }
-      arguments:
+      relationships:
         fillpdf_form:
           id: fillpdf_form
           table: fillpdf_fields
           field: fillpdf_form
           relationship: none
+          group_type: group
+          admin_label: 'FillPDF form'
+          required: true
+          entity_type: fillpdf_form_field
+          entity_field: fillpdf_form
+          plugin_id: standard
+      arguments:
+        fid:
+          id: fid
+          table: fillpdf_forms
+          field: fid
+          relationship: fillpdf_form
           group_type: group
           admin_label: ''
           default_action: 'not found'
@@ -526,19 +537,15 @@ display:
             sort_order: asc
             number_of_records: 0
             format: default_summary
-          specify_validation: true
+          specify_validation: false
           validate:
-            type: 'entity:fillpdf_form'
+            type: none
             fail: 'not found'
-          validate_options:
-            access: '1'
-            operation: update
-            multiple: '0'
-            bundles: null
+          validate_options: {  }
           break_phrase: false
           not: false
-          entity_type: fillpdf_form_field
-          entity_field: fillpdf_form
+          entity_type: fillpdf_form
+          entity_field: fid
           plugin_id: numeric
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
@@ -552,4 +559,3 @@ display:
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
       field_langcode_add_to_query: null
-
