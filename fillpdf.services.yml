@@ -5,3 +5,7 @@ services:
 
   fillpdf.link_manipulator:
     class: Drupal\fillpdf\Service\FillPdfLinkManipulator
+
+  fillpdf.admin_form_helper:
+    class: Drupal\fillpdf\Service\FillpdfAdminFormHelper
+    arguments: ['@module_handler']

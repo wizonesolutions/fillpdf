@@ -59,8 +59,8 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      // Load the plugin manager.
       $container->get('module_handler'),
+      // Load the plugin manager.
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('current_user'),
       $container->get('entity.query')
