@@ -100,7 +100,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
         );
       }
       else {
-        drupal_set_message($this->t('You must install the <a href="@xmlrpc">contributed XML-RPC module</a> in order to use FillPDF Service as your PDF-filling method.', array('@xmlrpc' => Url::fromUri('https://drupal.org/project/xmlrpc'))), 'error');
+        drupal_set_message($this->t('You must install the <a href="@xmlrpc">contributed XML-RPC module</a> in order to use FillPDF Service as your PDF-filling method.', array('@xmlrpc' => Url::fromUri('https://drupal.org/project/xmlrpc')->toString())), 'error');
       }
     }
     else {
