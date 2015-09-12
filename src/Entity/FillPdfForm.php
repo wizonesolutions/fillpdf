@@ -28,9 +28,11 @@ use Drupal\fillpdf\FillPdfFormInterface;
  *   base_table = "fillpdf_forms",
  *   entity_keys = {
  *     "id" = "fid",
- *     "label" = "title",
  *     "uuid" = "uuid",
  *   },
+ *   links = {
+ *     "delete-form" = "/admin/structure/fillpdf/{fillpdf_form}/delete"
+ *   }
  * )
  */
 class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
@@ -76,10 +78,19 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
         'weight' => 10,
         ));
 
-    // @todo: Revisit this...I would probably need to store the entity and bundle types as well.
-//    $fields['default_entity_id'] = BaseFieldDefinition::create('integer')
-//      ->setLabel(t('Default entity ID'))
-//      ->setDescription(t('The default entity ID to be filled from this FillPDF Form.'));
+    // @todo: Validate this with a custom constraint or whatever
+    $fields['default_entity_type'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Default entity type'))
+      ->setDescription(t('The type of the below entity ID.'));
+
+    // @todo: Validate this with a custom constraint, if possible
+    $fields['default_entity_id'] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Default entity ID'))
+      ->setDescription(t('The default entity ID to be filled from this FillPDF Form.'))
+      ->setDisplayOptions('form', array(
+        'type' => 'string',
+        'weight' => 15,
+      ));
 
     // @todo: set display options on this
     $fields['destination_path'] = BaseFieldDefinition::create('string')

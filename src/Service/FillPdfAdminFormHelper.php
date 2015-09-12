@@ -22,17 +22,10 @@ class FillPdfAdminFormHelper implements FillPdfAdminFormHelperInterface {
    * {@inheritdoc}
    */
   public function getAdminTokenForm() {
-    $token_types = array('node', 'webform-tokens', 'submission');
-
-    // If not using Webform Rules, then show potential Webform Tokens
-    // webform:-namespaced tokens.
-    if ($this->moduleHandler->moduleExists('webform_rules') === FALSE) {
-      $token_types[] = 'webform';
-    }
     return array(
       '#theme' => 'token_tree',
-      '#token_types' => $token_types,
-      '#global_types' => FALSE,
+      '#token_types' => 'all',
+      '#global_types' => TRUE,
     );
   }
 

@@ -5,9 +5,7 @@
   */
 
 namespace Drupal\fillpdf;
-
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Defines an interface to allow parsing and building FillPDF Links.
@@ -19,7 +17,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 interface FillPdfLinkManipulatorInterface {
 
   /**
-   * @param Request $request The request containing the query string to parse.
+   * @param \Symfony\Component\HttpFoundation\Request $request The request containing the query string to parse.
    * @return array
    */
   public function parseLink(Request $request);
@@ -28,7 +26,7 @@ interface FillPdfLinkManipulatorInterface {
    * @param array $parameters
    *   The array of parameters to be converted into a
    *   URL and query string.
-   * @return string
+   * @return \Drupal\Core\Url
    */
   public function generateLink(array $parameters);
 

@@ -6,8 +6,10 @@
 
 namespace Drupal\fillpdf\Service;
 
+use Drupal\Core\Url;
 use Drupal\fillpdf\FillPdfLinkManipulatorInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
 
 class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
 
@@ -48,6 +50,9 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
           $entity_type = $entity_id_parts[0];
           $entity_id = $entity_id_parts[1];
         }
+        elseif (!empty($request_context['entity_type'])) {
+          $entity_type = $request_context['entity_type'];
+        }
         else {
           $entity_type = 'node';
         }
@@ -70,13 +75,28 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
   }
 
   /**
-   * @param array $parameters
-   *   The array of parameters to be converted into a
-   *     URL and query string.
-   * @return string
+   * {@inheritdoc}
    */
   public function generateLink(array $parameters) {
-    // TODO: Implement generateLink() method.
+    $query_options = array();
+
+    if (!isset($parameters['fid'])) {
+      throw new \InvalidArgumentException("The $parameters argument must contain the fid key (the FillPdfForm's ID).");
+    }
+
+    $query_options['fid'] = $parameters['fid'];
+
+    if (!empty($parameters['sample'])) {
+      $query_options['sample'] = 1;
+    }
+
+    // TODO: Implement rest of generateLink() method.
+
+    $fillpdf_link = Url::fromRoute('fillpdf.populate_pdf',
+      array(),
+      array('query' => $query_options));
+
+    return $fillpdf_link;
   }
 
 }
