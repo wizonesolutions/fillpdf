@@ -31,7 +31,7 @@ display:
           disable_sql_rewrite: false
           distinct: false
           replica: false
-          query_comment: false
+          query_comment: ''
           query_tags: {  }
       exposed_form:
         type: basic
@@ -53,11 +53,11 @@ display:
       row:
         type: fields
       fields:
-        fillpdf_form:
-          id: fillpdf_form
-          table: fillpdf_fields
-          field: fillpdf_form
-          relationship: none
+        fid:
+          id: fid
+          table: fillpdf_forms
+          field: fid
+          relationship: fillpdf_form
           group_type: group
           admin_label: ''
           label: 'FillPDF Form ID'
@@ -79,7 +79,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: 0
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -101,18 +101,24 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          set_precision: false
-          precision: 0
-          decimal: .
-          separator: ''
-          format_plural: false
-          format_plural_singular: '1'
-          format_plural_plural: '@count'
-          prefix: ''
-          suffix: ''
-          entity_type: fillpdf_form_field
-          entity_field: fillpdf_form
-          plugin_id: numeric
+          click_sort_column: value
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: fillpdf_form
+          entity_field: fid
+          plugin_id: field
         ffid:
           id: ffid
           table: fillpdf_fields
@@ -139,7 +145,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -199,7 +205,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -250,7 +256,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -301,7 +307,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -352,7 +358,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -403,7 +409,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -441,7 +447,7 @@ display:
             alter_text: true
             text: Edit
             make_link: true
-            path: 'admin/structure/fillpdf/{{ fillpdf_form }}/{{ ffid }}'
+            path: 'admin/structure/fillpdf/{{ fid }}/{{ ffid }}'
             absolute: false
             external: false
             replace_spaces: false
@@ -454,7 +460,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -550,6 +556,12 @@ display:
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
       field_langcode_add_to_query: null
+    cache_metadata:
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+      cacheable: false
   block_1:
     display_plugin: block
     id: block_1
@@ -559,3 +571,9 @@ display:
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
       field_langcode_add_to_query: null
+    cache_metadata:
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+      cacheable: false
