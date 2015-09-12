@@ -7,9 +7,7 @@
 namespace Drupal\fillpdf\Plugin\FillPdfBackend;
 
 use Drupal\Component\Annotation\Plugin;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Config\ConfigManagerInterface;
-use Drupal\Core\Url;
+use Drupal\Core\Annotation\Translation;
 use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
 use Drupal\fillpdf\Entity\FillPdfFormField;
