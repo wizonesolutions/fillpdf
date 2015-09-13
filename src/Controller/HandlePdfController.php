@@ -97,14 +97,20 @@ class HandlePdfController extends ControllerBase {
    * @param array|\Drupal\fillpdf\Controller\If $options If set, this function will always end the request by
    * sending the filled PDF to the user's browser.
    */
-  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, array $token_objects, $action = 'download', array $options = array()) {
+  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, array $token_objects, $action = 'download', array $options = []) {
     // TODO: Convert rest of this function.
     $force_download = FALSE;
     if (!empty($option['force_download'])) {
       $force_download = TRUE;
     }
 
-    if (in_array($action, array('default', 'download', 'save', 'redirect')) === FALSE) {
+    if (in_array($action, [
+        'default',
+        'download',
+        'save',
+        'redirect'
+      ]) === FALSE
+    ) {
       // Do nothing if the function is called with an invalid action.
       return;
     }

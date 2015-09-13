@@ -107,7 +107,7 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
     $args = func_get_args();
 
     // Fix up the array for Drupal 7 xmlrpc() function style
-    $args = array($args[0] => array_slice($args, 1));
+    $args = [$args[0] => array_slice($args, 1)];
     $result = xmlrpc($url, $args);
 
     $ret = new \stdClass;

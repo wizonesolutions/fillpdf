@@ -40,7 +40,7 @@ class FillPdfFormField extends ContentEntityBase implements FillPdfFormFieldInte
    * @todo Fix field descriptions to match D7 version.
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields = array();
+    $fields = [];
 
     $fields['ffid'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('FillPDF Form Field ID'))
@@ -65,39 +65,39 @@ class FillPdfFormField extends ContentEntityBase implements FillPdfFormFieldInte
     $fields['label'] = BaseFieldDefinition::create('string')
       ->setLabel(t('PDF field label'))
       ->setDescription(t('An optional label to help you identify the field.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string',
-      ));
+      ]);
 
     $fields['prefix'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Text before field value'))
       ->setDescription(t('Text to add to the front of the field value unless the field value is blank.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_long',
-      ));
+      ]);
 
     // @todo: convert meeeeeeee
     $fields['value'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Fill pattern'))
       ->setDescription(t('Text and tokens with which to fill in the PDF.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_long',
-      ));
+      ]);
 
     $fields['suffix'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Text after field value'))
       ->setDescription(t('Text to add to the end of the field value unless the field value is blank.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_long',
-      ));
+      ]);
 
     // @todo: Can I do better on field type here? Maybe a multi-value string field?
     $fields['replacements'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Fill pattern transformations'))
       ->setDescription(t('Pipe-separated mapping of specific values to replace with other values.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_long',
-      ));
+      ]);
 
     return $fields;
   }
