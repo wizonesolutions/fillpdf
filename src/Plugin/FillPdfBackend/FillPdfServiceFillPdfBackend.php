@@ -74,18 +74,14 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
   /**
    * @inheritdoc
    */
-  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $fields, array $context) {
+  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $field_mapping, array $context) {
     /** @var FileInterface $original_file */
     $original_file = File::load($pdf_form->file->target_id);
     $original_pdf = file_get_contents($original_file->getFileUri());
-
-    // @todo: Actually write this
     $api_key = $this->config['fillpdf_api_key'];
-    $field_mapping = array();
-    // @todo: Image-filling support. Probably both the local and remote plugins
-    // could extend the same class.
-    $image_data = array();
-    $result = $this->xmlRpcRequest('merge_pdf_v3', base64_encode($original_pdf), $field_mapping, $api_key, $context['flatten'], $image_data);
+
+    $result = $this->xmlRpcRequest('merge_pdf_v3', base64_encode($original_pdf), $field_mapping['fields'], $api_key, $context['flatten'], $field_mapping['images']);
+
     // @todo: Error handling/exceptions
 //    if ($result->error == TRUE) {
 //      drupal_goto();

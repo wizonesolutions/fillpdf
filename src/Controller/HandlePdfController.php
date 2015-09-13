@@ -7,7 +7,9 @@
 namespace Drupal\fillpdf\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityManager;
 use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Utility\Token;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Drupal\fillpdf\Entity\FillPdfFormField;
 use Drupal\fillpdf\FillPdfBackendManager;
@@ -30,11 +32,19 @@ class HandlePdfController extends ControllerBase {
   /** @var QueryFactory $entityQuery */
   protected $entityQuery;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, RequestStack $request_stack, FillPdfBackendManager $backend_manager, QueryFactory $entity_query) {
+  /** @var EntityManager $entityManager */
+  protected $entityManager;
+
+  /** @var Token $token */
+  protected $token;
+
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, RequestStack $request_stack, FillPdfBackendManager $backend_manager, Token $token, QueryFactory $entity_query, EntityManager $entity_manager) {
     $this->linkManipulator = $link_manipulator;
     $this->requestStack = $request_stack;
     $this->backendManager = $backend_manager;
+    $this->token = $token;
     $this->entityQuery = $entity_query;
+    $this->entityManager = $entity_manager;
   }
 
   /**
@@ -45,7 +55,9 @@ class HandlePdfController extends ControllerBase {
       $container->get('fillpdf.link_manipulator'),
       $container->get('request_stack'),
       $container->get('plugin.manager.fillpdf_backend'),
-      $container->get('entity.query')
+      $container->get('token'),
+      $container->get('entity.query'),
+      $container->get('entity.manager')
     );
   }
 
@@ -70,15 +82,75 @@ class HandlePdfController extends ControllerBase {
     $fields = FillPdfFormField::loadMultiple(
       $this->entityQuery->get('fillpdf_form_field')
         ->condition('fillpdf_form', $fillpdf_form->id())
-        ->execute()
-    );
+        ->execute());
 
-    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $fields, $context);
+    // Populate entities array based on what user passed in
+    $entities = [];
+    foreach ($context['entity_ids'] as $entity_type => $entity_ids) {
+      $type_controller = $this->entityManager->getStorage($entity_type);
+      $entity_list = $type_controller->loadMultiple($entity_ids);
+
+      if (!empty($entity_list)) {
+        // Initialize array.
+        $entities += [$entity_type => []];
+        $entities[$entity_type] += $entity_list;
+      }
+    }
+
+    $field_mapping = [
+      'fields' => [],
+      // @todo: Image-filling support. Probably both the local and remote plugins could extend the same class.
+      'images' => [],
+    ];
+
+    $mapped_fields = &$field_mapping['fields'];
+    $image_data = &$field_mapping['images'];
+    foreach ($fields as $field) {
+      $pdf_key = $field->pdf_key->value;
+      if ($context['sample']) {
+        $mapped_fields[$pdf_key] = $pdf_key;
+      }
+      else {
+        // Whichever entity matches the token last wins.
+        $replaced_string = '';
+        foreach ($entities as $entity_type => $entity_objects) {
+          foreach ($entity_objects as $entity_id => $entity) {
+            // @todo: Refactor so the token context can be re-used for title replacement later OR do title replacement here so that it works the same way as value replacement and doesn't just use the last value...like it does in Drupal 7 :(
+            // @todo: What if one fill pattern has tokens from multiple types in it? Figure out the best way to deal with that and rewrite this section accordingly. Probably some form of parallel arrays. Basically we'd have to run all combinations, although our logic still might not be smart enough to tell if *all* tokens in the source text have been replaced, or in which case both of them have been replaced last (which is what we want). I could deliberately pass each entity context separately and then count how many of them match, and only overwrite it if the match count is higher than the current one. Yeah, that's kind of inefficient but also a good start. I might just be able to scan for tokens myself and then check if they're still in the $uncleaned_base output, or do the cleaning myself so I only have to call Token::replace once. TBD.
+            $field_pattern = $field->value->value;
+            $maybe_replaced_string = $this->token->replace($field_pattern, [
+              $entity_type => $entity
+            ], [
+              'clean' => TRUE,
+              'sanitize' => FALSE,
+            ]);
+            // Generate a non-cleaned version of the token string so we can
+            // tell if the non-empty string we got back actually replaced
+            // some tokens.
+            $uncleaned_base = $this->token->replace($field_pattern, [
+              $entity_type => $entity
+            ], [
+              'sanitize' => FALSE,
+            ]);
+
+            // If we got a result that isn't what we put in, update the value
+            // for this field..
+            if ($maybe_replaced_string && $field_pattern !== $uncleaned_base) {
+              $replaced_string = $maybe_replaced_string;
+            }
+          }
+        }
+
+        $mapped_fields[$pdf_key] = $replaced_string;
+      }
+    }
+
+    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $field_mapping, $context);
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
     // TODO: Take the appropriate action on the PDF.
-    return $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, array());
+    return $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, []);
   }
 
   /**
