@@ -102,7 +102,7 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
    * @param $method
    * @return stdClass
    */
-  protected function xmlRpcRequest($method /** $args */) {
+  protected function xmlRpcRequest($method/** $args */) {
     $url = $this->fillPdfServiceEndpoint;
     $args = func_get_args();
 

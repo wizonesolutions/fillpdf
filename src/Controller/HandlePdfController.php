@@ -1,8 +1,8 @@
 <?php
 /**
-  * @file
-  * Contains \Drupal\fillpdf\Controller\HandlePdfController.
-  */
+ * @file
+ * Contains \Drupal\fillpdf\Controller\HandlePdfController.
+ */
 
 namespace Drupal\fillpdf\Controller;
 
@@ -37,6 +37,9 @@ class HandlePdfController extends ControllerBase {
     $this->entityQuery = $entity_query;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('fillpdf.link_manipulator'),
@@ -83,7 +86,6 @@ class HandlePdfController extends ControllerBase {
    *
    * Figure out what to do with the PDF and do it.
    *
-   * @return Nothing.
    * @param \Drupal\fillpdf\Controller\An|\Drupal\fillpdf\FillPdfFormInterface $fillpdf_form An object containing the loaded record from {fillpdf_forms}
    * .
    * @param $pdf_data A string containing the content of the merged PDF.
@@ -146,17 +148,6 @@ class HandlePdfController extends ControllerBase {
         fillpdf_save_to_file($fillpdf_form, $pdf_data, $token_objects, $output_name, !$options, $redirect_to_file);
       // FillPDF classic!
       case 'download':
-//        drupal_add_http_header("Pragma", "public");
-//        drupal_add_http_header('Expires', 0);
-//        drupal_add_http_header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
-//        drupal_add_http_header('Content-type', 'application-download');
-//        // This must be strlen(), not drupal_strlen() because the length in bytes,
-//        // not in characters, is what is needed here.
-//        drupal_add_http_header('Content-Length', strlen($pdf_data));
-//        drupal_add_http_header('Content-disposition', 'attachment; filename="' . $output_name . '"');
-//        drupal_add_http_header('Content-Transfer-Encoding', 'binary');
-//        echo $pdf_data;
-//        drupal_exit();
         $disposition = $response->headers->makeDisposition(
           ResponseHeaderBag::DISPOSITION_ATTACHMENT,
           $output_name

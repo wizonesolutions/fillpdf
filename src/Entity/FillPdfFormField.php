@@ -1,8 +1,8 @@
 <?php
 /**
-  * @file
-  * Contains \Drupal\fillpdf\Entity\FillPdfFormField.
-  */
+ * @file
+ * Contains \Drupal\fillpdf\Entity\FillPdfFormField.
+ */
 
 namespace Drupal\fillpdf\Entity;
 

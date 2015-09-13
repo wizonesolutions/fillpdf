@@ -17,8 +17,11 @@ use Symfony\Component\HttpFoundation\Request;
 interface FillPdfLinkManipulatorInterface {
 
   /**
-   * @param \Symfony\Component\HttpFoundation\Request $request The request containing the query string to parse.
+   * @param \Symfony\Component\HttpFoundation\Request $request The request
+   *  containing the query string to parse.
    * @return array
+   *
+   * @todo Should this actually take a \Drupal\Core\Url? Or should there be another method that does? What if another caller wants to parse an arbitrary URL?
    */
   public function parseLink(Request $request);
 
