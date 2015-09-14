@@ -9,7 +9,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
-use Drupal\fillpdf\Component\Utility\Fillpdf;
+use Drupal\fillpdf\Component\Utility\FillPdf;
 
 class FillPdfSettingsForm extends ConfigFormBase {
   public function getFormId() {

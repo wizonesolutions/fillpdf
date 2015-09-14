@@ -7,5 +7,12 @@ services:
     class: Drupal\fillpdf\Service\FillPdfLinkManipulator
 
   fillpdf.admin_form_helper:
-    class: Drupal\fillpdf\Service\FillpdfAdminFormHelper
+    class: Drupal\fillpdf\Service\FillPdfAdminFormHelper
     arguments: ['@module_handler']
+
+  # I don't like the name of this, but it is what it does...it translates
+  # the context provided by a FillPDF Link into loaded entities (or serializes)
+  # entities into a context...well, it might in the future.
+  fillpdf.context_manager:
+    class: Drupal\fillpdf\Service\FillPdfContextManager
+    arguments: ['@entity.manager']

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains \Drupal\fillpdf\Component\Utility\Fillpdf.
+ * Contains \Drupal\fillpdf\Component\Utility\FillPdf.
  */
 namespace Drupal\fillpdf\Component\Utility;
 use Drupal\views\Views;
