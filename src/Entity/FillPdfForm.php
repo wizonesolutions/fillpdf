@@ -99,18 +99,34 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       directly to the browser for download. Enter a path here to change this behavior (tokens allowed).
       <strong>Warning! Unless you include the &download=1 flag in the FillPDF URL, PDFs will only
       be saved to disk <em>and won't</em> be sent to the browser as well.</strong></p><p>The path
-      you specify must be in one of the following two formats:<br />
+      you specify must be in the following format:<br />
         <ul>
-          <li><em>path/to/directory</em> (path will be treated as relative to
-          your <em>files</em> directory)</li>
-          <li><em>/absolute/path/to/directory</em> (path will be treated as relative to your entire
+          <li><code>path/to/directory</code> (path will be treated as relative to
+          your <em>fillpdf</em> files subdirectory)</li>
           filesystem)</li>
         </ul>
-      Note that, in both cases, you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"))
-      ->setDisplayOptions('form', array(
+      Note that you are responsible for ensuring that the user under which PHP is running can write to this path. Do not include a trailing slash.</p>"))
+      ->setDisplayOptions('form', [
         'type' => 'string',
         'weight' => 20,
-      ));
+      ]);
+
+    // @todo: add post_save_redirect field for where to send the browser by default after they generate a PDF
+
+    $fields['scheme'] = BaseFieldDefinition::create('list_string')
+      ->setLabel('Storage system for generated PDFs')
+      ->setDescription(t('This setting is used as the storage/download method for generated PDFs. The use of public files is more efficient, but does not provide any access control. Changing this setting will require you to migrate associated files and data yourself and is not recommended after you have uploaded a template.'))
+      ->setSettings([
+        'allowed_values' => FillPdfAdminFormHelper::schemeOptions(),
+      ])
+      ->setRequired(TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'options_buttons',
+        'weight' => 25,
+        'settings' => [
+          'options' => FillPdfAdminFormHelper::schemeOptions(),
+        ],
+      ]);
 
     $fields['destination_redirect'] = BaseFieldDefinition::create('boolean')
       ->setLabel(t('Redirect browser directly to saved PDF'))

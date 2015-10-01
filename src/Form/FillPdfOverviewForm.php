@@ -8,16 +8,20 @@ namespace Drupal\fillpdf\Form;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\file\Entity\File;
+use Drupal\file\FileUsage\FileUsageInterface;
+use Drupal\fillpdf\Component\Utility\FillPdf;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Drupal\fillpdf\Entity\FillPdfFormField;
 use Drupal\fillpdf\FillPdfBackendManager;
 use Drupal\fillpdf\FillPdfBackendPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class FillPdfOverviewForm extends FillPdfAdminFormBase {
   /**
@@ -33,8 +37,11 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
   /** @var AccountInterface $current_user */
   protected $currentUser;
 
-  /** @var \Drupal\Core\Entity\Query\QueryFactory $entityQuery */
+  /** @var QueryFactory $entityQuery */
   protected $entityQuery;
+
+  /** @var FileSystemInterface $fileSystem */
+  protected $fileSystem;
 
   /**
    * Returns a unique string identifying the form.
@@ -46,12 +53,14 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     return 'fillpdf_forms_admin';
   }
 
-  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManager $backend_manager, AccountInterface $current_user, QueryFactory $entity_query) {
+  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManager $backend_manager, AccountInterface $current_user, QueryFactory $entity_query, FileSystemInterface $file_system, FileUsageInterface $file_usage) {
     parent::__construct();
     $this->backendManager = $backend_manager;
     $this->moduleHandler = $module_handler;
     $this->currentUser = $current_user;
     $this->entityQuery = $entity_query;
+    $this->fileSystem = $file_system;
+    $this->fileUsage = $file_usage;
   }
 
   /**
@@ -63,7 +72,9 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
       // Load the plugin manager.
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('current_user'),
-      $container->get('entity.query')
+      $container->get('entity.query'),
+      $container->get('file_system'),
+      $container->get('file.usage')
     );
   }
 
@@ -115,7 +126,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $file_upload = $this->getRequest()->files->get('files[upload_pdf]', NULL, TRUE);
     /**
-     * @var $file_upload \Symfony\Component\HttpFoundation\File\UploadedFile
+     * @var $file_upload UploadedFile
      */
     if ($file_upload && $file_upload->isValid()) {
       // Move it to somewhere we know.
@@ -123,21 +134,22 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
 
       // Ensure the destination is unique; we deliberately use managed files,
       // but they are keyed on file URI, so we can't save the same one twice.
-      $destination = file_destination(file_build_uri('fillpdf/' . $uploaded_filename), FILE_EXISTS_RENAME);
+      $scheme = $this->config('fillpdf.settings')->get('scheme');
+      $destination = file_destination(FillPdf::buildFileUri($scheme, 'fillpdf/' . $uploaded_filename), FILE_EXISTS_RENAME);
 
       // Ensure our directory exists.
-      $fillpdf_directory = file_build_uri('fillpdf');
+      $fillpdf_directory = FillPdf::buildFileUri($scheme, 'fillpdf');
       $directory_exists = file_prepare_directory($fillpdf_directory, FILE_CREATE_DIRECTORY + FILE_MODIFY_PERMISSIONS);
 
       if ($directory_exists) {
-        $file_moved = drupal_move_uploaded_file($file_upload->getRealPath(), $destination);
+        $file_moved = $this->fileSystem->moveUploadedFile($file_upload->getRealPath(), $destination);
 
         if ($file_moved) {
           // Create a File object from the uploaded file.
-          $new_file = File::create(array(
+          $new_file = File::create([
             'uri' => $destination,
             'uid' => $this->currentUser()->id(),
-          ));
+          ]);
 
           $errors = file_validate_extensions($new_file, 'pdf');
 
@@ -177,14 +189,17 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     $file->setPermanent();
     $file->save(); // Save the file so we can get an fid
 
-    $fillpdf_form = FillPdfForm::create(array(
+    $fillpdf_form = FillPdfForm::create([
       'file' => $file,
       'title' => $file->filename,
-    ));
+      'scheme' => $this->config('fillpdf.settings')->get('scheme'),
+    ]);
 
     // Save PDF configuration before parsing. We'll add a button to let them attempt
     // re-parsing if it fails.
     $fillpdf_form->save();
+    $fid = $fillpdf_form->id();
+    $this->fileUsage->add($file, 'fillpdf', 'fillpdf_form', $fid);
 
     $config = $this->config('fillpdf.settings');
     $fillpdf_service = $config->get('backend');

@@ -22,11 +22,25 @@ class FillPdfAdminFormHelper implements FillPdfAdminFormHelperInterface {
    * {@inheritdoc}
    */
   public function getAdminTokenForm() {
-    return array(
+    return [
       '#theme' => 'token_tree',
       '#token_types' => 'all',
       '#global_types' => TRUE,
-    );
+    ];
+  }
+
+  /**
+   * Returns acceptable file scheme options.
+   *
+   * Suitable for use with FAPI radio buttons.
+   *
+   * @return array
+   */
+  public static function schemeOptions() {
+    return [
+      'private' => t('Private files'),
+      'public' => t('Public files'),
+    ];
   }
 
 }

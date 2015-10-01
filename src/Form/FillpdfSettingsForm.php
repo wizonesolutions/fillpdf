@@ -5,20 +5,50 @@
  * Contains \Drupal\fillpdf\Form\FillPdfSettingsForm.
  */
 namespace Drupal\fillpdf\Form;
+
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-
 use Drupal\fillpdf\Component\Utility\FillPdf;
+use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class FillPdfSettingsForm extends ConfigFormBase {
+
+  /** @var FillPdfAdminFormHelper $adminFormHelper */
+  protected $adminFormHelper;
+
   public function getFormId() {
     return 'fillpdf_settings';
   }
 
+  public function __construct(ConfigFactoryInterface $config_factory, FillPdfAdminFormHelper $admin_form_helper) {
+    $this->adminFormHelper = $admin_form_helper;
+    parent::__construct($config_factory);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static($container->get('config.factory'), $container->get('fillpdf.admin_form_helper'));
+  }
+
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('fillpdf.settings');
-    $fillpdf_service = $config->get('fillpdf_service_backend');
+
+    $scheme_options = FillPdfAdminFormHelper::schemeOptions();
+
+    $form['scheme'] = array(
+      '#type' => 'radios',
+      '#title' => $this->t('Template download method'),
+      '#default_value' => $config->get('scheme'),
+      '#options' => $scheme_options,
+      '#description' => $this->t('This setting is used as the download method for uploaded templates. The use of public files is more efficient, but does not provide any access control. Changing this setting will require you to migrate associated files and data yourself and is not recommended after you have uploaded a template.'),
+    );
+
+    $fillpdf_service = $config->get('backend');
 
     // Assemble service options. Warning messages will be added next as needed.
     $options = array(

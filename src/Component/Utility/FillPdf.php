@@ -45,4 +45,12 @@ class FillPdf {
     return $view->preview($display_id, $args);
   }
 
+  /**
+   * Constructs a URI to FillPDF's default files location given a relative path.
+   */
+  public static function buildFileUri($scheme, $path) {
+    $uri = $scheme . '://' . $path;
+    return file_stream_wrapper_uri_normalize($uri);
+  }
+
 }

@@ -1,0 +1,18 @@
+<?php
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
+
+/**
+ * Add scheme field to FillPdfForm.
+ */
+function fillpdf_update_8101() {
+  $edum = \Drupal::entityDefinitionUpdateManager();
+  $scheme_field = BaseFieldDefinition::create('string')
+    ->setLabel('Storage system for generated PDFs')
+    ->setDescription(t('This setting is used as the storage/download method for generated PDFs. The use of public files is more efficient, but does not provide any access control. Changing this setting will require you to migrate associated files and data yourself and is not recommended after you have uploaded a template.'))
+    ->setDisplayOptions('form', array(
+      'type' => 'radios',
+      'options' => FillPdfAdminFormHelper::schemeOptions(),
+    ));
+  $edum->installFieldStorageDefinition('scheme', 'fillpdf_form', 'fillpdf_form', $scheme_field);
+}
