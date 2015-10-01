@@ -84,14 +84,14 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
 
     $config = $this->config('fillpdf.settings');
     // Only show PDF upload form if fillpdf is configured.
-    if ($config->get('fillpdf_service_backend')) {
+    if ($config->get('backend')) {
       // If using FillPDF Service, ensure XML-RPC module is present.
-      if ($config->get('fillpdf_service_backend') != 'fillpdf_service' || $this->moduleHandler->moduleExists('xmlrpc')) {
-        $form['upload_pdf'] = array(
+      if ($config->get('backend') !== 'fillpdf_service' || $this->moduleHandler->moduleExists('xmlrpc')) {
+        $form['upload_pdf'] = [
           '#type' => 'file',
           '#title' => 'Upload',
           '#description' => 'Upload a PDF template to create a new form',
-        );
+        ];
 
         $form['submit'] = array(
           '#type' => 'submit',
@@ -187,8 +187,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     $fillpdf_form->save();
 
     $config = $this->config('fillpdf.settings');
-    $fillpdf_service = $config->get('fillpdf_service_backend');
-
+    $fillpdf_service = $config->get('backend');
     /** @var FillPdfBackendPluginInterface $backend */
     $backend = $this->backendManager->createInstance($fillpdf_service, $config->get());
 

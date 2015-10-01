@@ -74,7 +74,7 @@ class HandlePdfController extends ControllerBase {
     $context = $this->linkManipulator->parseLink($this->requestStack->getCurrentRequest());
 
     $config = $this->config('fillpdf.settings');
-    $fillpdf_service = $config->get('fillpdf_service_backend');
+    $fillpdf_service = $config->get('backend');
 
     // Load the backend plugin.
     /** @var FillPdfBackendPluginInterface $backend */

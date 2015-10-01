@@ -31,7 +31,7 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
   public function __construct(array $config) {
     // TODO: Remove hardcoding.
     $this->config = $config;
-    $this->fillPdfServiceEndpoint = "{$this->config['fillpdf_remote_protocol']}://{$this->config['fillpdf_remote_endpoint']}";
+    $this->fillPdfServiceEndpoint = "{$this->config['remote_protocol']}://{$this->config['remote_endpoint']}";
   }
 
   /**
@@ -78,7 +78,7 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
     /** @var FileInterface $original_file */
     $original_file = File::load($pdf_form->file->target_id);
     $original_pdf = file_get_contents($original_file->getFileUri());
-    $api_key = $this->config['fillpdf_api_key'];
+    $api_key = $this->config['fillpdf_service_api_key'];
 
     $result = $this->xmlRpcRequest('merge_pdf_v3', base64_encode($original_pdf), $field_mapping['fields'], $api_key, $context['flatten'], $field_mapping['images']);
 
