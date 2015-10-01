@@ -1,8 +1,8 @@
 <?php
 /**
-  * @file
-  * Contains \Drupal\fillpdf\Form\FillPdfFormDeleteForm.
-  */
+ * @file
+ * Contains \Drupal\fillpdf\Form\FillPdfFormDeleteForm.
+ */
 
 namespace Drupal\fillpdf\Form;
 

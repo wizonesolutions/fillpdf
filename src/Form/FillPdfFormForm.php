@@ -46,7 +46,6 @@ class FillPdfFormForm extends ContentEntityForm {
       '#type' => 'details',
       '#title' => $this->t('Tokens'),
       '#weight' => 11,
-
       'token_tree' => $this->adminFormHelper->getAdminTokenForm(),
     );
 
@@ -81,14 +80,12 @@ class FillPdfFormForm extends ContentEntityForm {
       '#type' => 'fieldset',
       '#title' => $this->t('PDF form information'),
       '#weight' => $form['default_entity_id']['#weight'] + 1,
-
       'submitted_pdf' => array(
         '#type' => 'item',
         '#title' => t('Uploaded PDF'),
         '#description' => $file_entity->getFileUri(),
         '#weight' => $pdf_info_weight++,
       ),
-
       // @todo: make work
       'upload_pdf' => array(
         '#type' => 'file',
@@ -96,7 +93,6 @@ class FillPdfFormForm extends ContentEntityForm {
         '#description' => 'Update the PDF template used by this form',
         '#weight' => $pdf_info_weight++,
       ),
-
       'sample_populate' => array(
         '#type' => 'item',
         '#title' => 'Sample PDF',
@@ -108,7 +104,6 @@ class FillPdfFormForm extends ContentEntityForm {
           $this->t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
         '#weight' => $pdf_info_weight++,
       ),
-
       'form_id' => array(
         '#type' => 'item',
         '#title' => 'Form Info',
@@ -123,8 +118,10 @@ class FillPdfFormForm extends ContentEntityForm {
         '#title' => 'Fill PDF from default node',
         '#description' => $this->l($this->t('Download this PDF filled with data from the default entity (@entity_type:@entity).',
             array(
-              '@entity_type', $entity->get('default_entity_type')->first()->value,
-              '@entity' => $entity->get('default_entity_id')->first()->value)
+              '@entity_type',
+              $entity->get('default_entity_type')->first()->value,
+              '@entity' => $entity->get('default_entity_id')->first()->value
+            )
           ),
             $this->linkManipulator->generateLink(array('fid' => $fid))) . '<br />' .
           $this->t('If you have set a custom path on this PDF, the sample will be saved there silently.'),
@@ -136,14 +133,16 @@ class FillPdfFormForm extends ContentEntityForm {
       '#type' => 'details',
       '#title' => $this->t('Additional settings'),
       '#weight' => $form['pdf_info']['#weight'] + 1,
-      '#open' => $entity->get('destination_path')->first()->value || $entity->get('destination_redirect')->first()->value,
+      '#open' => $entity->get('destination_path')
+          ->first()->value || $entity->get('destination_redirect')
+          ->first()->value,
     );
 
     $form['destination_path']['#group'] = 'additional_settings';
     $form['scheme']['#group'] = 'additional_settings';
     $form['destination_redirect']['#group'] = 'additional_settings';
 
-    $form['fillpdf_fields'] = FillPdf::embedView('fillpdf_form_fields',
+    $form['fillpdf_fields']['fields'] = FillPdf::embedView('fillpdf_form_fields',
       'block_1',
       $entity->id());
 

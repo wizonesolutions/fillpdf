@@ -52,8 +52,8 @@ class FillPdfSettingsForm extends ConfigFormBase {
 
     // Assemble service options. Warning messages will be added next as needed.
     $options = array(
-      'pdftk' => $this->t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'),  Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
-      'local' => $this->t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'),  Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
+      'pdftk' => $this->t('Use locally-installed pdftk: You will need a VPS or a dedicated server so you can install pdftk: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'), Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
+      'local' => $this->t('Use locally-installed PHP/JavaBridge: You will need a VPS or dedicated server so you can deploy PHP/JavaBridge on Apache Tomcat: (!see_documentation).', array('!see_documentation' => $this->l($this->t('see documentation'), Url::fromUri('http://drupal.org/documentation/modules/fillpdf')))),
       'fillpdf_service' => $this->t('Use FillPDF Service: Sign up for <a href="https://fillpdf-service.com">FillPDF Service</a>.'),
     );
 
@@ -114,10 +114,10 @@ class FillPdfSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    if ($form_state->getValue('fillpdf_pdftk_path')) {
-      $status = FillPdf::checkPdftkPath($form_state->getValue('fillpdf_pdftk_path'));
+    if ($form_state->getValue('pdftk_path')) {
+      $status = FillPdf::checkPdftkPath($form_state->getValue('pdftk_path'));
       if ($status === FALSE) {
-        $form_state->setErrorByName('fillpdf_pdftk_path', $this->t('The path you have entered for
+        $form_state->setErrorByName('pdftk_path', $this->t('The path you have entered for
       <em>pdftk</em> is invalid. Please enter a valid path.'));
       }
     }

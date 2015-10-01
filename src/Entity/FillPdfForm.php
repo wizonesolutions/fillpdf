@@ -5,11 +5,15 @@
  */
 
 namespace Drupal\fillpdf\Entity;
+
+use Drupal\Core\Annotation\Translation;
+use Drupal\Core\Entity\Annotation\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Url;
 use Drupal\fillpdf\FillPdfFormInterface;
+use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
 
 /**
  * Defines the entity for managing uploaded FillPDF forms.
@@ -41,7 +45,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields = array();
+    $fields = [];
 
     $fields['fid'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('FillPDF Form ID'))
@@ -64,19 +68,19 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
     // @todo: what is wrong with the below?
     $fields['admin_title'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Administrative description'))
-      ->setDescription(t('Enter the name of the form here, and it will be shown on the <a href="@overview_url">form overview page</a>. It has no effect on functionality, but it can help you identify which form configuration you want to edit.', array('@overview_url' => $overview_url)))
-      ->setDisplayOptions('form', array(
+      ->setDescription(t('Enter the name of the form here, and it will be shown on the <a href="@overview_url">form overview page</a>. It has no effect on functionality, but it can help you identify which form configuration you want to edit.', ['@overview_url' => $overview_url]))
+      ->setDisplayOptions('form', [
         'type' => 'string',
         'weight' => 0,
-      ));
+      ]);
 
     $fields['title'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Filename pattern'))
       ->setDescription(t('Enter a title for this mapping configuration. This will be used for deciding the filename of your PDF. <strong>This field supports tokens.</strong>'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string',
         'weight' => 10,
-        ));
+      ]);
 
     // @todo: Validate this with a custom constraint or whatever
     $fields['default_entity_type'] = BaseFieldDefinition::create('string')
@@ -87,10 +91,10 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
     $fields['default_entity_id'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Default entity ID'))
       ->setDescription(t('The default entity ID to be filled from this FillPDF Form.'))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string',
         'weight' => 15,
-      ));
+      ]);
 
     // @todo: set display options on this
     $fields['destination_path'] = BaseFieldDefinition::create('string')
@@ -131,13 +135,13 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
     $fields['destination_redirect'] = BaseFieldDefinition::create('boolean')
       ->setLabel(t('Redirect browser directly to saved PDF'))
       ->setDescription(t("<strong>This setting is applicable only if <em>Where to save generated PDFs</em> is set.</strong> Instead of redirecting your visitors to the front page, it will redirect them directly to the PDF. However, if you pass Drupal's <em>destination</em> query string parameter, that will override this setting."))
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'boolean_checkbox',
         'weight' => 30,
-        'settings' => array(
+        'settings' => [
           'display_label' => TRUE,
-        ),
-      ));
+        ],
+      ]);
 
     return $fields;
   }

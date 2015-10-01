@@ -18,7 +18,7 @@ interface FillPdfBackendPluginInterface {
    *
    * @param FillPdfFormInterface $fillpdf_form The PDF whose fields
    *   are going to be parsed.
-   * @return array An array of FillPdfField entities containing metadata about
+   * @return array An array of FillPdfFormField entities containing metadata about
    *   the fields in the PDF. These can be iterated over and saved by the
    *   caller.
    */

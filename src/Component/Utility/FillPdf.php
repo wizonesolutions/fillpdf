@@ -8,6 +8,7 @@ use Drupal\views\Views;
 use \Symfony\Component\Process\Process;
 
 class FillPdf {
+
   public static function checkPdftkPath($pdftk_path = '') {
     // An empty value means we should leave it to the PATH.
     if (empty($pdftk_path)) {
@@ -39,7 +40,7 @@ class FillPdf {
 
     $view = Views::getView($name);
     if (!$view || !$view->access($display_id)) {
-      return;
+      return NULL;
     }
 
     return $view->preview($display_id, $args);

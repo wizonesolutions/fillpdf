@@ -18,6 +18,7 @@ use Drupal\fillpdf\FillPdfContextManagerInterface;
 use Drupal\fillpdf\FillPdfFormInterface;
 use Drupal\fillpdf\FillPdfLinkManipulatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -83,9 +84,11 @@ class HandlePdfController extends ControllerBase {
     // @todo: Emit event (or call alter hook?) before populating PDF. fillpdf_merge_fields_alter -> should be renamed to fillpdf_populate_fields_alter
 
     // TODO: Extract the PDF parameters, and act accordingly - this is pretty much just calling FillPdfBackendPluginInterface::populateWithFieldData and then reading the FillPdfForm options to determine whether to serve as a file download or fill in the field data.
+    /** @var FillPdfFormInterface $fillpdf_form */
     $fillpdf_form = FillPdfForm::load($context['fid']);
     if (!$fillpdf_form) {
       drupal_set_message($this->t('FillPDF Form (fid) not found in the system. Please check the value in your FillPDF Link.'), 'error');
+      return new RedirectResponse('/');
     }
 
     $fields = FillPdfFormField::loadMultiple(
@@ -103,7 +106,7 @@ class HandlePdfController extends ControllerBase {
     ];
 
     $mapped_fields = &$field_mapping['fields'];
-    $image_data = &$field_mapping['images'];
+//    $image_data = &$field_mapping['images'];
     foreach ($fields as $field) {
       $pdf_key = $field->pdf_key->value;
       if ($context['sample']) {
@@ -148,7 +151,10 @@ class HandlePdfController extends ControllerBase {
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
-    // TODO: Take the appropriate action on the PDF.
+    // Determine the appropriate action for the PDF.
+
+
+    // TODO: figure out what to do about $token_objects. Should I make buildObjects manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in
     return $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, []);
   }
 
@@ -157,36 +163,49 @@ class HandlePdfController extends ControllerBase {
    *
    * Figure out what to do with the PDF and do it.
    *
-   * @param \Drupal\fillpdf\Controller\An|\Drupal\fillpdf\FillPdfFormInterface $fillpdf_form An object containing the loaded record from {fillpdf_forms}
-   * .
-   * @param $pdf_data A string containing the content of the merged PDF.
-   * @param array|\Drupal\fillpdf\Controller\An $token_objects An array of objects to be used in replacing tokens.
-   * Here, specifically, it's for generating the filename of the handled PDF.
-   * @param \Drupal\fillpdf\Controller\One|string $action One of the following keywords: default, download, save,
-   * redirect. These correspond to performing the configured action (from
-   * admin/structure/fillpdf/%), sending the PDF to the user's browser, saving it
-   * to a file, and saving it to a file and then redirecting the user's browser to
-   * the saved file.
-   * @param array|\Drupal\fillpdf\Controller\If $options If set, this function will always end the request by
-   * sending the filled PDF to the user's browser.
+   * @param FillPdfFormInterface $fillpdf_form
+   *   An object containing the loaded record from {fillpdf_forms}.
+   *
+   * @param string $pdf_data
+   *   A string containing the content of the merged PDF.
+   *
+   * @param array $token_objects
+   *   An array of objects to be used in replacing tokens.
+   *   Here, specifically, it's for generating the filename of the handled PDF.
+   *
+   * @param string $action
+   *   One of the following keywords: default, download, save,
+   *   redirect. These correspond to performing the configured action (from
+   *   admin/structure/fillpdf/%), sending the PDF to the user's browser, saving it
+   *   to a file, and saving it to a file and then redirecting the user's browser to
+   *   the saved file.
+   * @todo ^ Make this a plugin too
+   *
+   * @param array $options
+   *   If set, this function will always end the request by
+   *   sending the filled PDF to the user's browser.
+   *
+   * @return NULL|Response
    */
-  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, array $token_objects, $action = 'download', array $options = []) {
+  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, array $token_objects, $action, array $options = []) {
     // TODO: Convert rest of this function.
     $force_download = FALSE;
     if (!empty($option['force_download'])) {
       $force_download = TRUE;
     }
 
-    if (in_array($action, [
-        'default',
-        'download',
-        'save',
-        'redirect'
-      ]) === FALSE
-    ) {
+    $valid_actions = [
+      'default',
+      'download',
+      'save',
+      'redirect'
+    ];
+    if (!in_array($action, $valid_actions)) {
       // Do nothing if the function is called with an invalid action.
-      return;
+      // TODO: Add an assertion here?
+      return NULL;
     }
+
     // Generate the filename of downloaded PDF from title of the PDF set in
     // admin/structure/fillpdf/%fid
     $output_name = $this->buildFilename($fillpdf_form->title->value, $token_objects);
@@ -216,6 +235,7 @@ class HandlePdfController extends ControllerBase {
       case 'redirect':
         $redirect_to_file = $fillpdf_form->destination_redirect;
       case 'save':
+        // TODO: Port this to use its own function that in itself will return a file, period. Then handle the redirect logic in the controller instead of as part of the save-to-file method. Also base it off the new code from Drupal 7
         fillpdf_save_to_file($fillpdf_form, $pdf_data, $token_objects, $output_name, !$options, $redirect_to_file);
       // FillPDF classic!
       case 'download':

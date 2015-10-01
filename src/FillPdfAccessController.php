@@ -8,8 +8,10 @@ namespace Drupal\fillpdf;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\Core\Session\AccountInterface;
 
 class FillPdfAccessController implements ContainerInjectionInterface {
 

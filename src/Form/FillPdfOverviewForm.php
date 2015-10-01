@@ -5,12 +5,10 @@
  */
 namespace Drupal\fillpdf\Form;
 
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Component\Utility\String;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\file\Entity\File;
@@ -27,7 +25,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
   /**
    * The backend manager (finds the filling plugin the user selected).
    *
-   * @var \Drupal\fillpdf\FillPdfBackendManager
+   * @var FillPdfBackendManager
    */
   protected $backendManager;
 
@@ -104,20 +102,20 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
           '#description' => 'Upload a PDF template to create a new form',
         ];
 
-        $form['submit'] = array(
+        $form['submit'] = [
           '#type' => 'submit',
           '#value' => $this->t('Upload'),
           '#weight' => 15,
-        );
+        ];
       }
       else {
-        drupal_set_message($this->t('You must install the <a href="@xmlrpc">contributed XML-RPC module</a> in order to use FillPDF Service as your PDF-filling method.', array('@xmlrpc' => Url::fromUri('https://drupal.org/project/xmlrpc')->toString())), 'error');
+        drupal_set_message($this->t('You must install the <a href="@xmlrpc">contributed XML-RPC module</a> in order to use FillPDF Service as your PDF-filling method.', ['@xmlrpc' => Url::fromUri('https://drupal.org/project/xmlrpc')->toString()]), 'error');
       }
     }
     else {
-      $form['message'] = array(
-        '#markup' => '<p>' . $this->t('Before you can upload PDF files, you must !link.', array('!link' => $this->l($this->t('configure FillPDF'), Url::fromRoute('fillpdf.settings')))) . '</p>',
-      );
+      $form['message'] = [
+        '#markup' => '<p>' . $this->t('Before you can upload PDF files, you must !link.', ['!link' => $this->l($this->t('configure FillPDF'), Url::fromRoute('fillpdf.settings'))]) . '</p>',
+      ];
       drupal_set_message($this->t('FillPDF is not configured.'), 'error');
     }
     return $form;
@@ -153,7 +151,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
 
           $errors = file_validate_extensions($new_file, 'pdf');
 
-          if (!empty($errors)) {
+          if (count($errors)) {
             $form_state->setErrorByName('upload_pdf', $this->t('Only PDF files are supported, and they must end in .pdf.'));
           }
           else {
@@ -216,10 +214,10 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
       $fillpdf_form_field->save();
     }
 
-    if (empty($fields)) {
-      drupal_set_message($this->t("No fields detected in PDF. Are you sure it contains editable fields?"), 'warning');
+    if (count($fields) === 0) {
+      drupal_set_message($this->t('No fields detected in PDF. Are you sure it contains editable fields?'), 'warning');
     }
 
-    $form_state->setRedirect('entity.fillpdf_form.edit_form', array('fillpdf_form' => $fillpdf_form->id()));
+    $form_state->setRedirect('entity.fillpdf_form.edit_form', ['fillpdf_form' => $fid]);
   }
 }
