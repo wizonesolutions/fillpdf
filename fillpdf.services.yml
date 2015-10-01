@@ -16,3 +16,7 @@ services:
   fillpdf.context_manager:
     class: Drupal\fillpdf\Service\FillPdfContextManager
     arguments: ['@entity.manager']
+
+  plugin.manager.fillpdf_action.processor:
+    class: Drupal\fillpdf\Plugin\FillPdfActionPluginManager
+    parent: default_plugin_manager
