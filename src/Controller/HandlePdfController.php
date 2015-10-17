@@ -17,6 +17,9 @@ use Drupal\fillpdf\FillPdfBackendPluginInterface;
 use Drupal\fillpdf\FillPdfContextManagerInterface;
 use Drupal\fillpdf\FillPdfFormInterface;
 use Drupal\fillpdf\FillPdfLinkManipulatorInterface;
+use Drupal\fillpdf\Plugin\FillPdfActionPlugin\FillPdfDownloadAction;
+use Drupal\fillpdf\Plugin\FillPdfActionPluginInterface;
+use Drupal\fillpdf\Plugin\FillPdfActionPluginManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -46,11 +49,12 @@ class HandlePdfController extends ControllerBase {
   /** @var FillPdfContextManagerInterface $contextManager */
   protected $contextManager;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, RequestStack $request_stack, FillPdfBackendManager $backend_manager, Token $token, QueryFactory $entity_query, EntityManagerInterface $entity_manager) {
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query, EntityManagerInterface $entity_manager) {
     $this->linkManipulator = $link_manipulator;
     $this->contextManager = $context_manager;
     $this->requestStack = $request_stack;
     $this->backendManager = $backend_manager;
+    $this->actionManager = $action_manager;
     $this->token = $token;
     $this->entityQuery = $entity_query;
     $this->entityManager = $entity_manager;
@@ -65,6 +69,7 @@ class HandlePdfController extends ControllerBase {
       $container->get('fillpdf.context_manager'),
       $container->get('request_stack'),
       $container->get('plugin.manager.fillpdf_backend'),
+      $container->get('plugin.manager.fillpdf_action.processor'),
       $container->get('token'),
       $container->get('entity.query'),
       $container->get('entity.manager')
@@ -151,11 +156,10 @@ class HandlePdfController extends ControllerBase {
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
-    // Determine the appropriate action for the PDF.
-
-
     // TODO: figure out what to do about $token_objects. Should I make buildObjects manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in
-    return $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, []);
+    $action_response =  $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, $context, []);
+
+    return $action_response;
   }
 
   /**
@@ -169,82 +173,70 @@ class HandlePdfController extends ControllerBase {
    * @param string $pdf_data
    *   A string containing the content of the merged PDF.
    *
+   * @param array $context
+   *   The FillPDF request context as parsed by
+   *   \Drupal\fillpdf\Service\LinkManipulator.
+   *
    * @param array $token_objects
    *   An array of objects to be used in replacing tokens.
    *   Here, specifically, it's for generating the filename of the handled PDF.
-   *
-   * @param string $action
-   *   One of the following keywords: default, download, save,
+   * @return NULL|\Symfony\Component\HttpFoundation\Response
+   * @internal param string $action_plugin_id The default action plugins are: default, download, save,*   The default action plugins are: default, download, save,
    *   redirect. These correspond to performing the configured action (from
-   *   admin/structure/fillpdf/%), sending the PDF to the user's browser, saving it
-   *   to a file, and saving it to a file and then redirecting the user's browser to
+   *   admin/structure/fillpdf/%), sending the PDF to the user's browser, saving
+   *   it to a file, and saving it to a file and then redirecting the user's browser to
    *   the saved file.
-   * @todo ^ Make this a plugin too
    *
-   * @param array $options
-   *   If set, this function will always end the request by
+   *   You can use any action plugin that implements
+   *   \Drupal\fillpdf\Plugin\FillPdfActionPluginInterface.
+   * @internal param array|bool $force_download If set, this function will always end the request by*   If set, this function will always end the request by
    *   sending the filled PDF to the user's browser.
-   *
-   * @return NULL|Response
    */
-  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, array $token_objects, $action, array $options = []) {
-    // TODO: Convert rest of this function.
+  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, $context, array $token_objects) {
     $force_download = FALSE;
-    if (!empty($option['force_download'])) {
+    if (!empty($context['force_download'])) {
       $force_download = TRUE;
-    }
-
-    $valid_actions = [
-      'default',
-      'download',
-      'save',
-      'redirect'
-    ];
-    if (!in_array($action, $valid_actions)) {
-      // Do nothing if the function is called with an invalid action.
-      // TODO: Add an assertion here?
-      return NULL;
     }
 
     // Generate the filename of downloaded PDF from title of the PDF set in
     // admin/structure/fillpdf/%fid
     $output_name = $this->buildFilename($fillpdf_form->title->value, $token_objects);
 
-    // Now that we have a filename, we can build the response we're most likely
-    // to deliver. Content-Disposition is set further down in the actual
-    // download case. If it turns out to be a redirect, then we replace this
-    // variable with a RedirectResponse.
-    $response = new Response($pdf_data);
-
-    if ($action == 'default') {
-      // Determine the default action, then re-set $action to that.
-      if (empty($fillpdf_form->destination_path) === FALSE) {
-        $action = 'save';
-      }
-      else {
-        $action = 'download';
-      }
+    // Determine the appropriate action for the PDF.
+    // @todo: If they checked destination_redirect, make it redirect
+    $destination_path_set = !empty($fillpdf_form->destination_path->value);
+    $redirect = !empty($fillpdf_form->destination_redirect->value);
+    if ($destination_path_set && !$redirect) {
+      $action_plugin_id = 'save';
+    }
+    elseif ($destination_path_set && $redirect) {
+      $action_plugin_id = 'redirect';
+    }
+    else {
+      $action_plugin_id = 'download';
     }
 
-    // Initialize variable containing whether or not we send the user's browser to
-    // the saved PDF after saving it (if we are)
-    $redirect_to_file = FALSE;
+    $action_configuration = [
+      'form' => $fillpdf_form,
+      'context' => $context,
+      'token_objects' => $token_objects,
+      'data' => $pdf_data,
+      'generated_filename' => $output_name,
+    ];
 
-    // Get a load of this switch...they all just fall through!
-    switch ($action) {
-      case 'redirect':
-        $redirect_to_file = $fillpdf_form->destination_redirect;
-      case 'save':
-        // TODO: Port this to use its own function that in itself will return a file, period. Then handle the redirect logic in the controller instead of as part of the save-to-file method. Also base it off the new code from Drupal 7
-        fillpdf_save_to_file($fillpdf_form, $pdf_data, $token_objects, $output_name, !$options, $redirect_to_file);
-      // FillPDF classic!
-      case 'download':
-        $disposition = $response->headers->makeDisposition(
-          ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-          $output_name
-        );
-        $response->headers->set('Content-Disposition', $disposition);
-        break;
+    /** @var FillPdfActionPluginInterface $fillpdf_action */
+    $fillpdf_action = $this->actionManager->createInstance($action_plugin_id, $action_configuration);
+    $response = $fillpdf_action->execute();
+
+    // If we are forcing a download, then manually get a Response from
+    // the download action and return that. Side effects of other plugins will
+    // still happen, obviously.
+    if ($force_download) {
+      /** @var FillPdfDownloadAction $download_action */
+      $download_action = $this->actionManager
+        ->createInstance('download', $action_configuration);
+      $response = $download_action
+        ->execute();
     }
 
     return $response;
@@ -252,8 +244,8 @@ class HandlePdfController extends ControllerBase {
 
   public function buildFilename($original, array $token_objects) {
     // Replace tokens *before* sanitization
-    if (!empty($token_objects)) {
-      $original = token_replace($original, $token_objects);
+    if (count($token_objects)) {
+      $original = $this->token->replace($original, $token_objects);
     }
 
     $output_name = str_replace(' ', '_', $original);

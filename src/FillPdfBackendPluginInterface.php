@@ -10,6 +10,8 @@ namespace Drupal\fillpdf;
  * Defines the required interface for all FillPDF Backend plugins.
  *
  * @package Drupal\fillpdf
+ *
+ * @todo: Impement PluginInspectionInterface, ConfigurablePluginInterface and update implementations accordingly.
  */
 interface FillPdfBackendPluginInterface {
 
