@@ -47,7 +47,15 @@ class FillPdf {
   }
 
   /**
-   * Constructs a URI to FillPDF's default files location given a relative path.
+   * Constructs a URI to a location given a relative path.
+   *
+   * @param string $scheme
+   *   A valid stream wrapper, such as 'public' or 'private'
+   *
+   * @param $path
+   *   The path component that should come after the stream wrapper.
+   *
+   * @return string
    */
   public static function buildFileUri($scheme, $path) {
     $uri = $scheme . '://' . $path;

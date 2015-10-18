@@ -20,3 +20,11 @@ services:
   plugin.manager.fillpdf_action.processor:
     class: Drupal\fillpdf\Plugin\FillPdfActionPluginManager
     parent: default_plugin_manager
+
+  fillpdf.output_handler:
+    class: Drupal\fillpdf\OutputHandler
+    arguments: ['@token', '@logger.channel.fillpdf']
+
+  logger.channel.fillpdf:
+    parent: logger.channel_base
+    arguments: ['fillpdf']

@@ -126,18 +126,15 @@ class HandlePdfController extends ControllerBase {
             // @todo: What if one fill pattern has tokens from multiple types in it? Figure out the best way to deal with that and rewrite this section accordingly. Probably some form of parallel arrays. Basically we'd have to run all combinations, although our logic still might not be smart enough to tell if *all* tokens in the source text have been replaced, or in which case both of them have been replaced last (which is what we want). I could deliberately pass each entity context separately and then count how many of them match, and only overwrite it if the match count is higher than the current one. Yeah, that's kind of inefficient but also a good start. I might just be able to scan for tokens myself and then check if they're still in the $uncleaned_base output, or do the cleaning myself so I only have to call Token::replace once. TBD.
             $field_pattern = $field->value->value;
             $maybe_replaced_string = $this->token->replace($field_pattern, [
-              $entity_type => $entity
+              $entity_type => $entity,
             ], [
               'clean' => TRUE,
-              'sanitize' => FALSE,
             ]);
             // Generate a non-cleaned version of the token string so we can
             // tell if the non-empty string we got back actually replaced
             // some tokens.
             $uncleaned_base = $this->token->replace($field_pattern, [
-              $entity_type => $entity
-            ], [
-              'sanitize' => FALSE,
+              $entity_type => $entity,
             ]);
 
             // If we got a result that isn't what we put in, update the value
@@ -156,7 +153,7 @@ class HandlePdfController extends ControllerBase {
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
-    // TODO: figure out what to do about $token_objects. Should I make buildObjects manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in
+    // TODO: figure out what to do about $token_objects. Should I make buildFilename manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in
     $action_response =  $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, $context, []);
 
     return $action_response;
@@ -221,7 +218,7 @@ class HandlePdfController extends ControllerBase {
       'context' => $context,
       'token_objects' => $token_objects,
       'data' => $pdf_data,
-      'generated_filename' => $output_name,
+      'filename' => $output_name,
     ];
 
     /** @var FillPdfActionPluginInterface $fillpdf_action */

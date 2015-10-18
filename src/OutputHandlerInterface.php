@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Contains \Drupal\fillpdf\OutputHandlerInterface.
+ */
+
+namespace Drupal\fillpdf;
+use Drupal\file\Entity\File;
+
+/**
+ * Contains functions to standardize output handling for generated PDFs.
+ *
+ * @package Drupal\fillpdf
+ */
+interface OutputHandlerInterface {
+
+  /**
+   * @param string $pdf_data
+   *   A string containing the full contents of the PDF to be saved.
+   * @param array $context
+   *   An array containing the following properties:
+   *     form: The FillPdfForm object from which the PDF was generated.
+   *     context: The FillPDF request context as returned by
+   *       \Drupal\fillpdf\FillPdfLinkParserInterface.
+   *     token_objects: The token data from which the PDF was generated.
+   *     data: The populated PDF data itself.
+   *     filename: The filename (not including path) with which
+   *       the PDF should be presented.
+   *
+   * @param string $destination_path_override
+   * @return bool|\Drupal\file\Entity\File
+   */
+  public function savePdfToFile($pdf_data, array $context, $destination_path_override = NULL);
+
+}
