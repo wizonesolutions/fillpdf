@@ -12,11 +12,9 @@ use Drupal\fillpdf\OutputHandler;
 use Drupal\fillpdf\Plugin\FillPdfActionPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 /**
- * Class FillPdfDownloadAction
+ * Class FillPdfSaveAction
  * @package Drupal\fillpdf\Plugin\FillPdfActionPlugin
  *
  * @FillPdfActionPlugin(
@@ -24,7 +22,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
  *   label = @Translation("Save PDF to file")
  * )
  */
-class FillPdfDownloadAction extends FillPdfActionPluginBase {
+class FillPdfSaveAction extends FillPdfActionPluginBase {
 
   /** @var OutputHandler $outputHandler */
   protected $outputHandler;
