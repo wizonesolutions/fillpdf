@@ -42,7 +42,7 @@ class FillPdfAccessController implements ContainerInjectionInterface {
   }
 
   public function checkLink() {
-    $context = $this->linkManipulator->parseLink($this->requestStack->getCurrentRequest());
+    $context = $this->linkManipulator->parseRequest($this->requestStack->getCurrentRequest());
 
     $is_admin = $this->currentUser->hasPermission('administer pdfs');
     $can_publish_all = $this->currentUser->hasPermission('publish all pdfs');

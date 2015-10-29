@@ -8,7 +8,7 @@ namespace Drupal\fillpdf;
 
 /**
  * Provides a common interface for loading and serialization of the $context
- * array returned by FillPdfLinkManipulator::parseLink().
+ * array returned by FillPdfLinkManipulator::parseRequest().
  *
  * @package Drupal\fillpdf\FillPdfContextManagerInterface
  */

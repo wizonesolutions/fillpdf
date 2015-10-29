@@ -22,7 +22,7 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
    * @todo: Maybe this should return a FillPdfLinkContext object or something?
    *   Guess it depends on how much I end up needing to change it.
    */
-  public function parseLink(Request $request) {
+  public function parseRequest(Request $request) {
     $request_context = array(
       'entity_ids' => NULL,
       'fid' => NULL,
