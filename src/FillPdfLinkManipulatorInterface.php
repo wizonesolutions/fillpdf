@@ -6,7 +6,6 @@
 
 namespace Drupal\fillpdf;
 use Drupal\Core\Url;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Defines an interface to allow parsing and building FillPDF Links.
@@ -16,13 +15,6 @@ use Symfony\Component\HttpFoundation\Request;
  * original one.
  */
 interface FillPdfLinkManipulatorInterface {
-
-  /**
-   * @param \Symfony\Component\HttpFoundation\Request $request The request
-   *  containing the query string to parse.
-   * @return array
-   */
-  public function parseRequest(Request $request);
 
   /**
    * @param \Drupal\Core\Url $link
