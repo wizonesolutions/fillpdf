@@ -63,9 +63,14 @@ class FillPdfFileContext extends ContentEntityBase implements FillPdfFileContext
       ->setDescription(t('The UUID of the FillPDF file context entity.'))
       ->setReadOnly(TRUE);
 
+    $fields['file'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('The associated managed file.'))
+      ->setDescription(t('The associated managed file.'))
+      ->setSetting('target_type', 'file');
+
     $fields['context'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Generation context'))
-      ->setDescription(t('The normalized FillPDF Link (URL) that was used to generate the PDF.'))
+      ->setDescription(t("The normalized, root-relative, stringified FillPDF Link (URL) that was used to generate the PDF. This field is fairly forgiving and will work with and without base URLs, and, if provided, the base URLs don't have to match the current site."))
       ->setRequired(TRUE);
 
     return $fields;

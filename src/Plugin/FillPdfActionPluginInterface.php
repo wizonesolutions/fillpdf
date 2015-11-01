@@ -9,6 +9,7 @@ namespace Drupal\fillpdf\Plugin;
 
 use Drupal\Component\Plugin\ConfigurablePluginInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -21,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
  * They may also have side effects, such as saving a file to the file system.
  * They must not, however, end the request.
  */
-interface FillPdfActionPluginInterface extends PluginInspectionInterface, ConfigurablePluginInterface {
+interface FillPdfActionPluginInterface extends PluginInspectionInterface, ConfigurablePluginInterface, ContainerFactoryPluginInterface {
 
   /**
    * Take action according to the plugin configuration. This will vary for each

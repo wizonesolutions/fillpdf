@@ -30,6 +30,7 @@ class FillPdfContextManager implements FillPdfContextManagerInterface {
     $entities = [];
 
     foreach ($context['entity_ids'] as $entity_type => $entity_ids) {
+      // @todo: Switch to using EntityTypeManagerInterface in 8.0.0-rc3
       $type_controller = $this->entityManager->getStorage($entity_type);
       $entity_list = $type_controller->loadMultiple($entity_ids);
 

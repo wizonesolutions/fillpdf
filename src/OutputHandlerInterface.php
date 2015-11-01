@@ -16,13 +16,11 @@ use Drupal\file\Entity\File;
 interface OutputHandlerInterface {
 
   /**
-   * @param string $pdf_data
-   *   A string containing the full contents of the PDF to be saved.
    * @param array $context
    *   An array containing the following properties:
    *     form: The FillPdfForm object from which the PDF was generated.
    *     context: The FillPDF request context as returned by
-   *       \Drupal\fillpdf\FillPdfLinkParserInterface.
+   *       \Drupal\fillpdf\FillPdfLinkManipulatorInterface::parseLink().
    *     token_objects: The token data from which the PDF was generated.
    *     data: The populated PDF data itself.
    *     filename: The filename (not including path) with which
@@ -31,6 +29,6 @@ interface OutputHandlerInterface {
    * @param string $destination_path_override
    * @return bool|\Drupal\file\Entity\File
    */
-  public function savePdfToFile($pdf_data, array $context, $destination_path_override = NULL);
+  public function savePdfToFile(array $context, $destination_path_override = NULL);
 
 }

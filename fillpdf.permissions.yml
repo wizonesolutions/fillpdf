@@ -8,5 +8,5 @@ publish own pdfs:
 
 publish all pdfs:
   title: 'Publish all PDFs'
-  description: 'Allows filling in and downloading PDFs with any site content.'add fillpdf file context entities:
+  description: 'Allows filling in and downloading PDFs with any site content.'
   title: 'Create new FillPDF file context entities'

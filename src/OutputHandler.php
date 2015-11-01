@@ -12,6 +12,7 @@ use Drupal\Core\Utility\Token;
 use Drupal\file\FileInterface;
 use Drupal\file\FileUsage\FileUsageInterface;
 use Drupal\fillpdf\Component\Utility\FillPdf;
+use Drupal\fillpdf\Entity\FillPdfFileContext;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Psr\Log\LoggerInterface;
 
@@ -34,19 +35,23 @@ class OutputHandler implements OutputHandlerInterface {
   /** @var \Drupal\file\FileUsage\FileUsageInterface $fileUsage */
   protected $fileUsage;
 
+  /** @var \Drupal\fillpdf\FillPdfLinkManipulatorInterface $link_manipulator */
+  protected $linkManipulator;
+
   /**
    * OutputHandler constructor.
    */
-  public function __construct(FileUsageInterface $file_usage, Token $token, LoggerInterface $logger) {
+  public function __construct(FileUsageInterface $file_usage, Token $token, LoggerInterface $logger, FillPdfLinkManipulatorInterface $link_manipulator) {
     $this->fileUsage = $file_usage;
     $this->token = $token;
     $this->logger = $logger;
+    $this->linkManipulator = $link_manipulator;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function savePdfToFile($pdf_data, array $context, $destination_path_override = NULL) {
+  public function savePdfToFile(array $context, $destination_path_override = NULL) {
     /** @var FillPdfForm $fillpdf_form */
     $fillpdf_form = $context['form'];
 
@@ -55,7 +60,7 @@ class OutputHandler implements OutputHandlerInterface {
 
     $destination_path = 'fillpdf';
     if (!empty($fillpdf_form->destination_path->value)) {
-      $destination_path = "fillpdf/{$destination_path}";
+      $destination_path = "fillpdf/{$fillpdf_form->destination_path->value}";
     }
     if (!empty($destination_path_override)) {
       $destination_path = "fillpdf/{$destination_path_override}";
@@ -76,8 +81,8 @@ class OutputHandler implements OutputHandlerInterface {
     }
     else {
       // Full steam ahead!
-      $saved_file = file_save_data($pdf_data, "{$resolved_destination_path}/{$context['filename']}", FILE_EXISTS_RENAME);
-      $this->addFileUsage($saved_file, 'fillpdf_file');
+      $saved_file = file_save_data($context['data'], "{$resolved_destination_path}/{$context['filename']}", FILE_EXISTS_RENAME);
+      $this->rememberFileContext($saved_file, $context['context']);
     }
 
     return $saved_file;
@@ -113,12 +118,22 @@ class OutputHandler implements OutputHandlerInterface {
   /**
    * @param \Drupal\file\FileInterface $fillpdf_file
    * @param array $context
-   *   An array of the entities that were used to generate this file.
+   *   An array representing the entities that were used to generate this file.
+   *   This array should match the format returned by
+   *   FillPdfLinkManipulator::parseLink().
+   * @see FillPdfLinkManipulatorInterface::parseLink()
+   * @see FileFieldItemList::postSave()
    */
-  protected function addFileUsage(FileInterface $fillpdf_file, array $context) {
-    // TODO: Add FillPdfFileContext content entity
-//    $fillpdf_file_context = FillPdfFileContext::create();
-//    $this->fileUsage->add($fillpdf_file, 'fillpdf', 'fillpdf_file', $fillpdf_file_context->fcid);
+  protected function rememberFileContext(FileInterface $fillpdf_file, array $context) {
+    $fillpdf_link = $this->linkManipulator->generateLink($context);
+
+    $fillpdf_file_context = FillPdfFileContext::create([
+      $fillpdf_file,
+      $fillpdf_link->toString(),
+    ]);
+
+    // The file field will automatically add file usage information upon save.
+    $fillpdf_file_context->save();
   }
 
 }

@@ -6,6 +6,7 @@
 
 namespace Drupal\fillpdf;
 use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Defines an interface to allow parsing and building FillPDF Links.
@@ -17,10 +18,21 @@ use Drupal\Core\Url;
 interface FillPdfLinkManipulatorInterface {
 
   /**
+   * @todo: Move this elsewhere, maybe to that current_fillpdf_link service I was thinking of or whatever it was.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request The request
+   *  containing the query string to parse.
+   * @return array
+   */
+  public function parseRequest(Request $request);
+
+  /**
    * @param \Drupal\Core\Url $link
    *   The valid URL containing the FillPDF generation metadata.
    *   e.g. http://example.com/fillpdf?entities[]=node:1&entities[]=contact:7
-   * @return mixed
+   * @todo: Document array. For now, see what FillPdfLinkManipulator::parseLink() does.
+   * @see FillPdfLinkManipulator::parseLink()
+   * @return array
    */
   public function parseLink(Url $link);
 

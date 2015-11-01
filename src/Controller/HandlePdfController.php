@@ -40,16 +40,13 @@ class HandlePdfController extends ControllerBase {
   /** @var QueryFactory $entityQuery */
   protected $entityQuery;
 
-  /** @var EntityManagerInterface $entityManager */
-  protected $entityManager;
-
   /** @var Token $token */
   protected $token;
 
   /** @var FillPdfContextManagerInterface $contextManager */
   protected $contextManager;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query, EntityManagerInterface $entity_manager) {
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query) {
     $this->linkManipulator = $link_manipulator;
     $this->contextManager = $context_manager;
     $this->requestStack = $request_stack;
@@ -57,7 +54,6 @@ class HandlePdfController extends ControllerBase {
     $this->actionManager = $action_manager;
     $this->token = $token;
     $this->entityQuery = $entity_query;
-    $this->entityManager = $entity_manager;
   }
 
   /**
@@ -71,8 +67,7 @@ class HandlePdfController extends ControllerBase {
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('plugin.manager.fillpdf_action.processor'),
       $container->get('token'),
-      $container->get('entity.query'),
-      $container->get('entity.manager')
+      $container->get('entity.query')
     );
   }
 
@@ -153,15 +148,13 @@ class HandlePdfController extends ControllerBase {
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
-    // TODO: figure out what to do about $token_objects. Should I make buildFilename manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in
+    // TODO: figure out what to do about $token_objects. Should I make buildFilename manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in D7. But it wouldn't be that hard to just use whatever helper function I make.
     $action_response =  $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, $context, []);
 
     return $action_response;
   }
 
   /**
-   * @todo: Split this up better. There are a few things happening here. 1) We look at the function arguments to determine the action to take. But there's also the concept of a default action. In that case, we have to look at the $context array. 2) The actual handling code for the action, e.g. transmitting a download and saving a file, optionally redirecting to a file. These should be usable at will, albeit specific to routes.
-   *
    * Figure out what to do with the PDF and do it.
    *
    * @param FillPdfFormInterface $fillpdf_form

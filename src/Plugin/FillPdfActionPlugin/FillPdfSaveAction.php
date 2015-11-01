@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains \Drupal\fillpdf\Plugin\FillPdfActionPlugin\FillPdfDownloadAction.
+ * Contains \Drupal\fillpdf\Plugin\FillPdfActionPlugin\FillPdfSaveAction.
  */
 
 namespace Drupal\fillpdf\Plugin\FillPdfActionPlugin;
@@ -39,7 +39,7 @@ class FillPdfSaveAction extends FillPdfActionPluginBase {
 
   public function execute() {
     // @todo: Error handling?
-    $this->outputHandler->savePdfToFile($this->configuration['data'], $this->configuration['context']);
+    $this->outputHandler->savePdfToFile($this->configuration);
 
     // @todo: Fix based on value of post_save_redirect, once I add that
     $response = new RedirectResponse('/');
