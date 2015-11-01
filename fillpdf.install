@@ -10,9 +10,87 @@ function fillpdf_update_8101() {
   $scheme_field = BaseFieldDefinition::create('string')
     ->setLabel('Storage system for generated PDFs')
     ->setDescription(t('This setting is used as the storage/download method for generated PDFs. The use of public files is more efficient, but does not provide any access control. Changing this setting will require you to migrate associated files and data yourself and is not recommended after you have uploaded a template.'))
-    ->setDisplayOptions('form', array(
+    ->setDisplayOptions('form', [
       'type' => 'radios',
       'options' => FillPdfAdminFormHelper::schemeOptions(),
-    ));
+    ]);
   $edum->installFieldStorageDefinition('scheme', 'fillpdf_form', 'fillpdf_form', $scheme_field);
+}
+
+/**
+ * Install FillPdfFileContext storage.
+ */
+function fillpdf_update_8102() {
+  $edum = \Drupal::entityDefinitionUpdateManager();
+  $entity_manager = \Drupal::entityManager();
+  $fillpdf_file_context = $entity_manager->getDefinition('fillpdf_file_context');
+  $edum->installEntityType($fillpdf_file_context);
+}
+
+/**
+ * Use file fields instead of entity_reference fields for referring to files.
+ *
+ * Never actually ran this, but leaving it in to refer to in the future.
+ */
+function fillpdf_update_8103() {
+  $edum = \Drupal::entityDefinitionUpdateManager();
+  $em = \Drupal::entityManager();
+
+  $form_file = BaseFieldDefinition::create('file')
+    ->setLabel(t('The associated managed file.'))
+    ->setDescription(t('The associated managed file.'))
+    ->setName('file')
+    ->setProvider('fillpdf_form')
+    ->setTargetBundle(NULL);
+
+  $fc_file = BaseFieldDefinition::create('file')
+    ->setLabel(t('The associated managed file.'))
+    ->setDescription(t('The associated managed file.'))
+    ->setName('file')
+    ->setProvider('fillpdf_file_context')
+    ->setTargetBundle(NULL);
+
+  // Save existing fillpdf_form data.
+  $form_files = [];
+  $forms = $em->getStorage('fillpdf_form')->loadMultiple();
+  foreach ($forms as $form) {
+    $form_files[$form->id()] = $form->file;
+    $form->file = NULL;
+    $form->save();
+  }
+
+  // Save existing fillpdf_file_context data.
+  $fc_files = [];
+  $fcs = $em->getStorage('fillpdf_file_context')->loadMultiple();
+  foreach ($fcs as $fc) {
+    $fc_files[$fc->id()] = $fc->file;
+    $fc->file = NULL;
+    $fc->save();
+  }
+
+  // Now install the new field definitions.
+  $edum->updateFieldStorageDefinition($form_file);
+  $edum->updateFieldStorageDefinition($fc_file);
+
+  foreach ($form_files as $entity_id => $form_file) {
+    $entity = $em->getStorage('fillpdf_form')->load($entity_id);
+    $entity->file = $form_file;
+    $entity->save();
+
+    // These files don't have proper file usage information because they were
+    // created as entity_reference fields. Manually run postSave as if they
+    // were new entities.
+    $entity->postSave($em->getStorage('fillpdf_form'), FALSE);
+  }
+
+  foreach ($fc_files as $entity_id => $fc_file) {
+    $entity = $em->getStorage('fillpdf_file_context')->load($entity_id);
+    $entity->file = $fc_file;
+    $entity->save();
+
+    // These files don't have proper file usage information because they were
+    // created as entity_reference fields. Manually run postSave as if they
+    // were new entities.
+    $entity->postSave($em->getStorage('fillpdf_file_context'), FALSE);
+  }
 }
