@@ -58,10 +58,9 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setDescription(t('The UUID of the FillPdfForm entity.'))
       ->setReadOnly(TRUE);
 
-    $fields['file'] = BaseFieldDefinition::create('entity_reference')
+    $fields['file'] = BaseFieldDefinition::create('file')
       ->setLabel(t('The associated managed file.'))
-      ->setDescription(t('The associated managed file.'))
-      ->setSetting('target_type', 'file');
+      ->setDescription(t('The associated managed file.'));
 
     // @todo: Figure out how to do this the right way...I get a router rebuild error if I use $url_generator->generateFromRoute()
     $overview_url = Url::fromUri('base://admin/structure/fillpdf')->toString();

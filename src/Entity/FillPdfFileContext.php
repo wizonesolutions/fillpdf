@@ -27,7 +27,6 @@ use Drupal\user\UserInterface;
  *   label = @Translation("FillPDF file context"),
  *   handlers = {
  *     "views_data" = "Drupal\fillpdf\Entity\FillPdfFileContextViewsData",
- *
  *     "access" = "Drupal\fillpdf\FillPdfFileContextAccessControlHandler",
  *   },
  *   base_table = "fillpdf_file_context",
@@ -63,10 +62,9 @@ class FillPdfFileContext extends ContentEntityBase implements FillPdfFileContext
       ->setDescription(t('The UUID of the FillPDF file context entity.'))
       ->setReadOnly(TRUE);
 
-    $fields['file'] = BaseFieldDefinition::create('entity_reference')
+    $fields['file'] = BaseFieldDefinition::create('file')
       ->setLabel(t('The associated managed file.'))
-      ->setDescription(t('The associated managed file.'))
-      ->setSetting('target_type', 'file');
+      ->setDescription(t('The associated managed file.'));
 
     $fields['context'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Generation context'))

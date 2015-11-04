@@ -1,4 +1,5 @@
 <?php
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
 
@@ -29,68 +30,63 @@ function fillpdf_update_8102() {
 
 /**
  * Use file fields instead of entity_reference fields for referring to files.
- *
- * Never actually ran this, but leaving it in to refer to in the future.
  */
 function fillpdf_update_8103() {
   $edum = \Drupal::entityDefinitionUpdateManager();
   $em = \Drupal::entityManager();
+  $db = \Drupal::database();
 
-  $form_file = BaseFieldDefinition::create('file')
+  $form_file_def = BaseFieldDefinition::create('file')
     ->setLabel(t('The associated managed file.'))
     ->setDescription(t('The associated managed file.'))
     ->setName('file')
     ->setProvider('fillpdf_form')
-    ->setTargetBundle(NULL);
+    ->setTargetBundle(NULL)
+    ->setTargetEntityTypeId('fillpdf_form');
 
-  $fc_file = BaseFieldDefinition::create('file')
+  $fc_file_def = BaseFieldDefinition::create('file')
     ->setLabel(t('The associated managed file.'))
     ->setDescription(t('The associated managed file.'))
     ->setName('file')
     ->setProvider('fillpdf_file_context')
-    ->setTargetBundle(NULL);
+    ->setTargetBundle(NULL)
+    ->setTargetEntityTypeId('fillpdf_file_context');
 
-  // Save existing fillpdf_form data.
-  $form_files = [];
-  $forms = $em->getStorage('fillpdf_form')->loadMultiple();
-  foreach ($forms as $form) {
-    $form_files[$form->id()] = $form->file;
-    $form->file = NULL;
-    $form->save();
-  }
+  // Save existing data.
+  $form_files = $db->select('fillpdf_forms', 'ff')
+    ->fields('ff', ['fid', 'file'])
+    ->execute()
+    ->fetchAllKeyed();
 
-  // Save existing fillpdf_file_context data.
-  $fc_files = [];
-  $fcs = $em->getStorage('fillpdf_file_context')->loadMultiple();
-  foreach ($fcs as $fc) {
-    $fc_files[$fc->id()] = $fc->file;
-    $fc->file = NULL;
-    $fc->save();
-  }
+  $fc_files = $db->select('fillpdf_file_context', 'fc')
+    ->fields('fc', ['id', 'file'])
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Remove data from the storage.
+  $db->update('fillpdf_forms')
+    ->fields(['file' => NULL])
+    ->execute();
+
+  $db->update('fillpdf_file_context')
+    ->fields(['file' => NULL])
+    ->execute();
 
   // Now install the new field definitions.
-  $edum->updateFieldStorageDefinition($form_file);
-  $edum->updateFieldStorageDefinition($fc_file);
+  $edum->updateFieldStorageDefinition($form_file_def);
+  $edum->updateFieldStorageDefinition($fc_file_def);
 
-  foreach ($form_files as $entity_id => $form_file) {
+  foreach ($form_files as $entity_id => $fillpdf_form_file) {
+    /** @var ContentEntityInterface $entity */
     $entity = $em->getStorage('fillpdf_form')->load($entity_id);
-    $entity->file = $form_file;
+    $entity->file->target_id = $fillpdf_form_file;
     $entity->save();
-
-    // These files don't have proper file usage information because they were
-    // created as entity_reference fields. Manually run postSave as if they
-    // were new entities.
-    $entity->postSave($em->getStorage('fillpdf_form'), FALSE);
   }
 
-  foreach ($fc_files as $entity_id => $fc_file) {
+  foreach ($fc_files as $entity_id => $ffcf) {
+    /** @var ContentEntityInterface $entity */
     $entity = $em->getStorage('fillpdf_file_context')->load($entity_id);
-    $entity->file = $fc_file;
+    $entity->file->target_id = $ffcf;
     $entity->save();
-
-    // These files don't have proper file usage information because they were
-    // created as entity_reference fields. Manually run postSave as if they
-    // were new entities.
-    $entity->postSave($em->getStorage('fillpdf_file_context'), FALSE);
   }
 }
