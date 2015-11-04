@@ -22,18 +22,17 @@ class FillPdfFileContextAccessControlHandler extends EntityAccessControlHandler 
    * {@inheritdoc}
    */
   protected function checkAccess(EntityInterface $entity, $operation, AccountInterface $account) {
-
     switch ($operation) {
       case 'view':
-
         // TODO: allow access if user has permission to entities user used to fill in PDF
 //        return AccessResult::allowedIfHasPermission($account, 'view fillpdf file context entities');
+        return AccessResult::forbidden();
 
       case 'update':
-        return AccessResult::allowedIfHasPermission($account, 'edit fillpdf file context entities');
+        return AccessResult::forbidden();
 
       case 'delete':
-        return AccessResult::allowedIfHasPermission($account, 'delete fillpdf file context entities');
+        return AccessResult::allowedIfHasPermission($account, 'administer pdfs');
     }
 
     return AccessResult::allowed();
