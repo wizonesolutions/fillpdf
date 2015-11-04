@@ -128,8 +128,8 @@ class OutputHandler implements OutputHandlerInterface {
     $fillpdf_link = $this->linkManipulator->generateLink($context);
 
     $fillpdf_file_context = FillPdfFileContext::create([
-      $fillpdf_file,
-      $fillpdf_link->toString(),
+      'file' => $fillpdf_file,
+      'context' => $fillpdf_link->toString(),
     ]);
 
     // The file field will automatically add file usage information upon save.
