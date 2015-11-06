@@ -28,3 +28,7 @@ services:
   logger.channel.fillpdf:
     parent: logger.channel_base
     arguments: ['fillpdf']
+
+  fillpdf.access_helper:
+    class: Drupal\fillpdf\FillPdfAccessHelper
+    arguments: ["@fillpdf.link_manipulator", "@fillpdf.context_manager"]

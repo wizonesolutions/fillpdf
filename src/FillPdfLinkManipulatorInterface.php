@@ -37,6 +37,15 @@ interface FillPdfLinkManipulatorInterface {
   public function parseLink(Url $link);
 
   /**
+   * @param string $url
+   * The root-relative FillPDF URL that would be used to generate the PDF.
+   * e.g. /fillpdf?fid=1&entity_type=node&entity_id=1
+   *
+   * @return array
+   */
+  public function parseUrlString($url);
+
+  /**
    * @param array $parameters
    *   The array of parameters to be converted into a
    *   URL and query string.

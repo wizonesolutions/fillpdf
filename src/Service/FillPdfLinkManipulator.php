@@ -26,10 +26,9 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
   public function parseRequest(Request $request) {
     // @todo: Use Url::fromRequest when/if it lands in core. See https://www.drupal.org/node/2605530
     $path = $request->getUri();
-    $options = UrlHelper::parse($path);
-    $requestUrl = Url::fromUri($path, $options);
+    $request_url = $this->createUrlFromString($path);
 
-    return $this->parseLink($requestUrl);
+    return $this->parseLink($request_url);
   }
 
   /**
@@ -106,6 +105,11 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
     return $request_context;
   }
 
+  public function parseUrlString($url) {
+    $link = $this->createUrlFromString($url);
+    return $this->parseLink($link);
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -154,6 +158,22 @@ class FillPdfLinkManipulator implements FillPdfLinkManipulatorInterface {
       ['query' => $query]);
 
     return $fillpdf_link;
+  }
+
+  /**
+   * @param $url
+   *
+   * @see FillPdfLinkManipulatorInterface::parseUrlString()
+   *
+   * @return \Drupal\Core\Url
+   */
+  protected function createUrlFromString($url) {
+    $url_parts = UrlHelper::parse($url);
+    $path = $url_parts['path'];
+    $query = $url_parts['query'];
+
+    $link = Url::fromUri($path, ['query' => $query]);
+    return $link;
   }
 
 }
