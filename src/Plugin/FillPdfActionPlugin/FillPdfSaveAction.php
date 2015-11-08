@@ -38,12 +38,16 @@ class FillPdfSaveAction extends FillPdfActionPluginBase {
   }
 
   public function execute() {
-    // @todo: Error handling?
-    $this->outputHandler->savePdfToFile($this->configuration);
+    $this->savePdf();
 
     // @todo: Fix based on value of post_save_redirect, once I add that
     $response = new RedirectResponse('/');
     return $response;
+  }
+
+  protected function savePdf() {
+    // @todo: Error handling?
+    return $this->outputHandler->savePdfToFile($this->configuration);
   }
 
 }

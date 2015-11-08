@@ -193,7 +193,6 @@ class HandlePdfController extends ControllerBase {
     $output_name = $this->buildFilename($fillpdf_form->title->value, $token_objects);
 
     // Determine the appropriate action for the PDF.
-    // @todo: If they checked destination_redirect, make it redirect
     $destination_path_set = !empty($fillpdf_form->destination_path->value);
     $redirect = !empty($fillpdf_form->destination_redirect->value);
     if ($destination_path_set && !$redirect) {

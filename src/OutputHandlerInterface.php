@@ -6,7 +6,7 @@
  */
 
 namespace Drupal\fillpdf;
-use Drupal\file\Entity\File;
+use Drupal\file\FileInterface;
 
 /**
  * Contains functions to standardize output handling for generated PDFs.
@@ -27,7 +27,7 @@ interface OutputHandlerInterface {
    *       the PDF should be presented.
    *
    * @param string $destination_path_override
-   * @return bool|\Drupal\file\Entity\File
+   * @return bool|FileInterface
    */
   public function savePdfToFile(array $context, $destination_path_override = NULL);
 
