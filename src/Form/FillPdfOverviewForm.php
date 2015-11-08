@@ -12,7 +12,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\file\Entity\File;
-use Drupal\file\FileUsage\FileUsageInterface;
 use Drupal\fillpdf\Component\Utility\FillPdf;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Drupal\fillpdf\Entity\FillPdfFormField;
@@ -51,14 +50,13 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     return 'fillpdf_forms_admin';
   }
 
-  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManager $backend_manager, AccountInterface $current_user, QueryFactory $entity_query, FileSystemInterface $file_system, FileUsageInterface $file_usage) {
+  public function __construct(ModuleHandlerInterface $module_handler, FillPdfBackendManager $backend_manager, AccountInterface $current_user, QueryFactory $entity_query, FileSystemInterface $file_system) {
     parent::__construct();
     $this->backendManager = $backend_manager;
     $this->moduleHandler = $module_handler;
     $this->currentUser = $current_user;
     $this->entityQuery = $entity_query;
     $this->fileSystem = $file_system;
-    $this->fileUsage = $file_usage;
   }
 
   /**
@@ -71,8 +69,7 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('current_user'),
       $container->get('entity.query'),
-      $container->get('file_system'),
-      $container->get('file.usage')
+      $container->get('file_system')
     );
   }
 
@@ -197,7 +194,6 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     // re-parsing if it fails.
     $fillpdf_form->save();
     $fid = $fillpdf_form->id();
-    $this->fileUsage->add($file, 'fillpdf', 'fillpdf_form', $fid);
 
     $config = $this->config('fillpdf.settings');
     $fillpdf_service = $config->get('backend');

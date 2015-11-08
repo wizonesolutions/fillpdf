@@ -16,6 +16,8 @@ use Drupal\fillpdf\FillPdfFormFieldInterface;
  * Defines the entity for managing PDF fields associated with uploaded FillPDF
  * forms.
  *
+ * Uses the same access handler as fillpdf_form.
+ *
  * @ContentEntityType(
  *   id = "fillpdf_form_field",
  *   label = @Translation("FillPDF form field"),
@@ -24,6 +26,7 @@ use Drupal\fillpdf\FillPdfFormFieldInterface;
  *     "form" = {
  *       "edit" = "Drupal\fillpdf\Form\FillPdfFormFieldForm",
  *     },
+ *     "access": "Drupal\fillpdf\FillPdfFormAccessControlHandler",
  *   },
  *   admin_permission = "administer pdfs",
  *   base_table = "fillpdf_fields",

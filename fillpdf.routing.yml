@@ -5,7 +5,6 @@ fillpdf.settings:
     _form: '\Drupal\fillpdf\Form\FillPdfSettingsForm'
     _title: 'FillPDF settings'
   requirements:
-    # TOOD: Use entity access instead
     _permission: 'administer pdfs'
   options:
     _admin_route: TRUE
@@ -16,8 +15,6 @@ fillpdf.forms_admin:
     _form: '\Drupal\fillpdf\Form\FillPdfOverviewForm'
     _title: 'FillPDF'
   requirements:
-    # TOOD: Use entity access instead
-    _permission: 'administer pdfs'
     _permission: 'administer pdfs'
   options:
     _admin_route: TRUE
@@ -35,7 +32,7 @@ entity.fillpdf_form.edit_form:
     _entity_form: fillpdf_form.edit
     _title: 'Edit FillPDF form'
   requirements:
-    _permission: 'administer pdfs' # todo: do we have an administer own pdfs perm?
+    _entity_access: fillpdf_form.update
   options:
     _admin_route: TRUE
 
@@ -45,7 +42,7 @@ entity.fillpdf_form.delete_form:
     _entity_form: fillpdf_form.delete
     _title: 'Delete FillPDF form'
   requirements:
-    _permission: 'administer pdfs' # todo: do we have an administer own pdfs perm?
+    _entity_access: fillpdf_form.delete
   options:
     _admin_route: TRUE
 
@@ -55,14 +52,6 @@ entity.fillpdf_form_field.edit_form:
     _entity_form: fillpdf_form_field.edit
     _title: 'Edit FillPDF form field'
   requirements:
-    _permission: 'administer pdfs' # todo: do we have an administer own pdfs perm?
+    _entity_access: fillpdf_form_field.update
   options:
     _admin_route: TRUE
-
-fillpdf_file_context.settings:
-  path: 'admin/structure/fillpdf_file_context'
-  defaults:
-   _form: '\Drupal\fillpdf\Entity\Form\FillPdfFileContextSettingsForm'
-   _title: 'FillPDF file context settings'
-  requirements:
-    _permission: 'administer fillpdf file context entities'
