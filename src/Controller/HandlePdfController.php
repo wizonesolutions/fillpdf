@@ -23,8 +23,6 @@ use Drupal\fillpdf\Plugin\FillPdfActionPluginManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class HandlePdfController extends ControllerBase {
 
@@ -83,7 +81,6 @@ class HandlePdfController extends ControllerBase {
 
     // @todo: Emit event (or call alter hook?) before populating PDF. fillpdf_merge_fields_alter -> should be renamed to fillpdf_populate_fields_alter
 
-    // TODO: Extract the PDF parameters, and act accordingly - this is pretty much just calling FillPdfBackendPluginInterface::populateWithFieldData and then reading the FillPdfForm options to determine whether to serve as a file download or fill in the field data.
     /** @var FillPdfFormInterface $fillpdf_form */
     $fillpdf_form = FillPdfForm::load($context['fid']);
     if (!$fillpdf_form) {

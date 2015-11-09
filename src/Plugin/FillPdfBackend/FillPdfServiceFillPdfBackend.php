@@ -25,6 +25,7 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
   /** @var string $fillPdfServiceEndpoint */
   protected $fillPdfServiceEndpoint;
 
+  // @todo: Use PluginBase's $this->configuration after adding a FillPdfBackendBase class.
   /** @var array $config */
   protected $config;
 
