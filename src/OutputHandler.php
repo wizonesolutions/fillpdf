@@ -32,17 +32,16 @@ class OutputHandler implements OutputHandlerInterface {
   /** @var \Psr\Log\LoggerInterface $logger */
   protected $logger;
 
-  /** @var \Drupal\file\FileUsage\FileUsageInterface $fileUsage */
-  protected $fileUsage;
-
   /** @var \Drupal\fillpdf\FillPdfLinkManipulatorInterface $link_manipulator */
   protected $linkManipulator;
 
   /**
    * OutputHandler constructor.
+   * @param \Drupal\Core\Utility\Token $token
+   * @param \Psr\Log\LoggerInterface $logger
+   * @param \Drupal\fillpdf\FillPdfLinkManipulatorInterface $link_manipulator
    */
-  public function __construct(FileUsageInterface $file_usage, Token $token, LoggerInterface $logger, FillPdfLinkManipulatorInterface $link_manipulator) {
-    $this->fileUsage = $file_usage;
+  public function __construct(Token $token, LoggerInterface $logger, FillPdfLinkManipulatorInterface $link_manipulator) {
     $this->token = $token;
     $this->logger = $logger;
     $this->linkManipulator = $link_manipulator;

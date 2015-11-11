@@ -23,7 +23,7 @@ services:
 
   fillpdf.output_handler:
     class: Drupal\fillpdf\OutputHandler
-    arguments: ['@file.usage', '@token', '@logger.channel.fillpdf', '@fillpdf.link_manipulator']
+    arguments: ['@token', '@logger.channel.fillpdf', '@fillpdf.link_manipulator']
 
   logger.channel.fillpdf:
     parent: logger.channel_base
