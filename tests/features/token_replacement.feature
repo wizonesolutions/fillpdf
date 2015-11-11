@@ -7,19 +7,20 @@ Feature: Replace tokens using entity data
     Given I have installed FillPDF
     And I have uploaded a PDF
     And I have mapped fields to the PDF
+    And two nodes with
 
-  Scenario: Fill PDF with one entity
+  Scenario: Populate PDF with one entity
     When I generate the PDF with one entity
     Then I should see all matching tokens replaced
     And non-matching tokens should be cleared
 
-  Scenario: Fill PDF with multiple entities
+  Scenario: Populate PDF with multiple entities
     When I generate the PDF with multiple entities
     Then I should see all matching tokens replaced
-    And the last passed-in entity's tokens should win
+    And the last passed-in ntity's tokens should win
     And non-matching tokens should be cleared
 
-  Scenario: Fill PDF with multiple entities and prioritize set values in earlier entities over empties in later ones
+  Scenario: Populate PDF with multiple entities and prioritize set values in earlier entities over empties in later ones
     Given the last entity has en empty Body field
     When I generate the PDF with multiple entities
     Then I should see all matching tokens replaced
