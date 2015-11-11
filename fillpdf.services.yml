@@ -32,3 +32,8 @@ services:
   fillpdf.access_helper:
     class: Drupal\fillpdf\FillPdfAccessHelper
     arguments: ["@fillpdf.link_manipulator", "@fillpdf.context_manager"]
+
+  fillpdf.token_resolver:
+    class: Drupal\fillpdf\TokenResolver
+    arguments: ["@token"]
+
