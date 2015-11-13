@@ -5,6 +5,8 @@
  * Contains \Drupal\fillpdf\TokenResolverInterface.
  */
 
+
+
 namespace Drupal\fillpdf;
 
 /**
@@ -21,10 +23,13 @@ interface TokenResolverInterface {
    * @param array $entities
    * An array of entities to be used as arguments to Token::replace
    *
-   * @param $replace_options
    * @return string
+   * The passed-in string after replacing all possible tokens. The default
+   * implementation of this interface removes any non-matched tokens.
+   *
    * @see \Drupal\Core\Utility\Token::replace()
+   * @see TokenResolver
    */
-  public function replace($original, array $entities, $replace_options);
+  public function replace($original, array $entities);
 
 }

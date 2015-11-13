@@ -20,6 +20,7 @@ use Drupal\fillpdf\FillPdfLinkManipulatorInterface;
 use Drupal\fillpdf\Plugin\FillPdfActionPlugin\FillPdfDownloadAction;
 use Drupal\fillpdf\Plugin\FillPdfActionPluginInterface;
 use Drupal\fillpdf\Plugin\FillPdfActionPluginManager;
+use Drupal\fillpdf\TokenResolverInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -44,9 +45,13 @@ class HandlePdfController extends ControllerBase {
   /** @var FillPdfContextManagerInterface $contextManager */
   protected $contextManager;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query) {
+  /** @var TokenResolverInterface */
+  protected $tokenResolver;
+
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, TokenResolverInterface $token_resolver, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query) {
     $this->linkManipulator = $link_manipulator;
     $this->contextManager = $context_manager;
+    $this->tokenResolver = $token_resolver;
     $this->requestStack = $request_stack;
     $this->backendManager = $backend_manager;
     $this->actionManager = $action_manager;
@@ -61,6 +66,7 @@ class HandlePdfController extends ControllerBase {
     return new static(
       $container->get('fillpdf.link_manipulator'),
       $container->get('fillpdf.context_manager'),
+      $container->get('fillpdf.token_resolver'),
       $container->get('request_stack'),
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('plugin.manager.fillpdf_action.processor'),
@@ -110,32 +116,8 @@ class HandlePdfController extends ControllerBase {
         $mapped_fields[$pdf_key] = $pdf_key;
       }
       else {
-        // Whichever entity matches the token last wins.
-        $replaced_string = '';
-        foreach ($entities as $entity_type => $entity_objects) {
-          foreach ($entity_objects as $entity_id => $entity) {
-            // @todo: Refactor so the token context can be re-used for title replacement later OR do title replacement here so that it works the same way as value replacement and doesn't just use the last value...like it does in Drupal 7 :(
-            // @todo: What if one fill pattern has tokens from multiple types in it? Figure out the best way to deal with that and rewrite this section accordingly. Probably some form of parallel arrays. Basically we'd have to run all combinations, although our logic still might not be smart enough to tell if *all* tokens in the source text have been replaced, or in which case both of them have been replaced last (which is what we want). I could deliberately pass each entity context separately and then count how many of them match, and only overwrite it if the match count is higher than the current one. Yeah, that's kind of inefficient but also a good start. I might just be able to scan for tokens myself and then check if they're still in the $uncleaned_base output, or do the cleaning myself so I only have to call Token::replace once. TBD.
-            $field_pattern = $field->value->value;
-            $maybe_replaced_string = $this->token->replace($field_pattern, [
-              $entity_type => $entity,
-            ], [
-              'clean' => TRUE,
-            ]);
-            // Generate a non-cleaned version of the token string so we can
-            // tell if the non-empty string we got back actually replaced
-            // some tokens.
-            $uncleaned_base = $this->token->replace($field_pattern, [
-              $entity_type => $entity,
-            ]);
-
-            // If we got a result that isn't what we put in, update the value
-            // for this field..
-            if ($maybe_replaced_string && $field_pattern !== $uncleaned_base) {
-              $replaced_string = $maybe_replaced_string;
-            }
-          }
-        }
+        $fill_pattern = $field->value->value;
+        $replaced_string = $this->tokenResolver->replace($fill_pattern, $entities);
 
         $mapped_fields[$pdf_key] = $replaced_string;
       }
@@ -168,16 +150,6 @@ class HandlePdfController extends ControllerBase {
    *   An array of objects to be used in replacing tokens.
    *   Here, specifically, it's for generating the filename of the handled PDF.
    * @return NULL|\Symfony\Component\HttpFoundation\Response
-   * @internal param string $action_plugin_id The default action plugins are: default, download, save,*   The default action plugins are: default, download, save,
-   *   redirect. These correspond to performing the configured action (from
-   *   admin/structure/fillpdf/%), sending the PDF to the user's browser, saving
-   *   it to a file, and saving it to a file and then redirecting the user's browser to
-   *   the saved file.
-   *
-   *   You can use any action plugin that implements
-   *   \Drupal\fillpdf\Plugin\FillPdfActionPluginInterface.
-   * @internal param array|bool $force_download If set, this function will always end the request by*   If set, this function will always end the request by
-   *   sending the filled PDF to the user's browser.
    */
   protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, $context, array $token_objects) {
     $force_download = FALSE;
