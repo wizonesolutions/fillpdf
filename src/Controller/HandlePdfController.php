@@ -39,23 +39,19 @@ class HandlePdfController extends ControllerBase {
   /** @var QueryFactory $entityQuery */
   protected $entityQuery;
 
-  /** @var Token $token */
-  protected $token;
-
   /** @var FillPdfContextManagerInterface $contextManager */
   protected $contextManager;
 
   /** @var TokenResolverInterface */
   protected $tokenResolver;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, TokenResolverInterface $token_resolver, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, Token $token, QueryFactory $entity_query) {
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, TokenResolverInterface $token_resolver, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, QueryFactory $entity_query) {
     $this->linkManipulator = $link_manipulator;
     $this->contextManager = $context_manager;
     $this->tokenResolver = $token_resolver;
     $this->requestStack = $request_stack;
     $this->backendManager = $backend_manager;
     $this->actionManager = $action_manager;
-    $this->token = $token;
     $this->entityQuery = $entity_query;
   }
 
@@ -70,7 +66,6 @@ class HandlePdfController extends ControllerBase {
       $container->get('request_stack'),
       $container->get('plugin.manager.fillpdf_backend'),
       $container->get('plugin.manager.fillpdf_action.processor'),
-      $container->get('token'),
       $container->get('entity.query')
     );
   }
@@ -123,7 +118,7 @@ class HandlePdfController extends ControllerBase {
       }
     }
 
-    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $field_mapping, $context);
+    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $field_mapping, $context, $entities);
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
@@ -146,12 +141,12 @@ class HandlePdfController extends ControllerBase {
    *   The FillPDF request context as parsed by
    *   \Drupal\fillpdf\Service\LinkManipulator.
    *
-   * @param array $token_objects
+   * @param array $entities
    *   An array of objects to be used in replacing tokens.
    *   Here, specifically, it's for generating the filename of the handled PDF.
    * @return NULL|\Symfony\Component\HttpFoundation\Response
    */
-  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, $context, array $token_objects) {
+  protected function handlePopulatedPdf(FillPdfFormInterface $fillpdf_form, $pdf_data, $context, array $entities) {
     $force_download = FALSE;
     if (!empty($context['force_download'])) {
       $force_download = TRUE;
@@ -159,7 +154,7 @@ class HandlePdfController extends ControllerBase {
 
     // Generate the filename of downloaded PDF from title of the PDF set in
     // admin/structure/fillpdf/%fid
-    $output_name = $this->buildFilename($fillpdf_form->title->value, $token_objects);
+    $output_name = $this->buildFilename($fillpdf_form->title->value, $entities);
 
     // Determine the appropriate action for the PDF.
     $destination_path_set = !empty($fillpdf_form->destination_path->value);
@@ -177,7 +172,7 @@ class HandlePdfController extends ControllerBase {
     $action_configuration = [
       'form' => $fillpdf_form,
       'context' => $context,
-      'token_objects' => $token_objects,
+      'token_objects' => $entities,
       'data' => $pdf_data,
       'filename' => $output_name,
     ];
@@ -200,10 +195,10 @@ class HandlePdfController extends ControllerBase {
     return $response;
   }
 
-  public function buildFilename($original, array $token_objects) {
+  protected function buildFilename($original, array $entities) {
     // Replace tokens *before* sanitization
-    if (count($token_objects)) {
-      $original = $this->token->replace($original, $token_objects);
+    if (count($entities)) {
+      $original = $this->tokenResolver->replace($original, $entities);
     }
 
     $output_name = str_replace(' ', '_', $original);

@@ -28,9 +28,8 @@ Feature: Replace tokens using entity data
     But the Body field value from the first entity should be used for the [node:body] token
     And non-matching tokens should be cleared
 
-    # TODO: Fix this case. It's failing. fillpdf?fid=5&entity_ids[]=node:1&entity_ids[]=node:2&&entity_ids[]=node:3
   Scenario: Populate PDF with 3+ entities - two tokens in pattern
-    Given the FillPDF Form's Body field is mapped to "Title [node:title] Body [node:body]"
+    Given the FillPDF Form's Body field is mapped to "Body [node:body]"
     When I generate the PDF with multiple entities
     Then I should see all matching tokens replaced
     And the last passed-in entity's tokens should win (if they are not blank)
@@ -44,3 +43,10 @@ Feature: Replace tokens using entity data
     And the last passed-in entity's tokens should win (if they are not blank)
     But the Body field value from the first entity should be used for the [node:body] token
     And non-matching tokens should be cleared
+
+  Scenario: Unreplaced tokens properly cleaned
+    Given the FillPDF Form's Body field is mapped to "Title [node:title] Body [node:body]"
+    And the passed-in entity has an empty Body field
+    When I generate the PDF
+    Then I should see "Title <title> Body" in the PDF's Text2 field
+
