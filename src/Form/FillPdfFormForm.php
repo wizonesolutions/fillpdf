@@ -141,6 +141,8 @@ class FillPdfFormForm extends ContentEntityForm {
     $form['destination_path']['#group'] = 'additional_settings';
     $form['scheme']['#group'] = 'additional_settings';
     $form['destination_redirect']['#group'] = 'additional_settings';
+    $form['replacements']['#group'] = 'additional_settings';
+    $form['replacements']['#weight'] = 1;
 
     $form['fillpdf_fields']['fields'] = FillPdf::embedView('fillpdf_form_fields',
       'block_1',

@@ -48,7 +48,11 @@ class TokenResolver implements TokenResolverInterface {
       }
     }
 
-    return $this->token->replace($replaced_string, [], ['clear' => TRUE]);
+    // The entities might not have had values for all the tokens in the pattern.
+    // Ensure that any remaining tokens are cleared from the string so they
+    // don't get sent to the PDF.
+    $clean_replaced_string = $this->token->replace($replaced_string, [], ['clear' => TRUE]);
+    return $clean_replaced_string;
   }
 
 }

@@ -10,6 +10,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Utility\Token;
+use Drupal\fillpdf\Component\Helper\FillPdfMappingHelper;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Drupal\fillpdf\Entity\FillPdfFormField;
 use Drupal\fillpdf\FillPdfBackendManager;
@@ -114,15 +115,29 @@ class HandlePdfController extends ControllerBase {
         $fill_pattern = $field->value->value;
         $replaced_string = $this->tokenResolver->replace($fill_pattern, $entities);
 
+        // Apply field transformations.
+        // Replace <br /> occurrences with newlines
+        $replaced_string = preg_replace('|<br />|', '
+', $replaced_string);
+
+        $form_replacements = FillPdfMappingHelper::parseReplacements($fillpdf_form->replacements->value);
+        $field_replacements = FillPdfMappingHelper::parseReplacements($field->replacements->value);
+
+        $replaced_string = FillPdfMappingHelper::transformString($replaced_string, $form_replacements, $field_replacements);
+
         $mapped_fields[$pdf_key] = $replaced_string;
       }
     }
 
-    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $field_mapping, $context, $entities);
+    $title_pattern = $fillpdf_form->title->value;
+    // Generate the filename of downloaded PDF from title of the PDF set in
+    // admin/structure/fillpdf/%fid
+    $context['filename'] = $this->buildFilename($title_pattern, $entities);
+
+    $populated_pdf = $backend->populateWithFieldData($fillpdf_form, $field_mapping, $context);
 
     // @todo: When Rules integration ported, emit an event or whatever.
 
-    // TODO: figure out what to do about $token_objects. Should I make buildFilename manually re-run everything or just use the final entities passed of each type? Maybe just the latter, since that is what I do in D7. But it wouldn't be that hard to just use whatever helper function I make.
     $action_response =  $this->handlePopulatedPdf($fillpdf_form, $populated_pdf, $context, []);
 
     return $action_response;
@@ -152,9 +167,7 @@ class HandlePdfController extends ControllerBase {
       $force_download = TRUE;
     }
 
-    // Generate the filename of downloaded PDF from title of the PDF set in
-    // admin/structure/fillpdf/%fid
-    $output_name = $this->buildFilename($fillpdf_form->title->value, $entities);
+    $output_name = $context['filename'];
 
     // Determine the appropriate action for the PDF.
     $destination_path_set = !empty($fillpdf_form->destination_path->value);

@@ -11,6 +11,7 @@ use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\fillpdf\FillPdfFormFieldInterface;
+use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
 
 /**
  * Defines the entity for managing PDF fields associated with uploaded FillPDF
@@ -79,7 +80,6 @@ class FillPdfFormField extends ContentEntityBase implements FillPdfFormFieldInte
         'type' => 'string_long',
       ]);
 
-    // @todo: convert meeeeeeee
     $fields['value'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Fill pattern'))
       ->setDescription(t('Text and tokens with which to fill in the PDF.'))
@@ -94,10 +94,9 @@ class FillPdfFormField extends ContentEntityBase implements FillPdfFormFieldInte
         'type' => 'string_long',
       ]);
 
-    // @todo: Can I do better on field type here? Maybe a multi-value string field?
     $fields['replacements'] = BaseFieldDefinition::create('string_long')
-      ->setLabel(t('Fill pattern transformations'))
-      ->setDescription(t('Pipe-separated mapping of specific values to replace with other values.'))
+      ->setLabel(t('Change text before sending to PDF (Transform values)'))
+      ->setDescription(FillPdfAdminFormHelper::getReplacementsDescription())
       ->setDisplayOptions('form', [
         'type' => 'string_long',
       ]);

@@ -14,11 +14,10 @@ class FillPdf {
     if (empty($pdftk_path)) {
       $pdftk_path = 'pdftk';
     }
-    $status = NULL;
     $process = new Process($pdftk_path);
     $process->run();
 
-    if (in_array($process->getExitCode(), [126, 127])) {
+    if (in_array($process->getExitCode(), [126, 127], TRUE)) {
       return FALSE;
     }
     return TRUE;

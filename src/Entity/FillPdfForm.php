@@ -63,9 +63,7 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
       ->setLabel(t('The associated managed file.'))
       ->setDescription(t('The associated managed file.'));
 
-    // @todo: Figure out how to do this the right way...I get a router rebuild error if I use $url_generator->generateFromRoute()
     $overview_url = Url::fromUri('base://admin/structure/fillpdf')->toString();
-    // @todo: what is wrong with the below?
     $fields['admin_title'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Administrative description'))
       ->setDescription(t('Enter the name of the form here, and it will be shown on the <a href="@overview_url">form overview page</a>. It has no effect on functionality, but it can help you identify which form configuration you want to edit.', ['@overview_url' => $overview_url]))
@@ -82,12 +80,10 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
         'weight' => 10,
       ]);
 
-    // @todo: Validate this with a custom constraint or whatever
     $fields['default_entity_type'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Default entity type'))
       ->setDescription(t('The type of the below entity ID.'));
 
-    // @todo: Validate this with a custom constraint, if possible
     $fields['default_entity_id'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Default entity ID'))
       ->setDescription(t('The default entity ID to be filled from this FillPDF Form.'))
@@ -96,7 +92,6 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
         'weight' => 15,
       ]);
 
-    // @todo: set display options on this
     $fields['destination_path'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Where to save generated PDFs'))
       ->setDescription(t("<p>By default, filled PDFs are not saved to disk; they are simply sent
@@ -141,6 +136,15 @@ class FillPdfForm extends ContentEntityBase implements FillPdfFormInterface {
         'settings' => [
           'display_label' => TRUE,
         ],
+      ]);
+
+    // Restore database and make this be string_long instead like FillPdfFormField
+    $fields['replacements'] = BaseFieldDefinition::create('string_long')
+      ->setLabel(t('Change text before sending to PDF (Transform values)'))
+      ->setDescription(FillPdfAdminFormHelper::getReplacementsDescription())
+      ->setDisplayOptions('form', [
+        'type' => 'string_long',
+        'weight' => 40,
       ]);
 
     return $fields;

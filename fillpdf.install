@@ -90,3 +90,14 @@ function fillpdf_update_8103() {
     $entity->save();
   }
 }
+
+/**
+ * Add replacements fields.
+ */
+function fillpdf_update_8104() {
+  $edum = \Drupal::entityDefinitionUpdateManager();
+  $replacements = BaseFieldDefinition::create('string_long')
+    ->setLabel(t('Replace word(s) with correct output values'))
+    ->setDescription(FillPdfAdminFormHelper::getReplacementsDescription());
+  $edum->installFieldStorageDefinition('replacements', 'fillpdf_form', 'fillpdf_form', $replacements);
+}
