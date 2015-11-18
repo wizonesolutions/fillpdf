@@ -32,7 +32,7 @@ display:
           disable_sql_rewrite: false
           distinct: false
           replica: false
-          query_comment: false
+          query_comment: ''
           query_tags: {  }
       exposed_form:
         type: basic
@@ -141,7 +141,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -201,7 +201,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -252,7 +252,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -277,11 +277,11 @@ display:
           entity_type: fillpdf_form
           entity_field: title
           plugin_id: standard
-        uri:
-          id: uri
-          table: file_managed
-          field: uri
-          relationship: file
+        file__target_id:
+          id: file__target_id
+          table: fillpdf_forms
+          field: file__target_id
+          relationship: none
           group_type: group
           admin_label: ''
           label: Location
@@ -303,7 +303,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: 0
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -325,11 +325,22 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          link_to_file: false
-          file_download_path: false
-          entity_type: file
-          entity_field: uri
-          plugin_id: file_uri
+          click_sort_column: target_id
+          type: file_default
+          settings: {  }
+          group_column: ''
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: fillpdf_form
+          entity_field: file
+          plugin_id: field
         nothing:
           id: nothing
           table: views
@@ -356,7 +367,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -405,7 +416,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -434,12 +445,12 @@ display:
           field: nothing
           relationship: none
           group_type: group
-          admin_label: 'Operations: Export field mappings'
+          admin_label: 'Operations: Export'
           label: ''
           exclude: false
           alter:
             alter_text: true
-            text: 'Export field mappings'
+            text: 'Export configuration'
             make_link: true
             path: 'admin/structure/fillpdf/{{ fid }}/export'
             absolute: false
@@ -454,7 +465,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -483,12 +494,12 @@ display:
           field: nothing
           relationship: none
           group_type: group
-          admin_label: 'Operations: Import field mappings'
+          admin_label: 'Operations: Import'
           label: ''
           exclude: false
           alter:
             alter_text: true
-            text: 'Import field mappings'
+            text: 'Import configuration'
             make_link: true
             path: 'admin/structure/fillpdf/{{ fid }}/import'
             absolute: false
@@ -503,7 +514,7 @@ display:
             suffix: ''
             target: ''
             nl2br: false
-            max_length: ''
+            max_length: null
             word_boundary: true
             ellipsis: true
             more_link: false
@@ -532,22 +543,17 @@ display:
       header: {  }
       footer: {  }
       empty: {  }
-      relationships:
-        file:
-          id: file
-          table: fillpdf_forms
-          field: file
-          relationship: none
-          group_type: group
-          admin_label: File
-          required: false
-          entity_type: fillpdf_form
-          entity_field: file
-          plugin_id: standard
+      relationships: {  }
       arguments: {  }
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
       field_langcode_add_to_query: null
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+      tags: {  }
   block_1:
     display_plugin: block
     id: block_1
@@ -557,3 +563,9 @@ display:
       display_extenders: {  }
       field_langcode: '***LANGUAGE_language_content***'
       field_langcode_add_to_query: null
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+      tags: {  }
