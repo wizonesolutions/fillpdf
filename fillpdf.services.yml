@@ -37,3 +37,6 @@ services:
     class: Drupal\fillpdf\TokenResolver
     arguments: ["@token"]
 
+  fillpdf.entity_helper:
+    class: Drupal\fillpdf\EntityHelper
+    arguments: ["@entity.query"]

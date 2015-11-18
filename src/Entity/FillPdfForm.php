@@ -26,6 +26,8 @@ use Drupal\fillpdf\Service\FillPdfAdminFormHelper;
  *     "form" = {
  *       "edit" = "Drupal\fillpdf\Form\FillPdfFormForm",
  *       "delete" = "Drupal\fillpdf\Form\FillPdfFormDeleteForm",
+ *       "export" = "Drupal\fillpdf\Form\FillPdfFormExportForm",
+ *       "import" = "Drupal\fillpdf\Form\FillPdfFormImportForm",
  *     },
  *     "access" = "Drupal\fillpdf\FillPdfFormAccessControlHandler",
  *   },

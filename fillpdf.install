@@ -101,3 +101,10 @@ function fillpdf_update_8104() {
     ->setDescription(FillPdfAdminFormHelper::getReplacementsDescription());
   $edum->installFieldStorageDefinition('replacements', 'fillpdf_form', 'fillpdf_form', $replacements);
 }
+
+/**
+ * Enable Serialization module.
+ */
+function fillpdf_update_8105() {
+  \Drupal::getContainer()->get('module_installer')->install(['serialization']);
+}

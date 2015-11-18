@@ -6,6 +6,7 @@
 namespace Drupal\fillpdf\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
@@ -20,14 +21,17 @@ class FillPdfFormForm extends ContentEntityForm {
   protected $adminFormHelper;
   protected $linkManipulator;
 
-  public function __construct(FillPdfAdminFormHelperInterface $admin_form_helper,
+  public function __construct(EntityManagerInterface $entity_manager, FillPdfAdminFormHelperInterface $admin_form_helper,
                               FillPdfLinkManipulatorInterface $link_manipulator) {
+    $this->entityManager = $entity_manager;
+    parent::__construct($this->entityManager);
     $this->adminFormHelper = $admin_form_helper;
     $this->linkManipulator = $link_manipulator;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
+      $container->get('entity.manager'),
       $container->get('fillpdf.admin_form_helper'),
       $container->get('fillpdf.link_manipulator')
     );

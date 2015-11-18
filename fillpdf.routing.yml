@@ -46,6 +46,26 @@ entity.fillpdf_form.delete_form:
   options:
     _admin_route: TRUE
 
+entity.fillpdf_form.export_form:
+  path: '/admin/structure/fillpdf/{fillpdf_form}/export'
+  defaults:
+    _entity_form: fillpdf_form.export
+    _title: 'Export FillPDF form configuration and field mappings'
+  requirements:
+    _entity_access: fillpdf_form.view
+  options:
+    _admin_route: TRUE
+
+entity.fillpdf_form.import_form:
+  path: '/admin/structure/fillpdf/{fillpdf_form}/import'
+  defaults:
+    _entity_form: fillpdf_form.import
+    _title: 'Import FillPDF form configuration and field mappings'
+  requirements:
+    _entity_access: fillpdf_form.view
+  options:
+    _admin_route: TRUE
+
 entity.fillpdf_form_field.edit_form:
   path: '/admin/structure/fillpdf/{fillpdf_form}/{fillpdf_form_field}'
   defaults:

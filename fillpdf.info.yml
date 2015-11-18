@@ -9,3 +9,4 @@ dependencies:
   - link
   - token
   - views
+  - serialization

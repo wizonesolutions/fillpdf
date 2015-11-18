@@ -8,11 +8,9 @@ namespace Drupal\fillpdf\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\Core\Entity\Query\QueryFactory;
-use Drupal\Core\Utility\Token;
 use Drupal\fillpdf\Component\Helper\FillPdfMappingHelper;
 use Drupal\fillpdf\Entity\FillPdfForm;
-use Drupal\fillpdf\Entity\FillPdfFormField;
+use Drupal\fillpdf\EntityHelper;
 use Drupal\fillpdf\FillPdfBackendManager;
 use Drupal\fillpdf\FillPdfBackendPluginInterface;
 use Drupal\fillpdf\FillPdfContextManagerInterface;
@@ -37,8 +35,8 @@ class HandlePdfController extends ControllerBase {
   /** @var FillPdfBackendManager $backendManager */
   protected $backendManager;
 
-  /** @var QueryFactory $entityQuery */
-  protected $entityQuery;
+  /** @var EntityHelper */
+  protected $entityHelper;
 
   /** @var FillPdfContextManagerInterface $contextManager */
   protected $contextManager;
@@ -46,14 +44,14 @@ class HandlePdfController extends ControllerBase {
   /** @var TokenResolverInterface */
   protected $tokenResolver;
 
-  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, TokenResolverInterface $token_resolver, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager, QueryFactory $entity_query) {
+  public function __construct(FillPdfLinkManipulatorInterface $link_manipulator, FillPdfContextManagerInterface $context_manager, EntityHelper $entity_helper, TokenResolverInterface $token_resolver, RequestStack $request_stack, FillPdfBackendManager $backend_manager, FillPdfActionPluginManager $action_manager) {
     $this->linkManipulator = $link_manipulator;
     $this->contextManager = $context_manager;
     $this->tokenResolver = $token_resolver;
     $this->requestStack = $request_stack;
     $this->backendManager = $backend_manager;
     $this->actionManager = $action_manager;
-    $this->entityQuery = $entity_query;
+    $this->entityHelper = $entity_helper;
   }
 
   /**
@@ -63,6 +61,7 @@ class HandlePdfController extends ControllerBase {
     return new static(
       $container->get('fillpdf.link_manipulator'),
       $container->get('fillpdf.context_manager'),
+      $container->get('fillpdf.entity_helper'),
       $container->get('fillpdf.token_resolver'),
       $container->get('request_stack'),
       $container->get('plugin.manager.fillpdf_backend'),
@@ -90,10 +89,7 @@ class HandlePdfController extends ControllerBase {
       return new RedirectResponse('/');
     }
 
-    $fields = FillPdfFormField::loadMultiple(
-      $this->entityQuery->get('fillpdf_form_field')
-        ->condition('fillpdf_form', $fillpdf_form->id())
-        ->execute());
+    $fields = $this->entityHelper->getFormFields($fillpdf_form);
 
     // Populate entities array based on what user passed in
     $entities = $this->contextManager->loadEntities($context);
