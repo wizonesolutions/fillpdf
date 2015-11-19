@@ -7,7 +7,12 @@
 namespace Drupal\fillpdf\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\file\Entity\File;
+use Drupal\file\FileInterface;
 use Drupal\fillpdf\Component\Helper\FillPdfMappingHelper;
 use Drupal\fillpdf\Entity\FillPdfForm;
 use Drupal\fillpdf\EntityHelper;
@@ -96,32 +101,77 @@ class HandlePdfController extends ControllerBase {
 
     $field_mapping = [
       'fields' => [],
-      // @todo: Image-filling support. Probably both the local and remote plugins could extend the same class.
       'images' => [],
     ];
 
     $mapped_fields = &$field_mapping['fields'];
-//    $image_data = &$field_mapping['images'];
+    $image_data = &$field_mapping['images'];
     foreach ($fields as $field) {
       $pdf_key = $field->pdf_key->value;
       if ($context['sample']) {
         $mapped_fields[$pdf_key] = $pdf_key;
       }
       else {
+        // Get image fields attached to the entity and derive their token names based on the entity types we are working with at the moment.
         $fill_pattern = $field->value->value;
-        $replaced_string = $this->tokenResolver->replace($fill_pattern, $entities);
+        $is_image_token = FALSE;
+        $transform_string = TRUE;
+        foreach ($entities as $entity_type => $entities_of_that_type) {
+          $lifo_entities = array_reverse($entities_of_that_type);
+          /**
+           * @var string $entity_id
+           * @var EntityInterface $entity
+           */
+          foreach ($lifo_entities as $entity_id => $entity) {
+            if (method_exists($entity, 'getFields')) {
+              /**
+               * @var ContentEntityInterface $entity
+               * @var string $field_name
+               * @var FieldDefinitionInterface $field_definition
+               */
+              foreach ($entity->getFields() as $field_name => $field_data) {
+                $field_definition = $field_data->getFieldDefinition();
+                if ($field_definition->getType() === 'image') {
+                  if ($fill_pattern === "[{$entity_type}:{$field_name}]") {
+                    // It's a match!
+                    $is_image_token = TRUE;
+                    if (count($entity->{$field_name})) {
+                      /** @var FileInterface $image_file */
+                      $image_file = File::load($entity->{$field_name}->target_id);
+                      $image_path = $image_file->getFileUri();
+                      $mapped_fields[$pdf_key] = "{image}{$image_path}";
+                      $image_path_info = pathinfo($image_path);
+                      // Store the image data to transmit to the remote service if necessary
+                      $file_data = file_get_contents($image_path);
+                      if ($file_data) {
+                        $image_data[$pdf_key] = [
+                          'data' => base64_encode($file_data),
+                          'filenamehash' => md5($image_path_info['filename']) . '.' . $image_path_info['extension'],
+                        ];
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
 
-        // Apply field transformations.
-        // Replace <br /> occurrences with newlines
-        $replaced_string = preg_replace('|<br />|', '
+        if (!$is_image_token) {
+          $replaced_string = $this->tokenResolver->replace($fill_pattern, $entities);
+
+          // Apply field transformations.
+          // Replace <br /> occurrences with newlines
+          $replaced_string = preg_replace('|<br />|', '
 ', $replaced_string);
 
-        $form_replacements = FillPdfMappingHelper::parseReplacements($fillpdf_form->replacements->value);
-        $field_replacements = FillPdfMappingHelper::parseReplacements($field->replacements->value);
+          $form_replacements = FillPdfMappingHelper::parseReplacements($fillpdf_form->replacements->value);
+          $field_replacements = FillPdfMappingHelper::parseReplacements($field->replacements->value);
 
-        $replaced_string = FillPdfMappingHelper::transformString($replaced_string, $form_replacements, $field_replacements);
+          $replaced_string = FillPdfMappingHelper::transformString($replaced_string, $form_replacements, $field_replacements);
 
-        $mapped_fields[$pdf_key] = $replaced_string;
+          $mapped_fields[$pdf_key] = $replaced_string;
+        }
       }
     }
 
