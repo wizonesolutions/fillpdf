@@ -11,7 +11,7 @@ namespace Drupal\fillpdf;
  *
  * @package Drupal\fillpdf
  *
- * @todo: Impement PluginInspectionInterface, ConfigurablePluginInterface and update implementations accordingly.
+ * @todo: Implement PluginInspectionInterface, ConfigurablePluginInterface and update implementations accordingly.
  */
 interface FillPdfBackendPluginInterface {
 
