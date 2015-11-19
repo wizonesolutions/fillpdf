@@ -203,14 +203,30 @@ class FillPdfOverviewForm extends FillPdfAdminFormBase {
     // Attempt to parse the fields in the PDF.
     $fields = $backend->parse($fillpdf_form);
 
+    $form_fields = [];
+    foreach ((array) $fields as $key => $arr) {
+      if ($arr['type']) { // Don't store "container" fields
+        $arr['name'] = str_replace('&#0;', '', $arr['name']); // pdftk sometimes inserts random &#0; markers - strip these out. NOTE: This may break forms that actually DO contain this pattern, but 99%-of-the-time functionality is better than merge failing due to improper parsing.
+        $field = FillPdfFormField::create(
+          [
+            'fillpdf_form' => $fillpdf_form,
+            'pdf_key' => $arr['name'],
+            'value' => '',
+          ]
+        );
+
+        $form_fields[] = $field;
+      }
+    }
+
     // Save the fields that were parsed out (if any). If none were, set a
     // warning message telling the user that.
-    foreach ($fields as $fillpdf_form_field) {
+    foreach ($form_fields as $fillpdf_form_field) {
       /** @var FillPdfFormField $fillpdf_form_field */
       $fillpdf_form_field->save();
     }
 
-    if (count($fields) === 0) {
+    if (count($form_fields) === 0) {
       drupal_set_message($this->t('No fields detected in PDF. Are you sure it contains editable fields?'), 'warning');
     }
 

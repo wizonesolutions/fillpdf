@@ -10,10 +10,8 @@ use Drupal\Component\Annotation\Plugin;
 use Drupal\Core\Annotation\Translation;
 use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
-use Drupal\fillpdf\Entity\FillPdfFormField;
 use Drupal\fillpdf\FillPdfBackendPluginInterface;
 use Drupal\fillpdf\FillPdfFormInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @Plugin(
@@ -39,59 +37,21 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
    * @inheritdoc
    */
   public function parse(FillPdfFormInterface $fillpdf_form) {
-    // @todo: Is there a better way to do this?
+    /** @var FileInterface $file */
     $file = File::load($fillpdf_form->file->target_id);
     $content = file_get_contents($file->getFileUri());
 
     $result = $this->xmlRpcRequest('parse_pdf_fields', base64_encode($content));
 
-    // TODO: Don't do magic error handling. Throw an exception and let the caller decide what to do. Make my own exception class (see PluginNotFoundException for inspiration).
-//    if ($result->error == TRUE) {
-//      drupal_goto('admin/structure/fillpdf');
-//    } // after setting error message
+    if ($result->error == TRUE) {
+      // @todo: Throw an exception, log a message etc.
+      return [];
+    } // after setting error message
 
     $fields = $result->data;
 
-    $form_fields = array();
-
-    foreach ((array) $fields as $key => $arr) {
-      if ($arr['type']) { // Don't store "container" fields
-        $arr['name'] = str_replace('&#0;', '', $arr['name']); // pdftk sometimes inserts random &#0; markers - strip these out. NOTE: This may break forms that actually DO contain this pattern, but 99%-of-the-time functionality is better than merge failing due to improper parsing.
-        $field = FillPdfFormField::create(
-          array(
-            'fillpdf_form' => $fillpdf_form,
-            'pdf_key' => $arr['name'],
-            'value' => '',
-          )
-        );
-
-        $form_fields[] = $field;
-      }
-    }
-
-    return $form_fields;
+    return $fields;
   }
-
-  /**
-   * @inheritdoc
-   */
-  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $field_mapping, array $context) {
-    /** @var FileInterface $original_file */
-    $original_file = File::load($pdf_form->file->target_id);
-    $original_pdf = file_get_contents($original_file->getFileUri());
-    $api_key = $this->config['fillpdf_service_api_key'];
-
-    $result = $this->xmlRpcRequest('merge_pdf_v3', base64_encode($original_pdf), $field_mapping['fields'], $api_key, $context['flatten'], $field_mapping['images']);
-
-    // @todo: Error handling/exceptions
-//    if ($result->error == TRUE) {
-//      drupal_goto();
-//    }
-
-    $populated_pdf = base64_decode($result->data);
-    return $populated_pdf;
-  }
-
 
   /**
    * Make an XML_RPC request.
@@ -109,23 +69,37 @@ class FillPdfServiceFillPdfBackend implements FillPdfBackendPluginInterface {
 
     $ret = new \stdClass;
 
-    // TODO: Exceptions, not error messages
     if (isset($result['error'])) {
-//      drupal_set_message($result['error'], 'error');
+      drupal_set_message($result['error'], 'error');
       $ret->error = TRUE;
     }
     elseif ($result == FALSE || xmlrpc_error()) {
       $error = xmlrpc_error();
       $ret->error = TRUE;
-//      drupal_set_message(t('There was a problem contacting the FillPDF service.
-//      It may be down, or you may not have internet access. [ERROR @code: @message]',
-//        array('@code' => $error->code, '@message' => $error->message)), 'error');
+      drupal_set_message(t('There was a problem contacting the FillPDF service.
+      It may be down, or you may not have internet access. [ERROR @code: @message]',
+        ['@code' => $error->code, '@message' => $error->message]), 'error');
     }
     else {
       $ret->data = $result['data'];
       $ret->error = FALSE;
     }
     return $ret;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function populateWithFieldData(FillPdfFormInterface $pdf_form, array $field_mapping, array $context) {
+    /** @var FileInterface $original_file */
+    $original_file = File::load($pdf_form->file->target_id);
+    $original_pdf = file_get_contents($original_file->getFileUri());
+    $api_key = $this->config['fillpdf_service_api_key'];
+
+    $result = $this->xmlRpcRequest('merge_pdf_v3', base64_encode($original_pdf), $field_mapping['fields'], $api_key, $context['flatten'], $field_mapping['images']);
+
+    $populated_pdf = base64_decode($result->data);
+    return $populated_pdf;
   }
 
 }
