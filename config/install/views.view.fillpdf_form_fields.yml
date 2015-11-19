@@ -562,6 +562,8 @@ display:
         - 'languages:language_interface'
         - url
       cacheable: false
+      max-age: 0
+      tags: {  }
   block_1:
     display_plugin: block
     id: block_1
@@ -577,3 +579,5 @@ display:
         - 'languages:language_interface'
         - url
       cacheable: false
+      max-age: 0
+      tags: {  }
