@@ -170,6 +170,16 @@ class HandlePdfController extends ControllerBase {
 
           $replaced_string = FillPdfMappingHelper::transformString($replaced_string, $form_replacements, $field_replacements);
 
+          // Apply prefix and suffix, if applicable
+          if (isset($replaced_string) && $replaced_string) {
+            if ($field->prefix->value) {
+              $replaced_string = $field->prefix->value . $replaced_string;
+            }
+            if ($field->suffix->value) {
+              $replaced_string .= $field->suffix->value;
+            }
+          }
+
           $mapped_fields[$pdf_key] = $replaced_string;
         }
       }
